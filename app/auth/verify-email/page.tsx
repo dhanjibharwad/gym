@@ -190,7 +190,7 @@ function VerifyEmailForm() {
 
         {/* Footer */}
         <div className="absolute bottom-8 left-8 text-white/60 text-sm">
-          © 2026 Eagle Gym. All rights reserved.
+          © 2026 Our  Gym. All rights reserved.
         </div>
       </div>
 

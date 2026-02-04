@@ -203,7 +203,7 @@ function RegisterForm() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <h1 className="text-4xl font-bold mb-4 leading-tight">
-            Join Eagle Gym<br />management team.
+            Join Our  Gym<br />management team.
           </h1>
           <p className="text-lg text-white/80">
             Create your account to access the gym management<br />system and start managing members.
@@ -212,7 +212,7 @@ function RegisterForm() {
 
         {/* Footer */}
         <div className="absolute bottom-8 left-8 text-white/60 text-sm">
-          © 2026 Eagle Gym. All rights reserved.
+          © 2026 Our  Gym. All rights reserved.
         </div>
       </div>
 
@@ -264,7 +264,7 @@ function RegisterForm() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition text-gray-900 bg-white"
-                placeholder="admin@eaglegym.com"
+                placeholder="admin@Our gym.com"
               />
             </div>
 

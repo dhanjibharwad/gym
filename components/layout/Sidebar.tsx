@@ -92,7 +92,7 @@ export default function Sidebar({ userRole = "admin" }: SidebarProps) {
             <div className="w-8 h-8 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-orange-600">EAGLE GYM</span>
+            <span className="text-xl font-bold text-orange-600">Our  GYM</span>
           </div>
         </div>
       )}
@@ -160,7 +160,7 @@ export default function Sidebar({ userRole = "admin" }: SidebarProps) {
       }`}>
         {!isCollapsed ? (
           <div className="text-xs text-gray-500">
-            EAGLE GYM © 2026
+            Our  GYM © 2026
           </div>
         ) : (
           <div className="text-xs text-gray-500 font-semibold">

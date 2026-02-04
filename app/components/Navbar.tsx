@@ -36,7 +36,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
               <div className="text-white font-bold text-2xl">
-                <span className="text-3xl text-orange-500">EAGLE GYM</span>
+                <span className="text-3xl text-white">OUR GYM</span>
                 {/* <span className="">GYM</span> */}
               </div>
             </Link>

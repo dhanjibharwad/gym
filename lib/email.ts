@@ -14,10 +14,10 @@ export async function sendVerificationEmail(email: string, otp: string) {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Verify Your Email - Eagle Gym',
+    subject: 'Verify Your Email - Our  Gym',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ea580c;">Email Verification - Eagle Gym</h2>
+        <h2 style="color: #ea580c;">Email Verification - Our  Gym</h2>
         <p>Your verification code is:</p>
         <h1 style="color: #ea580c; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
         <p>This code will expire in 10 minutes.</p>
@@ -33,10 +33,10 @@ export async function sendPasswordResetEmail(email: string, otp: string) {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Reset Your Password - Eagle Gym',
+    subject: 'Reset Your Password - Our  Gym',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ea580c;">Password Reset - Eagle Gym</h2>
+        <h2 style="color: #ea580c;">Password Reset - Our  Gym</h2>
         <p>Your password reset code is:</p>
         <h1 style="color: #ea580c; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
         <p>This code will expire in 10 minutes.</p>

@@ -114,12 +114,12 @@ async function sendStaffCredentialsEmail(email: string, name: string, password: 
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Welcome to Eagle Gym - Your Login Credentials',
+    subject: 'Welcome to Our  Gym - Your Login Credentials',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ea580c;">Welcome to Eagle Gym!</h2>
+        <h2 style="color: #ea580c;">Welcome to Our  Gym!</h2>
         <p>Hello ${name},</p>
-        <p>You have been added as a reception staff member at Eagle Gym. Here are your login credentials:</p>
+        <p>You have been added as a reception staff member at Our  Gym. Here are your login credentials:</p>
         
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p><strong>Email:</strong> ${email}</p>
@@ -135,7 +135,7 @@ async function sendStaffCredentialsEmail(email: string, name: string, password: 
         
         <p>If you have any questions, please contact your administrator.</p>
         
-        <p>Best regards,<br>Eagle Gym Management Team</p>
+        <p>Best regards,<br>Our  Gym Management Team</p>
       </div>
     `,
   };

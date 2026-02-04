@@ -4,18 +4,31 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/', '/unauthorized'];
 const authPaths = ['/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('session')?.value;
 
+  // Skip middleware for static files and API auth routes
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api/auth') || pathname.includes('.')) {
+    return NextResponse.next();
+  }
+
   // Allow public paths
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  if (publicPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) {
     // Redirect authenticated users away from auth pages
     if (token && authPaths.some(path => pathname.startsWith(path))) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      try {
+        await jwtVerify(token, JWT_SECRET);
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      } catch {
+        // Invalid token, allow access to auth pages
+        const response = NextResponse.next();
+        response.cookies.delete('session');
+        return response;
+      }
     }
     return NextResponse.next();
   }
@@ -50,5 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public|api/auth).*)']
 };

@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
 
         {/* Footer */}
         <div className="absolute bottom-8 left-8 text-white/60 text-sm">
-          © 2026 Eagle Gym. All rights reserved.
+          © 2026 Our  Gym. All rights reserved.
         </div>
       </div>
 
@@ -178,7 +178,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-md focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition text-gray-900"
-                    placeholder="admin@eaglegym.com"
+                    placeholder="admin@Our gym.com"
                   />
                 </div>
                 <p className="mt-2 text-xs text-gray-500">

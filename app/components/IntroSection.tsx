@@ -11,7 +11,7 @@ const IntroSection = () => {
   }, []);
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-white">
       <div className="container mx-auto px-6">
         <div
           className={`transition-all duration-1000 ease-out ${
@@ -22,12 +22,12 @@ const IntroSection = () => {
             {/* Left Content */}
             <div>
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 leading-tight">
-                <span className="block text-foreground">Why Choose</span>
+                <span className="block text-gray-900">Why Choose</span>
                 <span className="block gradient-text mt-2">Our Gym?</span>
               </h2>
 
               <p
-                className={`text-lg text-muted-foreground mb-8 leading-relaxed transition-all duration-1000 delay-300 ${
+                className={`text-lg text-gray-600 mb-8 leading-relaxed transition-all duration-1000 delay-300 ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
@@ -41,15 +41,15 @@ const IntroSection = () => {
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
-                <div className="text-center p-4 rounded-xl border border-foreground/10">
+                <div className="text-center p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                   <Users className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">500+</div>
-                  <div className="text-sm text-muted-foreground">Active Members</div>
+                  <div className="text-2xl font-bold text-gray-900">500+</div>
+                  <div className="text-sm text-gray-600">Active Members</div>
                 </div>
-                <div className="text-center p-4 rounded-xl border border-foreground/10">
+                <div className="text-center p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                   <Trophy className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground">50+</div>
-                  <div className="text-sm text-muted-foreground">Equipment Types</div>
+                  <div className="text-2xl font-bold text-gray-900">50+</div>
+                  <div className="text-sm text-gray-600">Equipment Types</div>
                 </div>
               </div>
             </div>
@@ -60,32 +60,32 @@ const IntroSection = () => {
                 isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
               }`}
             >
-              <div className="p-6 rounded-xl border border-foreground/10">
+              <div className="p-6 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 mb-4">
                   <Star className="w-6 h-6 text-yellow-400" />
-                  <h3 className="text-xl font-semibold text-foreground">Expert Training</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Expert Training</h3>
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Certified personal trainers with years of experience to guide your fitness journey.
                 </p>
               </div>
 
-              <div className="p-6 rounded-xl border border-foreground/10">
+              <div className="p-6 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 mb-4">
                   <Clock className="w-6 h-6 text-blue-500" />
-                  <h3 className="text-xl font-semibold text-foreground">24/7 Access</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">24/7 Access</h3>
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Train on your schedule with round-the-clock gym access for all members.
                 </p>
               </div>
 
-              <div className="p-6 rounded-xl border border-foreground/10">
+              <div className="p-6 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4 mb-4">
                   <Trophy className="w-6 h-6 text-yellow-400" />
-                  <h3 className="text-xl font-semibold text-foreground">Modern Equipment</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">Modern Equipment</h3>
                 </div>
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Latest fitness technology and equipment from top brands worldwide.
                 </p>
               </div>
