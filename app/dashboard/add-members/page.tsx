@@ -12,17 +12,25 @@ import {
   Dumbbell,
   FileText,
   Camera,
-  Users
+  Users,
+  Briefcase,
+  UserCheck
 } from 'lucide-react';
 
 // Type definitions
 interface FormData {
+  // Serial Number
+  serialNumber: string;
+  serialNumberType: 'new' | 'existing';
+  
   // Personal Information
   fullName: string;
   phoneNumber: string;
   email: string;
   gender: 'Male' | 'Female' | 'Other' | '';
+  occupation: string;
   dateOfBirth: string;
+  age: number;
   address: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
@@ -30,11 +38,12 @@ interface FormData {
   
   // Membership Details
   selectedPlan: string;
-  planStartDate: string;
+  courseStartDate: string;
+  courseEndDate: string;
   trainerAssigned: string;
   batchTime: 'Morning' | 'Evening' | 'Flexible' | '';
-  membershipType: 'Gym Only' | 'Gym + Personal Training' | '';
-  lockerRequired: boolean;
+  membershipTypes: string[];
+  referenceOfAdmission: string;
   
   // Medical & Notes
   medicalConditions: string;
@@ -60,6 +69,12 @@ interface MembershipPlan {
   created_at: string;
 }
 
+interface StaffMember {
+  id: number;
+  name: string;
+  role: 'Manager' | 'Trainer' | 'Receptionist';
+}
+
 const AddMemberPage = () => {
   const today = new Date().toISOString().split('T')[0];
   const [showSuccess, setShowSuccess] = useState(false);
@@ -69,21 +84,26 @@ const AddMemberPage = () => {
   const [plansLoading, setPlansLoading] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
+    serialNumber: '',
+    serialNumberType: 'new',
     fullName: '',
     phoneNumber: '',
     email: '',
     gender: '',
+    occupation: '',
     dateOfBirth: '',
+    age: 0,
     address: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
     profilePhoto: null,
     selectedPlan: '',
-    planStartDate: today,
+    courseStartDate: today,
+    courseEndDate: '',
     trainerAssigned: '',
     batchTime: '',
-    membershipType: '',
-    lockerRequired: false,
+    membershipTypes: [],
+    referenceOfAdmission: '',
     medicalConditions: '',
     injuriesLimitations: '',
     additionalNotes: '',
@@ -96,24 +116,63 @@ const AddMemberPage = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [photoPreview, setPhotoPreview] = useState<string>('');
 
+  // Calculate course end date
+  const calculateEndDate = (startDate: string, planId: string): string => {
+    if (!startDate || !planId) return '';
+    const selectedPlan = plans.find(plan => plan.id.toString() === planId);
+    if (!selectedPlan) return '';
+    
+    const start = new Date(startDate);
+    start.setMonth(start.getMonth() + selectedPlan.duration_months);
+    return start.toISOString().split('T')[0];
+  };
+
+  // Format date to DD-MM-YYYY
+  const formatDateDisplay = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   // Reset form to initial state
   const resetForm = () => {
     setFormData({
+      serialNumber: '',
+      serialNumberType: 'new',
       fullName: '',
       phoneNumber: '',
       email: '',
       gender: '',
+      occupation: '',
       dateOfBirth: '',
+      age: 0,
       address: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
       profilePhoto: null,
       selectedPlan: '',
-      planStartDate: today,
+      courseStartDate: today,
+      courseEndDate: '',
       trainerAssigned: '',
       batchTime: '',
-      membershipType: '',
-      lockerRequired: false,
+      membershipTypes: [],
+      referenceOfAdmission: '',
       medicalConditions: '',
       injuriesLimitations: '',
       additionalNotes: '',
@@ -152,6 +211,7 @@ const AddMemberPage = () => {
       setPlansLoading(false);
     }
   };
+
   
   useEffect(() => {
     fetchPlans();
@@ -165,7 +225,18 @@ const AddMemberPage = () => {
     
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({ ...prev, [name]: checked }));
+      
+      if (name === 'membershipTypes') {
+        const checkboxValue = (e.target as HTMLInputElement).value;
+        setFormData(prev => ({
+          ...prev,
+          membershipTypes: checked 
+            ? [...prev.membershipTypes, checkboxValue]
+            : prev.membershipTypes.filter(type => type !== checkboxValue)
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: checked }));
+      }
     } else {
       // Convert numeric fields to numbers
       let processedValue: string | number = value;
@@ -175,12 +246,29 @@ const AddMemberPage = () => {
       
       setFormData(prev => ({ ...prev, [name]: processedValue }));
       
-      // Auto-fill total plan fee when plan is selected
+      // Auto-calculate age when date of birth changes
+      if (name === 'dateOfBirth' && value) {
+        const calculatedAge = calculateAge(value);
+        setFormData(prev => ({ ...prev, age: calculatedAge }));
+      }
+      
+      // Auto-fill total plan fee and calculate end date when plan is selected
       if (name === 'selectedPlan' && value) {
         const selectedPlan = plans.find(plan => plan.id.toString() === value);
         if (selectedPlan) {
-          setFormData(prev => ({ ...prev, totalPlanFee: selectedPlan.price }));
+          const endDate = calculateEndDate(formData.courseStartDate, value);
+          setFormData(prev => ({ 
+            ...prev, 
+            totalPlanFee: selectedPlan.price,
+            courseEndDate: endDate
+          }));
         }
+      }
+      
+      // Recalculate end date when start date changes
+      if (name === 'courseStartDate' && value && formData.selectedPlan) {
+        const endDate = calculateEndDate(value, formData.selectedPlan);
+        setFormData(prev => ({ ...prev, courseEndDate: endDate }));
       }
     }
     
@@ -220,7 +308,7 @@ const AddMemberPage = () => {
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
     if (!formData.selectedPlan) newErrors.selectedPlan = 'Please select a plan';
-    if (!formData.planStartDate) newErrors.planStartDate = 'Start date is required';
+    if (!formData.courseStartDate) newErrors.courseStartDate = 'Start date is required';
     if (formData.amountPaidNow < 0) newErrors.amountPaidNow = 'Payment amount cannot be negative';
     if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
 
@@ -506,6 +594,43 @@ const AddMemberPage = () => {
                 )}
               </div>
 
+              {/* Emergency Contact Name */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Emergency Contact Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="emergencyContactName"
+                    value={formData.emergencyContactName}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="Emergency contact name"
+                  />
+                </div>
+              </div>
+
+              {/* Emergency Contact Phone */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Emergency Contact Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="tel"
+                    name="emergencyContactPhone"
+                    value={formData.emergencyContactPhone}
+                    onChange={handleInputChange}
+                    maxLength={10}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="10-digit emergency number"
+                  />
+                </div>
+              </div>
+
               {/* Gender */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -524,6 +649,24 @@ const AddMemberPage = () => {
                 </select>
               </div>
 
+              {/* Occupation */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Occupation
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="occupation"
+                    value={formData.occupation}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="Enter occupation"
+                  />
+                </div>
+              </div>
+
               {/* Date of Birth */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -538,6 +681,36 @@ const AddMemberPage = () => {
                     onChange={handleInputChange}
                     max={today}
                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Age (Auto-calculated) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Age
+                </label>
+                <div className="flex items-center h-[52px] px-4 bg-slate-50 border border-slate-300 rounded-xl">
+                  <span className="text-slate-900 font-medium">
+                    {formData.age > 0 ? `${formData.age} years` : 'Select date of birth'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Address
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                    placeholder="Enter complete address"
                   />
                 </div>
               </div>
@@ -628,30 +801,60 @@ const AddMemberPage = () => {
                 )}
               </div>
 
-              {/* Plan Start Date */}
+              {/* Course Start Date */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Plan Start Date <span className="text-orange-600">*</span>
+                  Course Start Date <span className="text-orange-600">*</span>
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="date"
-                    name="planStartDate"
-                    value={formData.planStartDate}
+                    name="courseStartDate"
+                    value={formData.courseStartDate}
                     onChange={handleInputChange}
-                    data-error={!!errors.planStartDate}
+                    data-error={!!errors.courseStartDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
-                      errors.planStartDate ? 'border-red-500' : 'border-slate-300'
+                      errors.courseStartDate ? 'border-red-500' : 'border-slate-300'
                     } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
                   />
                 </div>
-                {errors.planStartDate && (
+                {errors.courseStartDate && (
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.planStartDate}
+                    {errors.courseStartDate}
                   </p>
                 )}
+              </div>
+
+              {/* Course End Date (Auto-calculated) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Course End Date
+                </label>
+                <div className="flex items-center h-[52px] px-4 bg-slate-50 border border-slate-300 rounded-xl">
+                  <span className="text-slate-900 font-medium">
+                    {formData.courseEndDate ? formatDateDisplay(formData.courseEndDate) : 'Select plan and start date'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reference of Admission */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Reference of Admission
+                </label>
+                <div className="relative">
+                  <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="referenceOfAdmission"
+                    value={formData.referenceOfAdmission}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="Enter reference name"
+                  />
+                </div>
               </div>
 
               {/* Trainer Assigned */}
@@ -690,42 +893,25 @@ const AddMemberPage = () => {
                 </select>
               </div>
 
-              {/* Membership Type */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {/* Membership Type (Checkboxes) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-3">
                   Membership Type
                 </label>
-                <select
-                  name="membershipType"
-                  value={formData.membershipType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
-                >
-                  <option value="">Select type</option>
-                  <option value="Gym Only">Gym Only</option>
-                  <option value="Gym + Personal Training">Gym + Personal Training</option>
-                </select>
-              </div>
-
-              {/* Locker Required */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Locker Required?
-                </label>
-                <div className="flex items-center gap-4 mt-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="lockerRequired"
-                      checked={formData.lockerRequired}
-                      onChange={handleInputChange}
-                      className="sr-only peer"
-                    />
-                    <div className="w-14 h-7 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
-                    <span className="ms-3 text-sm font-medium text-slate-700">
-                      {formData.lockerRequired ? 'Yes' : 'No'}
-                    </span>
-                  </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {['New', 'Renewal', 'Personal Training', 'Diet'].map((type) => (
+                    <label key={type} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="membershipTypes"
+                        value={type}
+                        checked={formData.membershipTypes.includes(type)}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-orange-600 bg-white border-slate-300 rounded focus:ring-orange-500 focus:ring-2"
+                      />
+                      <span className="text-sm text-slate-700">{type}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>

@@ -15,23 +15,21 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-// Create session without company context
-export async function createSession(userId: number, role: string) {
-  const token = await new SignJWT({ userId, role })
+// Create session with company context
+export async function createSession(userId: number, companyId: number, role: string) {
+  const token = await new SignJWT({ userId, companyId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
     .sign(JWT_SECRET);
 
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Store session in database
   await pool.query(
-    'INSERT INTO sessions (user_id, session_token, expires_at) VALUES ($1, $2, $3)',
-    [userId, token, expiresAt]
+    'INSERT INTO sessions (user_id, company_id, session_token, expires_at) VALUES ($1, $2, $3, $4)',
+    [userId, companyId, token, expiresAt]
   );
 
-  // Set HTTP-only cookie
   const cookieStore = await cookies();
   cookieStore.set('session', token, {
     httpOnly: true,
@@ -44,57 +42,56 @@ export async function createSession(userId: number, role: string) {
   return token;
 }
 
-// Get current session
+// Get current session with company context
 export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get('session')?.value;
 
-  if (!token) {
-    return null;
-  }
+  if (!token) return null;
 
   try {
-    // Verify JWT token
     const { payload } = await jwtVerify(token, JWT_SECRET);
     
-    // Get session and user data from database
     const result = await pool.query(
       `SELECT 
         s.id as session_id,
         s.expires_at,
         u.id as user_id,
+        u.company_id,
         u.email,
         u.name,
         u.phone,
         u.role,
         u.is_verified,
-        u.last_login_at,
-        u.created_at
+        c.name as company_name,
+        c.subdomain
        FROM sessions s 
        JOIN users u ON s.user_id = u.id 
+       JOIN companies c ON u.company_id = c.id
        WHERE s.session_token = $1 AND s.expires_at > NOW()`,
       [token]
     );
 
-    if (result.rows.length === 0) {
-      return null;
-    }
+    if (result.rows.length === 0) return null;
 
-    const sessionData = result.rows[0];
-
+    const data = result.rows[0];
     return {
       user: {
-        id: sessionData.user_id,
-        email: sessionData.email,
-        name: sessionData.name,
-        phone: sessionData.phone,
-        role: sessionData.role,
-        isVerified: sessionData.is_verified,
-        lastLoginAt: sessionData.last_login_at,
-        createdAt: sessionData.created_at,
+        id: data.user_id,
+        companyId: data.company_id,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        role: data.role,
+        isVerified: data.is_verified,
       },
-      sessionId: sessionData.session_id,
-      expiresAt: sessionData.expires_at,
+      company: {
+        id: data.company_id,
+        name: data.company_name,
+        subdomain: data.subdomain,
+      },
+      sessionId: data.session_id,
+      expiresAt: data.expires_at,
     };
   } catch (error) {
     console.error('Session verification error:', error);
@@ -193,19 +190,19 @@ export async function deleteVerificationToken(
   }
 }
 
-// Get user by email
-export async function getUserByEmail(email: string) {
+// Get user by email and company
+export async function getUserByEmail(email: string, companyId?: number) {
   try {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email.toLowerCase().trim()]
-    );
-
-    if (result.rows.length === 0) {
-      return null;
+    let query = 'SELECT u.*, c.name as company_name, c.subdomain FROM users u JOIN companies c ON u.company_id = c.id WHERE u.email = $1';
+    const params: any[] = [email.toLowerCase().trim()];
+    
+    if (companyId) {
+      query += ' AND u.company_id = $2';
+      params.push(companyId);
     }
 
-    return result.rows[0];
+    const result = await pool.query(query, params);
+    return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     console.error('Error fetching user:', error);
     return null;
@@ -213,6 +210,34 @@ export async function getUserByEmail(email: string) {
 }
 
 
+
+// Get company by subdomain
+export async function getCompanyBySubdomain(subdomain: string) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM companies WHERE subdomain = $1',
+      [subdomain.toLowerCase().trim()]
+    );
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    console.error('Error fetching company:', error);
+    return null;
+  }
+}
+
+// Create company
+export async function createCompany(name: string, subdomain: string) {
+  try {
+    const result = await pool.query(
+      'INSERT INTO companies (name, subdomain) VALUES ($1, $2) RETURNING *',
+      [name, subdomain.toLowerCase().trim()]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error creating company:', error);
+    throw error;
+  }
+}
 
 // Update last login timestamp
 export async function updateLastLogin(userId: number) {

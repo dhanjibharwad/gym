@@ -4,91 +4,51 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-type UserRole = 'admin' | 'reception';
-
-// Role-based access control: which roles can access which dashboard prefixes
-const roleAccessMap: Record<string, UserRole[]> = {
-  '/admin': ['admin'],
-  '/reception': ['reception', 'admin'],
-};
+const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/'];
+const authPaths = ['/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('session')?.value;
 
-  console.log('Middleware running for:', pathname, 'Token exists:', !!token);
-
-  // Block register page (keeping for future use)
-  if (pathname === '/auth/register') {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  // 1. Check if user has a token
-  if (!token) {
-    console.log('No token - redirecting to login');
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  // 2. Verify JWT and extract payload
-  let payload: any;
-  try {
-    const result = await jwtVerify(token, JWT_SECRET);
-    payload = result.payload;
-    console.log('JWT payload:', payload);
-  } catch (error) {
-    console.log('JWT verification failed:', error);
-    const response = NextResponse.redirect(new URL('/auth/login', request.url));
-    response.cookies.delete('session');
-    return response;
-  }
-
-  // 3. Validate required JWT fields
-  if (!payload.userId) {
-    console.log('Invalid JWT payload - missing userId');
-    const response = NextResponse.redirect(new URL('/auth/login', request.url));
-    response.cookies.delete('session');
-    return response;
-  }
-
-  // 4. Extract user role from JWT
-  const userRole = payload.role as UserRole | undefined;
-  if (!userRole) {
-    console.log('JWT payload missing role - redirecting to login');
-    const response = NextResponse.redirect(new URL('/auth/login', request.url));
-    response.cookies.delete('session');
-    return response;
-  }
-
-  // 5. Determine which dashboard prefix is being accessed
-  const matchedPrefix = Object.keys(roleAccessMap).find((prefix) =>
-    pathname.startsWith(prefix)
-  );
-
-  // If not a dashboard path, allow access (other routes handle their own auth)
-  if (!matchedPrefix) {
-    console.log('Not a dashboard route - allowing access');
+  // Allow public paths
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    // Redirect authenticated users away from auth pages
+    if (token && authPaths.some(path => pathname.startsWith(path))) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
   }
 
-  // 6. Check if user's role has access to this dashboard
-  const allowedRoles = roleAccessMap[matchedPrefix];
-  
-  if (!allowedRoles.includes(userRole)) {
-    console.log(`Access denied: ${userRole} cannot access ${matchedPrefix}`);
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+  // Check authentication for protected routes
+  if (!token) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // 7. User has correct role - allow access
-  console.log(`Access granted: ${userRole} accessing ${pathname}`);
-  return NextResponse.next();
+  try {
+    // Verify JWT and extract company context
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { userId, companyId, role } = payload as { userId: number; companyId: number; role: string };
+
+    // Add tenant context to headers for API routes
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', userId.toString());
+    requestHeaders.set('x-company-id', companyId.toString());
+    requestHeaders.set('x-user-role', role);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } catch (error) {
+    // Invalid token, redirect to login
+    const response = NextResponse.redirect(new URL('/auth/login', request.url));
+    response.cookies.delete('session');
+    return response;
+  }
 }
 
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/reception/:path*',
-    '/auth/register'
-  ],
+  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico|public).*)'],
 };
-
-export default middleware;

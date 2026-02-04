@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation';
 export default function SetupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
+    companyName: '',
+    subdomain: '',
+    adminName: '',
+    adminEmail: '',
+    adminPassword: '',
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
@@ -39,17 +41,17 @@ export default function SetupPage() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
-      setError('All fields are required');
+    if (!formData.companyName.trim() || !formData.subdomain.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPassword) {
+      setError('All required fields must be filled');
       return;
     }
 
-    if (formData.password.length < 8) {
+    if (formData.adminPassword.length < 8) {
       setError('Password must be at least 8 characters long');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.adminPassword !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
@@ -57,13 +59,15 @@ export default function SetupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/setup', {
+      const res = await fetch('/api/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          password: formData.password,
+          companyName: formData.companyName.trim(),
+          subdomain: formData.subdomain.trim(),
+          adminName: formData.adminName.trim(),
+          adminEmail: formData.adminEmail.trim(),
+          adminPassword: formData.adminPassword,
         }),
       });
 
@@ -98,8 +102,8 @@ export default function SetupPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Setup Eagle Gym</h1>
-          <p className="text-gray-600">Create the admin account to get started</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Setup New Company</h1>
+          <p className="text-gray-600">Create your company and admin account</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -111,45 +115,75 @@ export default function SetupPage() {
             )}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                Company Name
               </label>
               <input
-                id="name"
+                id="companyName"
                 type="text"
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.companyName}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
-                placeholder="Enter your full name"
+                placeholder="Gym"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+              <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 mb-2">
+                Subdomain
               </label>
               <input
-                id="email"
+                id="subdomain"
+                type="text"
+                required
+                value={formData.subdomain}
+                onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                placeholder="Your company name"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Full Name
+              </label>
+              <input
+                id="adminName"
+                type="text"
+                required
+                value={formData.adminName}
+                onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                placeholder="Enter admin full name"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="adminEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Email Address
+              </label>
+              <input
+                id="adminEmail"
                 type="email"
                 required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.adminEmail}
+                onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
-                placeholder="admin@eaglegym.com"
+                placeholder="admin@gym.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+              <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Password
               </label>
               <input
-                id="password"
+                id="adminPassword"
                 type="password"
                 required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={formData.adminPassword}
+                onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Create a strong password"
               />
@@ -175,7 +209,7 @@ export default function SetupPage() {
               disabled={loading}
               className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {loading ? 'Creating Admin...' : 'Create Admin Account'}
+              {loading ? 'Creating Company...' : 'Create Company & Admin'}
             </button>
           </form>
         </div>

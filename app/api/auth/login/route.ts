@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { verifyPassword, createSession, updateLastLogin, getUserByEmail } from '@/lib/auth';
+import { verifyPassword, createSession, updateLastLogin, getUserByEmail, getCompanyBySubdomain } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, subdomain } = await request.json();
 
     // Validate required fields
-    if (!email || !password) {
+    if (!email || !password || !subdomain) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email, password, and company subdomain are required' },
         { status: 400 }
       );
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const normalizedSubdomain = subdomain.toLowerCase().trim();
 
-    // Get user by email
-    const user = await getUserByEmail(normalizedEmail);
+    // Get company by subdomain
+    const company = await getCompanyBySubdomain(normalizedSubdomain);
+    if (!company) {
+      return NextResponse.json(
+        { error: 'Invalid company' },
+        { status: 401 }
+      );
+    }
 
+    // Get user by email and company
+    const user = await getUserByEmail(normalizedEmail, company.id);
     if (!user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -28,7 +37,6 @@ export async function POST(request: NextRequest) {
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password);
-
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -47,8 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
-    const token = await createSession(user.id, user.role);
+    // Create session with company context
+    const token = await createSession(user.id, user.company_id, user.role);
 
     // Update last login timestamp
     await updateLastLogin(user.id);
@@ -57,10 +65,16 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
       user: {
         id: user.id,
+        companyId: user.company_id,
         email: user.email,
         name: user.name,
         phone: user.phone,
         role: user.role,
+      },
+      company: {
+        id: company.id,
+        name: company.name,
+        subdomain: company.subdomain,
       },
       token,
     });
