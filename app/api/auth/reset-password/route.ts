@@ -46,23 +46,41 @@ export async function POST(req: NextRequest) {
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password
-    await pool.query(
-      'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
-      [hashedPassword, user.id]
-    );
+    // Use database transaction for atomicity
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Update password
+      await client.query(
+        'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
+        [hashedPassword, user.id]
+      );
 
-    // Delete verification token
-    await deleteVerificationToken(user.id, 'password_reset');
+      // Delete verification token
+      await client.query(
+        'DELETE FROM verification_tokens WHERE user_id = $1 AND type = $2',
+        [user.id, 'password_reset']
+      );
 
-    // Delete all user sessions to force re-login
-    await deleteAllUserSessions(user.id);
+      // Delete all user sessions to force re-login
+      await client.query(
+        'DELETE FROM sessions WHERE user_id = $1',
+        [user.id]
+      );
+
+      await client.query('COMMIT');
+    } catch (transactionError) {
+      await client.query('ROLLBACK');
+      throw transactionError;
+    } finally {
+      client.release();
+    }
 
     return NextResponse.json({
       message: 'Password reset successfully',
     });
-  } catch (error) {
-    console.error('Reset password error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Reset failed' },
       { status: 500 }

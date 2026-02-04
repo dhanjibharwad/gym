@@ -42,11 +42,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate phone format if provided
-    if (phone && !/^[\d\s\-\+\(\)]{10,15}$/.test(phone.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid phone number format' },
-        { status: 400 }
-      );
+    if (phone && phone.trim()) {
+      const phoneRegex = /^[\d\s\-\+\(\)]{10,15}$/;
+      if (!phoneRegex.test(phone.trim())) {
+        return NextResponse.json(
+          { error: 'Invalid phone number format' },
+          { status: 400 }
+        );
+      }
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -83,8 +86,7 @@ export async function POST(request: NextRequest) {
     // Send verification email
     try {
       await sendVerificationEmail(normalizedEmail, otp);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+    } catch {
       // Don't fail registration if email fails
     }
 
@@ -98,8 +100,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('Registration error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
