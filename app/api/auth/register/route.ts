@@ -5,7 +5,7 @@ import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, phone, password } = await request.json();
+    const { name, email, phone, password, companyId } = await request.json();
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -54,53 +54,84 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
-    const existingUser = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [normalizedEmail]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      );
-    }
-
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user with default role 'reception'
-    const result = await pool.query(
-      `INSERT INTO users (name, email, phone, password, role, is_verified) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, email, name, role`,
-      [name.trim(), normalizedEmail, phone?.trim() || null, hashedPassword, 'reception', false]
-    );
-
-    const newUser = result.rows[0];
-
-    // Create verification token
-    const otp = await createVerificationToken(newUser.id, 'email_verification');
-
-    // Send verification email
+    const client = await pool.connect();
     try {
-      await sendVerificationEmail(normalizedEmail, otp);
-    } catch {
-      // Don't fail registration if email fails
+      // Check if user already exists
+      const existingUser = await client.query(
+        'SELECT id FROM users WHERE email = $1',
+        [normalizedEmail]
+      );
+
+      if (existingUser.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'User with this email already exists' },
+          { status: 409 }
+        );
+      }
+
+      let targetCompanyId = companyId;
+      let roleId = null;
+
+      // If companyId is provided, validate it exists
+      if (companyId) {
+        const companyResult = await client.query(
+          'SELECT id FROM companies WHERE id = $1 AND is_active = true',
+          [companyId]
+        );
+        
+        if (companyResult.rows.length === 0) {
+          return NextResponse.json(
+            { error: 'Invalid company' },
+            { status: 400 }
+          );
+        }
+
+        // Get default staff role for the company
+        const roleResult = await client.query(
+          `SELECT id FROM roles WHERE company_id = $1 AND name = 'Staff' LIMIT 1`,
+          [companyId]
+        );
+        roleId = roleResult.rows[0]?.id || null;
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Create user
+      const result = await client.query(
+        `INSERT INTO users (company_id, role_id, name, email, phone, password, is_verified) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id, email, name`,
+        [targetCompanyId, roleId, name.trim(), normalizedEmail, phone?.trim() || null, hashedPassword, false]
+      );
+
+      const newUser = result.rows[0];
+
+      // Create verification token
+      const otp = await createVerificationToken(newUser.id, 'email_verification');
+
+      // Send verification email
+      try {
+        await sendVerificationEmail(normalizedEmail, otp);
+      } catch {
+        // Don't fail registration if email fails
+      }
+
+      return NextResponse.json({
+        message: 'Registration successful. Please check your email for verification.',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+        },
+      });
+
+    } finally {
+      client.release();
     }
 
-    return NextResponse.json({
-      message: 'Registration successful. Please check your email for verification.',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-      },
-    });
-
-  } catch {
+  } catch (error) {
+    console.error('Registration error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -19,29 +19,36 @@ export async function POST(request: NextRequest) {
     try {
       await client.query('BEGIN');
 
-      // Create company without subdomain
+      // Create company in pending status (no subdomain until approved)
       const companyResult = await client.query(
-        `INSERT INTO companies (name, email, subscription_status, trial_ends_at) 
-         VALUES ($1, $2, 'trial', NOW() + INTERVAL '30 days') RETURNING *`,
+        `INSERT INTO companies (name, email, status, subscription_status, trial_ends_at) 
+         VALUES ($1, $2, 'pending', 'trial', NOW() + INTERVAL '30 days') RETURNING *`,
         [companyName, adminEmail]
       );
       const company = companyResult.rows[0];
 
       // Create Admin role for the company
-      const roleResult = await client.query(
+      const adminRoleResult = await client.query(
         `INSERT INTO roles (company_id, name, description, is_system_role) 
          VALUES ($1, 'Admin', 'Full system administrator', true) RETURNING *`,
         [company.id]
       );
-      const adminRole = roleResult.rows[0];
+      const adminRole = adminRoleResult.rows[0];
+
+      // Create Staff role for the company
+      await client.query(
+        `INSERT INTO roles (company_id, name, description, is_system_role) 
+         VALUES ($1, 'Staff', 'General staff member', true)`,
+        [company.id]
+      );
 
       // Hash admin password
       const hashedPassword = await hashPassword(adminPassword);
 
-      // Create admin user with proper role
+      // Create admin user with proper role (not verified until company is approved)
       const userResult = await client.query(
         `INSERT INTO users (company_id, role_id, email, password, name, is_verified) 
-         VALUES ($1, $2, $3, $4, $5, true) RETURNING *`,
+         VALUES ($1, $2, $3, $4, $5, false) RETURNING *`,
         [company.id, adminRole.id, adminEmail.toLowerCase().trim(), hashedPassword, adminName]
       );
 
@@ -58,10 +65,11 @@ export async function POST(request: NextRequest) {
       await client.query('COMMIT');
 
       return NextResponse.json({
-        message: 'Company setup completed successfully',
+        message: 'Company registration submitted successfully. Your account is pending approval from our team.',
         company: {
           id: company.id,
           name: company.name,
+          status: company.status
         },
         admin: {
           id: userResult.rows[0].id,

@@ -76,6 +76,8 @@ export default function SetupPage() {
         return;
       }
 
+      // Show success message for pending approval
+      alert('Registration submitted successfully! Your company is pending approval. You will be notified once approved.');
       router.push('/auth/login');
     } catch (err) {
       console.error('Setup error:', err);

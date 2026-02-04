@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const client = await pool.connect();
     try {
       const userResult = await client.query(
-        `SELECT u.*, c.name as company_name, c.subdomain, r.name as role 
+        `SELECT u.*, c.name as company_name, c.subdomain, c.status as company_status, r.name as role 
          FROM users u 
          JOIN companies c ON u.company_id = c.id 
          LEFT JOIN roles r ON u.role_id = r.id 
@@ -30,11 +30,53 @@ export async function POST(request: NextRequest) {
       
       const user = userResult.rows[0];
       if (!user) {
+        // Check if user's email domain matches any registered company
+        const emailDomain = normalizedEmail.split('@')[1];
+        const companyResult = await client.query(
+          `SELECT id, name FROM companies WHERE email LIKE $1 AND is_active = true`,
+          [`%@${emailDomain}`]
+        );
+        
+        if (companyResult.rows.length > 0) {
+          return NextResponse.json(
+            { 
+              error: 'User not registered',
+              code: 'USER_CAN_REGISTER',
+              availableCompanies: companyResult.rows.map(company => ({
+                id: company.id,
+                name: company.name
+              }))
+            },
+            { status: 404 }
+          );
+        }
+        
         return NextResponse.json(
           { error: 'Invalid email or password' },
           { status: 401 }
         );
       }
+
+    // Check company status
+    if (user.company_status === 'pending') {
+      return NextResponse.json(
+        { 
+          error: 'Your company registration is pending approval. Please wait for admin verification.',
+          code: 'COMPANY_PENDING'
+        },
+        { status: 403 }
+      );
+    }
+
+    if (user.company_status === 'rejected') {
+      return NextResponse.json(
+        { 
+          error: 'Your company registration has been rejected. Please contact support.',
+          code: 'COMPANY_REJECTED'
+        },
+        { status: 403 }
+      );
+    }
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password);

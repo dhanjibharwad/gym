@@ -2,15 +2,19 @@
 CREATE TABLE companies (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    subdomain VARCHAR(100) UNIQUE NOT NULL,
+    subdomain VARCHAR(100) UNIQUE,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     plan_name VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     subscription_status VARCHAR(50) DEFAULT 'trial' CHECK (subscription_status IN ('trial', 'active', 'inactive', 'cancelled')),
     trial_ends_at TIMESTAMP,
     subscription_expires_at TIMESTAMP,
     logo_url TEXT,
     is_active BOOLEAN DEFAULT TRUE,
+    approved_by INTEGER REFERENCES users(id),
+    approved_at TIMESTAMP,
+    rejection_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
