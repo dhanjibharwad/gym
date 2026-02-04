@@ -7,7 +7,6 @@ export default function SetupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     companyName: '',
-    subdomain: '',
     adminName: '',
     adminEmail: '',
     adminPassword: '',
@@ -41,7 +40,7 @@ export default function SetupPage() {
     e.preventDefault();
     setError('');
 
-    if (!formData.companyName.trim() || !formData.subdomain.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPassword) {
+    if (!formData.companyName.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPassword) {
       setError('All required fields must be filled');
       return;
     }
@@ -64,7 +63,6 @@ export default function SetupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyName: formData.companyName.trim(),
-          subdomain: formData.subdomain.trim(),
           adminName: formData.adminName.trim(),
           adminEmail: formData.adminEmail.trim(),
           adminPassword: formData.adminPassword,
@@ -126,21 +124,6 @@ export default function SetupPage() {
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Gym"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 mb-2">
-                Subdomain
-              </label>
-              <input
-                id="subdomain"
-                type="text"
-                required
-                value={formData.subdomain}
-                onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
-                placeholder="Your company name"
               />
             </div>
 

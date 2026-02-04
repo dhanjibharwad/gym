@@ -4,20 +4,12 @@ import pool from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyName, subdomain, adminEmail, adminPassword, adminName } = await request.json();
+    const { companyName, adminEmail, adminPassword, adminName } = await request.json();
 
     // Validate required fields
-    if (!companyName || !subdomain || !adminEmail || !adminPassword || !adminName) {
+    if (!companyName || !adminEmail || !adminPassword || !adminName) {
       return NextResponse.json(
         { error: 'All required fields must be provided' },
-        { status: 400 }
-      );
-    }
-
-    // Validate subdomain format
-    if (!/^[a-z0-9-]+$/.test(subdomain)) {
-      return NextResponse.json(
-        { error: 'Subdomain can only contain lowercase letters, numbers, and hyphens' },
         { status: 400 }
       );
     }
@@ -27,11 +19,11 @@ export async function POST(request: NextRequest) {
     try {
       await client.query('BEGIN');
 
-      // Create company with minimal fields
+      // Create company without subdomain
       const companyResult = await client.query(
-        `INSERT INTO companies (name, subdomain, email, subscription_status, trial_ends_at) 
-         VALUES ($1, $2, $3, 'trial', NOW() + INTERVAL '30 days') RETURNING *`,
-        [companyName, subdomain, adminEmail]
+        `INSERT INTO companies (name, email, subscription_status, trial_ends_at) 
+         VALUES ($1, $2, 'trial', NOW() + INTERVAL '30 days') RETURNING *`,
+        [companyName, adminEmail]
       );
       const company = companyResult.rows[0];
 
@@ -70,7 +62,6 @@ export async function POST(request: NextRequest) {
         company: {
           id: company.id,
           name: company.name,
-          subdomain: company.subdomain,
         },
         admin: {
           id: userResult.rows[0].id,
@@ -90,12 +81,6 @@ export async function POST(request: NextRequest) {
     console.error('Setup error:', error);
     
     if (error.code === '23505') { // Unique constraint violation
-      if (error.constraint?.includes('subdomain')) {
-        return NextResponse.json(
-          { error: 'Subdomain already exists' },
-          { status: 409 }
-        );
-      }
       if (error.constraint?.includes('email')) {
         return NextResponse.json(
           { error: 'Email already exists' },

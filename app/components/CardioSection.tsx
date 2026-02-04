@@ -37,14 +37,14 @@ const CardioSection = () => {
       className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-gray-50 to-white"
     >
       {/* Enhanced Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5" />
+      {/* <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5" />
       <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-500/8 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: "1s" }} />
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-500/8 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: "1s" }} /> */}
       
       {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-4 h-4 bg-blue-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: "0.5s" }} />
+      {/* <div className="absolute top-20 left-10 w-4 h-4 bg-blue-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: "0.5s" }} />
       <div className="absolute top-40 right-20 w-3 h-3 bg-purple-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: "1.5s" }} />
-      <div className="absolute bottom-32 left-20 w-2 h-2 bg-pink-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: "2s" }} />
+      <div className="absolute bottom-32 left-20 w-2 h-2 bg-pink-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: "2s" }} /> */}
 
       <div className="container mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -97,12 +97,12 @@ const CardioSection = () => {
             className={`order-1 lg:order-2 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"
             }`}
           >
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full px-4 py-2 mb-6">
+            {/* <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full px-4 py-2 mb-6">
               <Zap className="w-4 h-4 text-blue-500" />
               <span className="text-blue-600 font-semibold tracking-wide uppercase text-sm">
                 High-Intensity Zone
               </span>
-            </div>
+            </div> */}
             
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
               <span className="gradient-text">
