@@ -271,7 +271,9 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold">
-              {user.role.toLowerCase() === 'admin' ? 'Admin Dashboard' : 'Reception Dashboard'}
+              {user.role.toLowerCase() === 'admin' ? 'Admin Dashboard' : 
+               user.role.toLowerCase() === 'reception' ? 'Reception Dashboard' : 
+               `${user.role} Dashboard`}
             </h1>
             <p className="text-gray-300 mt-2">
               Welcome back, {user.name}! Here's what's happening at your gym today.

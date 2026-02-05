@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import pool from '@/lib/db';
 
 // Role-based permissions configuration
 const ROLE_PERMISSIONS = {
@@ -10,7 +11,13 @@ const ROLE_PERMISSIONS = {
 };
 
 function getRolePermissions(role: string): string[] {
-  return ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
+  // This will be replaced by database lookup in the updated system
+  // For now, return admin permissions for custom roles
+  const permissions = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
+  if (permissions) {
+    return permissions;
+  }
+  return ['view_dashboard', 'view_members', 'add_members', 'manage_payments', 'view_staff'];
 }
 
 export async function GET() {
@@ -24,11 +31,33 @@ export async function GET() {
       );
     }
 
+    // Get user permissions from database
+    let userPermissions: string[] = [];
+    try {
+      const result = await pool.query(`
+        SELECT DISTINCT p.name 
+        FROM role_permissions rp
+        JOIN permissions p ON rp.permission_id = p.id
+        JOIN users u ON u.role_id = rp.role_id
+        WHERE u.id = $1
+      `, [session.user.id]);
+      
+      userPermissions = result.rows.map(row => row.name);
+      
+      // If no permissions found, use default based on role
+      if (userPermissions.length === 0) {
+        userPermissions = getRolePermissions(session.user.role);
+      }
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
+      userPermissions = getRolePermissions(session.user.role);
+    }
+
     const user = {
       id: session.user.id,
       name: session.user.name,
       role: session.user.role,
-      permissions: getRolePermissions(session.user.role)
+      permissions: userPermissions
     };
 
     return NextResponse.json({

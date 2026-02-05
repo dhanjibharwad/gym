@@ -21,25 +21,27 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "reception"] },
-  { label: "Add Staff", href: "/dashboard/add-staff", icon: UserCog, roles: ["admin"] },
-  { label: "Our Staff", href: "/dashboard/ourstaff", icon: User, roles: ["admin"] },
-  { label: "Roles", href: "/dashboard/roles", icon: Crown, roles: ["admin"] },
-  { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"] },
-  { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"] },
-  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"] },
-  { label: "Membership Plans", href: "/dashboard/membership-plans", icon: Crown, roles: ["admin"] },
-  { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"] },
-  { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"] },
-  { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"] },
-  { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"] }
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "reception"], permissions: ['view_dashboard'] },
+  { label: "Add Staff", href: "/dashboard/add-staff", icon: UserCog, roles: ["admin"], permissions: ["add_staff"] },
+  { label: "Our Staff", href: "/dashboard/ourstaff", icon: User, roles: ["admin"], permissions: ["view_staff"] },
+  { label: "Roles", href: "/dashboard/roles", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
+  { label: "Permissions", href: "/dashboard/permissions", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
+  { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"], permissions: ["view_members"] },
+  { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"], permissions: ["add_members"] },
+  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"], permissions: ["manage_payments"] },
+  { label: "Membership Plans", href: "/dashboard/membership-plans", icon: Crown, roles: ["admin"], permissions: ["manage_settings"] },
+  { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"], permissions: ["view_reports"] },
+  { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
+  { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },
+  { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"], permissions: ["view_members"] }
 ];
 
 interface SidebarProps {
   userRole?: string;
+  userPermissions?: string[];
 }
 
-export default function Sidebar({ userRole = "admin" }: SidebarProps) {
+export default function Sidebar({ userRole = "admin", userPermissions = [] }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
@@ -110,7 +112,21 @@ export default function Sidebar({ userRole = "admin" }: SidebarProps) {
           }`}>
             <ul className="space-y-1">
               {navItems
-                .filter(item => item.roles.includes(userRole.toLowerCase()))
+                .filter(item => {
+                  // Admin users see all sidebar items
+                  if (userRole.toLowerCase() === 'admin') return true;
+                  
+                  // Show dashboard to everyone
+                  if (item.href === '/dashboard') return true;
+                  
+                  // Check if user has required permissions
+                  if (item.permissions.length > 0) {
+                    return item.permissions.some(permission => userPermissions.includes(permission));
+                  }
+                  
+                  // Fallback to role-based filtering for backward compatibility
+                  return item.roles.includes(userRole.toLowerCase());
+                })
                 .map((item) => {
                 const Icon = item.icon;
                 const isActive = item.href === '/dashboard' 

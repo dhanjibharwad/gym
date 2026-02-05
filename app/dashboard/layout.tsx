@@ -57,7 +57,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <Sidebar userRole={user.role} />
+      <Sidebar userRole={user.role} userPermissions={user.permissions} />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar userRole={user.role} userName={user.name} />
         <main className="p-3 sm:p-4 lg:p-6 flex-1 overflow-auto">
