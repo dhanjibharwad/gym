@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     
     // Extract data from FormData
     const data = {
-      serialNumber: formData.get('serialNumber') as string || null,
       fullName: formData.get('fullName') as string,
       phoneNumber: formData.get('phoneNumber') as string,
       email: formData.get('email') as string || null,
@@ -47,12 +46,11 @@ export async function POST(request: NextRequest) {
       // Insert member first
       const memberResult = await client.query(
         `INSERT INTO members (
-          company_id, serial_number, full_name, phone_number, email, gender, occupation,
+          company_id, full_name, phone_number, email, gender, occupation,
           date_of_birth, age, address, emergency_contact_name, emergency_contact_phone
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
         [
           session?.user?.companyId,
-          data.serialNumber,
           data.fullName,
           data.phoneNumber,
           data.email,

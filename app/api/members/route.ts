@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         ms.status as membership_status,
         ms.trainer_assigned,
         ms.batch_time,
-        ms.membership_type,
+        ms.membership_types,
         ms.locker_required,
         mp.plan_name,
         mp.duration_months,
