@@ -66,16 +66,16 @@ const Navbar: React.FC<NavbarProps> = ({
               href="/auth/login"
               className="px-6 py-2.5 text-white border border-white hover:bg-white hover:text-black transition-all duration-300 font-semibold text-sm"
             >
-              LOGIN
+              UNIVERSAL LOGIN
             </Link>
 
             {/* Start Now Button */}
-            {/* <Link
-              href="/auth/member-register"
+            <Link
+              href="/setup"
               className="px-6 py-2.5 bg-orange-500 text-white hover:bg-orange-600 transition-all duration-300 font-semibold text-sm"
             >
-              START NOW
-            </Link> */}
+              START HERE
+            </Link>
           </div>
 
           {/* Mobile menu button */}

@@ -4,10 +4,10 @@ import pool from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyName, adminEmail, adminPassword, adminName } = await request.json();
+    const { companyName, adminEmail, adminPassword, adminName, adminPhone } = await request.json();
 
     // Validate required fields
-    if (!companyName || !adminEmail || !adminPassword || !adminName) {
+    if (!companyName || !adminEmail || !adminPassword || !adminName || !adminPhone) {
       return NextResponse.json(
         { error: 'All required fields must be provided' },
         { status: 400 }
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
 
       // Create admin user with proper role (not verified until company is approved)
       const userResult = await client.query(
-        `INSERT INTO users (company_id, role_id, email, password, name, is_verified) 
-         VALUES ($1, $2, $3, $4, $5, false) RETURNING *`,
-        [company.id, adminRole.id, adminEmail.toLowerCase().trim(), hashedPassword, adminName]
+        `INSERT INTO users (company_id, role_id, email, password, name, phone, is_verified) 
+         VALUES ($1, $2, $3, $4, $5, $6, false) RETURNING *`,
+        [company.id, adminRole.id, adminEmail.toLowerCase().trim(), hashedPassword, adminName, adminPhone]
       );
 
       // Create default membership plans for the company

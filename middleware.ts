@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/', '/unauthorized', '/setup'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/', '/unauthorized', '/setup', '/superadmin/login', '/superadmin'];
 const authPaths = ['/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {

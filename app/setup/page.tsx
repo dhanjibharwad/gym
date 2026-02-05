@@ -9,6 +9,7 @@ export default function SetupPage() {
     companyName: '',
     adminName: '',
     adminEmail: '',
+    adminPhone: '',
     adminPassword: '',
     confirmPassword: '',
   });
@@ -22,13 +23,8 @@ export default function SetupPage() {
 
   const checkSetupStatus = async () => {
     try {
-      const res = await fetch('/api/auth/setup');
-      const data = await res.json();
-      
-      if (data.adminExists) {
-        router.push('/auth/login');
-        return;
-      }
+      // Allow setup page to be accessible for new company registrations
+      // Remove the admin check that was preventing multiple companies
     } catch (error) {
       console.error('Setup check failed:', error);
     } finally {
@@ -40,13 +36,18 @@ export default function SetupPage() {
     e.preventDefault();
     setError('');
 
-    if (!formData.companyName.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPassword) {
+    if (!formData.companyName.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPhone.trim() || !formData.adminPassword) {
       setError('All required fields must be filled');
       return;
     }
 
     if (formData.adminPassword.length < 8) {
       setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(formData.adminPhone)) {
+      setError('Phone number must be exactly 10 digits');
       return;
     }
 
@@ -65,6 +66,7 @@ export default function SetupPage() {
           companyName: formData.companyName.trim(),
           adminName: formData.adminName.trim(),
           adminEmail: formData.adminEmail.trim(),
+          adminPhone: formData.adminPhone.trim(),
           adminPassword: formData.adminPassword,
         }),
       });
@@ -156,6 +158,24 @@ export default function SetupPage() {
                 onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="admin@gym.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="adminPhone" className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Phone Number
+              </label>
+              <input
+                id="adminPhone"
+                type="tel"
+                required
+                value={formData.adminPhone}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setFormData({ ...formData, adminPhone: value });
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                placeholder="Enter phone number"
               />
             </div>
 
