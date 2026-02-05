@@ -33,7 +33,8 @@ const navItems = [
   { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"], permissions: ["view_reports"] },
   { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
   { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },
-  { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"], permissions: ["view_members"] }
+  { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"], permissions: ["view_members"] },
+  { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["admin", "reception"], permissions: ['view_profile'] }
 ];
 
 interface SidebarProps {
@@ -113,11 +114,11 @@ export default function Sidebar({ userRole = "admin", userPermissions = [] }: Si
             <ul className="space-y-1">
               {navItems
                 .filter(item => {
-                  // Admin users see all sidebar items
-                  if (userRole.toLowerCase() === 'admin') return true;
+                  // Show dashboard and profile to everyone
+                  if (item.href === '/dashboard' || item.href === '/dashboard/profile') return true;
                   
-                  // Show dashboard to everyone
-                  if (item.href === '/dashboard') return true;
+                  // Admin users see all other sidebar items
+                  if (userRole.toLowerCase() === 'admin') return true;
                   
                   // Check if user has required permissions
                   if (item.permissions.length > 0) {

@@ -38,8 +38,8 @@ interface FormData {
   
   // Membership Details
   selectedPlan: string;
-  courseStartDate: string;
-  courseEndDate: string;
+  planStartDate: string;
+  planEndDate: string;
   trainerAssigned: string;
   batchTime: 'Morning' | 'Evening' | 'Flexible' | '';
   membershipTypes: string[];
@@ -99,8 +99,8 @@ const AddMemberPage = () => {
     emergencyContactPhone: '',
     profilePhoto: null,
     selectedPlan: '',
-    courseStartDate: today,
-    courseEndDate: '',
+    planStartDate: today,
+    planEndDate: '',
     trainerAssigned: '',
     batchTime: 'Flexible',
     membershipTypes: [],
@@ -174,8 +174,8 @@ const AddMemberPage = () => {
       emergencyContactPhone: '',
       profilePhoto: null,
       selectedPlan: '',
-      courseStartDate: today,
-      courseEndDate: '',
+      planStartDate: today,
+      planEndDate: '',
       trainerAssigned: '',
       batchTime: 'Flexible',
       membershipTypes: [],
@@ -264,19 +264,19 @@ const AddMemberPage = () => {
       if (name === 'selectedPlan' && value) {
         const selectedPlan = plansMap.get(value);
         if (selectedPlan) {
-          const endDate = calculateEndDate(formData.courseStartDate, value);
+          const endDate = calculateEndDate(formData.planStartDate, value);
           setFormData(prev => ({ 
             ...prev, 
             totalPlanFee: selectedPlan.price,
-            courseEndDate: endDate
+            planEndDate: endDate
           }));
         }
       }
       
       // Recalculate end date when start date changes
-      if (name === 'courseStartDate' && value && formData.selectedPlan) {
+      if (name === 'planStartDate' && value && formData.selectedPlan) {
         const endDate = calculateEndDate(value, formData.selectedPlan);
-        setFormData(prev => ({ ...prev, courseEndDate: endDate }));
+        setFormData(prev => ({ ...prev, planEndDate: endDate }));
       }
     }
     
@@ -330,7 +330,7 @@ const AddMemberPage = () => {
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
     if (!formData.selectedPlan) newErrors.selectedPlan = 'Please select a plan';
-    if (!formData.courseStartDate) newErrors.courseStartDate = 'Start date is required';
+    if (!formData.planStartDate) newErrors.planStartDate = 'Start date is required';
     if (formData.amountPaidNow < 0) newErrors.amountPaidNow = 'Payment amount cannot be negative';
     if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
 
@@ -823,40 +823,40 @@ const AddMemberPage = () => {
                 )}
               </div>
 
-              {/* Course Start Date */}
+              {/* Plan Start Date */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Course Start Date <span className="text-orange-600">*</span>
+                  Plan Start Date <span className="text-orange-600">*</span>
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="date"
-                    name="courseStartDate"
-                    value={formData.courseStartDate}
+                    name="planStartDate"
+                    value={formData.planStartDate}
                     onChange={handleInputChange}
-                    data-error={!!errors.courseStartDate}
+                    data-error={!!errors.planStartDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
-                      errors.courseStartDate ? 'border-red-500' : 'border-slate-300'
+                      errors.planStartDate ? 'border-red-500' : 'border-slate-300'
                     } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
                   />
                 </div>
-                {errors.courseStartDate && (
+                {errors.planStartDate && (
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.courseStartDate}
+                    {errors.planStartDate}
                   </p>
                 )}
               </div>
 
-              {/* Course End Date (Auto-calculated) */}
+              {/* Plan End Date (Auto-calculated) */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Course End Date
+                  Plan End Date
                 </label>
                 <div className="flex items-center h-[52px] px-4 bg-slate-50 border border-slate-300 rounded-xl">
                   <span className="text-slate-900 font-medium">
-                    {formData.courseEndDate ? formatDateDisplay(formData.courseEndDate) : 'Select plan and start date'}
+                    {formData.planEndDate ? formatDateDisplay(formData.planEndDate) : 'Select plan and start date'}
                   </span>
                 </div>
               </div>

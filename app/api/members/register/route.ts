@@ -11,11 +11,14 @@ export async function POST(request: NextRequest) {
     
     // Extract data from FormData
     const data = {
+      serialNumber: formData.get('serialNumber') as string || null,
       fullName: formData.get('fullName') as string,
       phoneNumber: formData.get('phoneNumber') as string,
       email: formData.get('email') as string || null,
       gender: formData.get('gender') as string || null,
+      occupation: formData.get('occupation') as string || null,
       dateOfBirth: formData.get('dateOfBirth') as string || null,
+      age: parseInt(formData.get('age') as string) || null,
       address: formData.get('address') as string || null,
       emergencyContactName: formData.get('emergencyContactName') as string || null,
       emergencyContactPhone: formData.get('emergencyContactPhone') as string || null,
@@ -23,8 +26,9 @@ export async function POST(request: NextRequest) {
       planStartDate: formData.get('planStartDate') as string,
       trainerAssigned: formData.get('trainerAssigned') as string || null,
       batchTime: formData.get('batchTime') as string || null,
-      membershipType: formData.get('membershipType') as string || null,
-      lockerRequired: formData.get('lockerRequired') === 'true',
+      membershipTypes: formData.get('membershipTypes') as string || null,
+      referenceOfAdmission: formData.get('referenceOfAdmission') as string || null,
+      notes: formData.get('notes') as string || null,
       medicalConditions: formData.get('medicalConditions') as string || null,
       injuriesLimitations: formData.get('injuriesLimitations') as string || null,
       additionalNotes: formData.get('additionalNotes') as string || null,
@@ -43,18 +47,22 @@ export async function POST(request: NextRequest) {
       // Insert member first
       const memberResult = await client.query(
         `INSERT INTO members (
-          full_name, phone_number, email, gender, date_of_birth, 
-          address, emergency_contact_name, emergency_contact_phone
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+          company_id, serial_number, full_name, phone_number, email, gender, occupation,
+          date_of_birth, age, address, emergency_contact_name, emergency_contact_phone
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
         [
+          session?.user?.companyId,
+          data.serialNumber,
           data.fullName,
           data.phoneNumber,
-          data.email || null,
-          data.gender || null,
-          data.dateOfBirth || null,
-          data.address || null,
-          data.emergencyContactName || null,
-          data.emergencyContactPhone || null
+          data.email,
+          data.gender,
+          data.occupation,
+          data.dateOfBirth,
+          data.age,
+          data.address,
+          data.emergencyContactName,
+          data.emergencyContactPhone
         ]
       );
       
@@ -101,22 +109,22 @@ export async function POST(request: NextRequest) {
       endDate.setMonth(endDate.getMonth() + monthsToAdd);
       
       // Insert membership
-      const userName = session?.user?.name || 'user not logged in';
       const membershipResult = await client.query(
         `INSERT INTO memberships (
           member_id, plan_id, start_date, end_date, trainer_assigned,
-          batch_time, membership_type, locker_required, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+          batch_time, membership_types, reference_of_admission, notes, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
         [
           memberId,
           planId,
           data.planStartDate,
           endDate.toISOString().split('T')[0],
-          data.trainerAssigned || null,
-          data.batchTime || null,
-          data.membershipType || null,
-          data.lockerRequired || false,
-          userName
+          data.trainerAssigned,
+          data.batchTime,
+          data.membershipTypes ? data.membershipTypes.split(',') : null,
+          data.referenceOfAdmission,
+          data.notes,
+          session?.user?.id
         ]
       );
       

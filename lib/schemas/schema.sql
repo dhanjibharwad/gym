@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS memberships (
     batch_time VARCHAR(50) DEFAULT 'Flexible' CHECK (batch_time IN ('Morning', 'Evening', 'Flexible')),
     membership_types TEXT[], -- Array to store multiple membership types
     reference_of_admission VARCHAR(255),
+    notes TEXT,
     locker_required BOOLEAN DEFAULT FALSE,
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired', 'suspended')),
     created_by INTEGER REFERENCES users(id),
