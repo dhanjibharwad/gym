@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent, useMemo } from 'react';
 import { 
   User, 
   Phone, 
@@ -44,6 +44,7 @@ interface FormData {
   batchTime: 'Morning' | 'Evening' | 'Flexible' | '';
   membershipTypes: string[];
   referenceOfAdmission: string;
+  notes: string;
   
   // Medical & Notes
   medicalConditions: string;
@@ -76,7 +77,7 @@ interface StaffMember {
 }
 
 const AddMemberPage = () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [showSuccess, setShowSuccess] = useState(false);
   const [memberId, setMemberId] = useState<number | null>(null);
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
@@ -104,6 +105,7 @@ const AddMemberPage = () => {
     batchTime: 'Flexible',
     membershipTypes: [],
     referenceOfAdmission: '',
+    notes: '',
     medicalConditions: '',
     injuriesLimitations: '',
     additionalNotes: '',
@@ -116,10 +118,15 @@ const AddMemberPage = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [photoPreview, setPhotoPreview] = useState<string>('');
 
+  // Memoized plans map for performance
+  const plansMap = useMemo(() => {
+    return new Map(plans.map(plan => [plan.id.toString(), plan]));
+  }, [plans]);
+
   // Calculate course end date
   const calculateEndDate = (startDate: string, planId: string): string => {
     if (!startDate || !planId) return '';
-    const selectedPlan = plans.find(plan => plan.id.toString() === planId);
+    const selectedPlan = plansMap.get(planId);
     if (!selectedPlan) return '';
     
     const start = new Date(startDate);
@@ -173,6 +180,7 @@ const AddMemberPage = () => {
       batchTime: 'Flexible',
       membershipTypes: [],
       referenceOfAdmission: '',
+      notes: '',
       medicalConditions: '',
       injuriesLimitations: '',
       additionalNotes: '',
@@ -254,7 +262,7 @@ const AddMemberPage = () => {
       
       // Auto-fill total plan fee and calculate end date when plan is selected
       if (name === 'selectedPlan' && value) {
-        const selectedPlan = plans.find(plan => plan.id.toString() === value);
+        const selectedPlan = plansMap.get(value);
         if (selectedPlan) {
           const endDate = calculateEndDate(formData.courseStartDate, value);
           setFormData(prev => ({ 
@@ -282,6 +290,20 @@ const AddMemberPage = () => {
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        showToast('File size must be less than 5MB', 'error');
+        return;
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        showToast('Please select a valid image file (JPG, PNG, or GIF)', 'error');
+        return;
+      }
+      
       setFormData(prev => ({ ...prev, profilePhoto: file }));
       
       // Create preview
@@ -349,7 +371,7 @@ const AddMemberPage = () => {
         
         // Convert plan ID to plan name before sending to API
         const selectedPlanId = formData.selectedPlan;
-        const selectedPlan = plans.find(plan => plan.id.toString() === selectedPlanId);
+        const selectedPlan = plansMap.get(selectedPlanId);
         const planName = selectedPlan ? selectedPlan.plan_name : '';
         
         // Validate plan selection before sending
@@ -912,6 +934,24 @@ const AddMemberPage = () => {
                       <span className="text-sm text-slate-700">{type}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Notes
+                </label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                    placeholder="Add any special notes or instructions for this membership"
+                  />
                 </div>
               </div>
             </div>
