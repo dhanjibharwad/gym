@@ -54,7 +54,7 @@ interface FormData {
   // Payment Information
   totalPlanFee: number;
   amountPaidNow: number;
-  paymentMode: 'Cash' | 'UPI' | 'Card' | 'Online' | '';
+  paymentMode: 'Cash' | 'UPI' | 'Card' | 'Online' | 'Cheque' | '';
   nextDueDate: string;
 }
 
@@ -83,6 +83,9 @@ const AddMemberPage = () => {
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  
+  const [paymentModes, setPaymentModes] = useState<string[]>([]);
+  const [paymentModesLoading, setPaymentModesLoading] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
     serialNumber: '',
@@ -220,9 +223,41 @@ const AddMemberPage = () => {
     }
   };
 
+  // Fetch enabled payment modes
+  const fetchPaymentModes = async () => {
+    try {
+      const response = await fetch('/api/settings/payment-modes');
+      const data = await response.json();
+      
+      if (data.success) {
+        setPaymentModes(data.paymentModes.map((mode: any) => mode.name));
+        console.log('Fetched payment modes:', data.paymentModes);
+      } else {
+        console.error('Failed to fetch payment modes:', data.message);
+        showToast('Failed to load payment modes', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching payment modes:', error);
+      showToast('Error loading payment modes', 'error');
+    } finally {
+      setPaymentModesLoading(false);
+    }
+  };
+
+  // Add window focus event to refresh payment modes when user returns to tab
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchPaymentModes();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   
   useEffect(() => {
     fetchPlans();
+    fetchPaymentModes();
   }, []);
 
   // Handle input changes
@@ -332,7 +367,13 @@ const AddMemberPage = () => {
     if (!formData.selectedPlan) newErrors.selectedPlan = 'Please select a plan';
     if (!formData.planStartDate) newErrors.planStartDate = 'Start date is required';
     if (formData.amountPaidNow < 0) newErrors.amountPaidNow = 'Payment amount cannot be negative';
-    if (!formData.paymentMode) newErrors.paymentMode = 'Payment mode is required';
+    
+    // Payment mode validation
+    if (!formData.paymentMode) {
+      newErrors.paymentMode = 'Payment mode is required';
+    } else if (!paymentModes.includes(formData.paymentMode)) {
+      newErrors.paymentMode = 'Selected payment mode is not available';
+    }
 
     // Phone number format validation
     const phoneRegex = /^[0-9]{10}$/;
@@ -1098,12 +1139,12 @@ const AddMemberPage = () => {
                   className={`w-full px-4 py-3 bg-white border ${
                     errors.paymentMode ? 'border-red-500' : 'border-slate-300'
                   } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
+                  disabled={paymentModesLoading}
                 >
-                  <option value="">Select payment mode</option>
-                  <option value="Cash">Cash</option>
-                  <option value="UPI">UPI</option>
-                  <option value="Card">Card</option>
-                  <option value="Online">Online Transfer</option>
+                  <option value="">{paymentModesLoading ? 'Loading payment modes...' : 'Select payment mode'}</option>
+                  {paymentModes.map((mode) => (
+                    <option key={mode} value={mode}>{mode}</option>
+                  ))}
                 </select>
                 {errors.paymentMode && (
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-1">

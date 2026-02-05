@@ -17,7 +17,8 @@ import {
   Clock,
   BadgeCheck,
   UserX,
-  History
+  History,
+  Settings
 } from 'lucide-react';
 
 const navItems = [
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
   { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },
   { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"], permissions: ["view_members"] },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["admin"], permissions: ["manage_settings"] },
   { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["admin", "reception"], permissions: ['view_profile'] }
 ];
 
