@@ -164,7 +164,7 @@ export default function Sidebar({ userRole = "admin" }: SidebarProps) {
           </div>
         ) : (
           <div className="text-xs text-gray-500 font-semibold">
-            GF
+            Our Gym
           </div>
         )}
       </div>
