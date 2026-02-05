@@ -57,26 +57,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
-    // Check company status
-    if (user.company_status === 'pending') {
-      return NextResponse.json(
-        { 
-          error: 'Your company registration is pending approval. Please wait for admin verification.',
-          code: 'COMPANY_PENDING'
-        },
-        { status: 403 }
-      );
-    }
+      // Check company status
+      if (user.company_status === 'pending') {
+        return NextResponse.json(
+          { 
+            error: 'Your company registration is pending approval. Please wait for admin verification.',
+            code: 'COMPANY_PENDING'
+          },
+          { status: 403 }
+        );
+      }
 
-    if (user.company_status === 'rejected') {
-      return NextResponse.json(
-        { 
-          error: 'Your company registration has been rejected. Please contact support.',
-          code: 'COMPANY_REJECTED'
-        },
-        { status: 403 }
-      );
-    }
+      if (user.company_status === 'rejected') {
+        return NextResponse.json(
+          { 
+            error: 'Your company registration has been rejected. Please contact support.',
+            code: 'COMPANY_REJECTED'
+          },
+          { status: 403 }
+        );
+      }
+
+      if (user.company_status !== 'approved') {
+        return NextResponse.json(
+          { 
+            error: 'Your company status is invalid. Please contact support.',
+            code: 'COMPANY_INVALID_STATUS'
+          },
+          { status: 403 }
+        );
+      }
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password);

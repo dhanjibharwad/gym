@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check if user is admin
     const session = await getSession();
-    if (!session || session.user.role !== 'admin') {
+    if (!session || session.user.role.toLowerCase() !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized. Admin access required.' },
         { status: 403 }
@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
+    // Check if user already exists in the same company
     const existingUser = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
-      [normalizedEmail]
+      'SELECT id FROM users WHERE email = $1 AND company_id = $2',
+      [normalizedEmail, session.user.companyId]
     );
 
     if (existingUser.rows.length > 0) {
@@ -62,12 +62,27 @@ export async function POST(request: NextRequest) {
     const tempPassword = generatePassword();
     const hashedPassword = await hashPassword(tempPassword);
 
+    // Get the Reception role for this company
+    const roleResult = await pool.query(
+      'SELECT id FROM roles WHERE company_id = $1 AND name = $2',
+      [session.user.companyId, 'Reception']
+    );
+
+    if (roleResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Reception role not found for this company' },
+        { status: 500 }
+      );
+    }
+
+    const receptionRoleId = roleResult.rows[0].id;
+
     // Create reception staff user (verified by default since admin creates them)
     const result = await pool.query(
-      `INSERT INTO users (name, email, password, role, is_verified) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, email, name, role`,
-      [name.trim(), normalizedEmail, hashedPassword, 'reception', true]
+      `INSERT INTO users (company_id, role_id, name, email, password, is_verified) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, email, name`,
+      [session.user.companyId, receptionRoleId, name.trim(), normalizedEmail, hashedPassword, true]
     );
 
     const newUser = result.rows[0];
@@ -86,7 +101,7 @@ export async function POST(request: NextRequest) {
         id: newUser.id,
         email: newUser.email,
         name: newUser.name,
-        role: newUser.role,
+        role: 'Reception',
       },
     });
 

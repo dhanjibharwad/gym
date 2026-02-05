@@ -99,7 +99,7 @@ const Dashboard = () => {
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    return user.role === 'admin' || user.permissions.includes(permission);
+    return user.role.toLowerCase() === 'admin' || user.permissions.includes(permission);
   };
 
   const fetchDashboardData = async () => {
@@ -271,7 +271,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold">
-              {user.role === 'admin' ? 'Admin Dashboard' : 'Reception Dashboard'}
+              {user.role.toLowerCase() === 'admin' ? 'Admin Dashboard' : 'Reception Dashboard'}
             </h1>
             <p className="text-gray-300 mt-2">
               Welcome back, {user.name}! Here's what's happening at your gym today.
@@ -339,7 +339,7 @@ const Dashboard = () => {
         )}
 
         {/* Total Revenue - Admin only */}
-        {user.role === 'admin' && (
+        {user.role.toLowerCase() === 'admin' && (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>

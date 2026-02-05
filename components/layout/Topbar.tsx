@@ -43,7 +43,7 @@ export default function Topbar({ userRole = "admin", userName = "User" }: Topbar
       {/* Left side - Portal name */}
       <div className="flex items-center">
         <span className="ml-2 text-sm text-gray-500">
-          {userRole === 'admin' ? 'Admin Portal' : 'Reception Portal'}
+          {userRole.toLowerCase() === 'admin' ? 'Admin Portal' : 'Reception Portal'}
         </span>
       </div>
 

@@ -109,7 +109,7 @@ export default function Sidebar({ userRole = "admin" }: SidebarProps) {
           }`}>
             <ul className="space-y-1">
               {navItems
-                .filter(item => item.roles.includes(userRole))
+                .filter(item => item.roles.includes(userRole.toLowerCase()))
                 .map((item) => {
                 const Icon = item.icon;
                 const isActive = item.href === '/dashboard' 

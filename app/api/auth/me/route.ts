@@ -4,7 +4,9 @@ import { getSession } from '@/lib/auth';
 // Role-based permissions configuration
 const ROLE_PERMISSIONS = {
   admin: ['view_revenue', 'add_members', 'manage_payments', 'view_members', 'manage_staff'],
-  reception: ['add_members', 'manage_payments', 'view_members']
+  Admin: ['view_revenue', 'add_members', 'manage_payments', 'view_members', 'manage_staff'],
+  reception: ['add_members', 'manage_payments', 'view_members'],
+  Reception: ['add_members', 'manage_payments', 'view_members']
 };
 
 function getRolePermissions(role: string): string[] {

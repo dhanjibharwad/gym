@@ -61,13 +61,14 @@ export async function getSession() {
         u.email,
         u.name,
         u.phone,
-        u.role,
         u.is_verified,
         c.name as company_name,
-        c.subdomain
+        c.subdomain,
+        r.name as role
        FROM sessions s 
        JOIN users u ON s.user_id = u.id 
        JOIN companies c ON u.company_id = c.id
+       LEFT JOIN roles r ON u.role_id = r.id
        WHERE s.session_token = $1 AND s.expires_at > NOW()`,
       [token]
     );

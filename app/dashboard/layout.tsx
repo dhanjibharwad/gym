@@ -8,7 +8,7 @@ import Topbar from "@/components/layout/Topbar";
 interface User {
   id: number;
   name: string;
-  role: 'admin' | 'reception';
+  role: string;
   permissions: string[];
 }
 

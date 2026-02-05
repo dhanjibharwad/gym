@@ -48,7 +48,9 @@ export default function LoginPage() {
 
       // Redirect based on user role
       const roleRoutes = {
+        'Admin': '/dashboard',
         'admin': '/dashboard',
+        'Reception': '/dashboard',
         'reception': '/dashboard'
       };
       
