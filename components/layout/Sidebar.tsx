@@ -24,6 +24,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "reception"] },
   { label: "Add Staff", href: "/dashboard/add-staff", icon: UserCog, roles: ["admin"] },
   { label: "Our Staff", href: "/dashboard/ourstaff", icon: User, roles: ["admin"] },
+  { label: "Roles", href: "/dashboard/roles", icon: Crown, roles: ["admin"] },
   { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"] },
   { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"] },
   { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"] },

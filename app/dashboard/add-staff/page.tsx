@@ -1,16 +1,43 @@
 'use client';
 
-import { useState } from 'react';
-import { UserPlus, Mail, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users } from 'lucide-react';
+
+interface Role {
+  id: number;
+  name: string;
+  description: string;
+}
 
 export default function AddStaffPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    roleId: '',
   });
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('/api/admin/roles');
+      const data = await response.json();
+      if (response.ok) {
+        setRoles(data.roles);
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,6 +65,11 @@ export default function AddStaffPage() {
       return;
     }
 
+    if (!formData.roleId) {
+      setError('Please select a role');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -47,6 +79,7 @@ export default function AddStaffPage() {
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
+          roleId: parseInt(formData.roleId),
         }),
       });
 
@@ -57,8 +90,9 @@ export default function AddStaffPage() {
         return;
       }
 
-      setSuccess(`Reception staff "${formData.name}" added successfully! They will receive login credentials via email.`);
-      setFormData({ name: '', email: '' });
+      const selectedRole = roles.find(r => r.id === parseInt(formData.roleId));
+      setSuccess(`Staff member "${formData.name}" added successfully with role "${selectedRole?.name}"! They will receive login credentials via email.`);
+      setFormData({ name: '', email: '', roleId: '' });
     } catch (err) {
       console.error('Add staff error:', err);
       setError('An error occurred. Please try again.');
@@ -77,8 +111,8 @@ export default function AddStaffPage() {
               <UserPlus className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Add Reception Staff</h1>
-              <p className="text-gray-600">Create a new reception staff account</p>
+              <h1 className="text-2xl font-bold text-gray-900">Add Staff Member</h1>
+              <p className="text-gray-600">Create a new staff account with role assignment</p>
             </div>
           </div>
         </div>
@@ -123,6 +157,36 @@ export default function AddStaffPage() {
               </div>
             </div>
 
+            {/* Role Selection */}
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                Role <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Users className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  id="role"
+                  required
+                  value={formData.roleId}
+                  onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+                  disabled={rolesLoading}
+                >
+                  <option value="">Select a role</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {rolesLoading && (
+                <p className="mt-2 text-sm text-gray-500">Loading roles...</p>
+              )}
+            </div>
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -158,7 +222,7 @@ export default function AddStaffPage() {
                 <div className="text-sm text-blue-800">
                   <p className="font-medium mb-1">What happens next?</p>
                   <ul className="list-disc list-inside space-y-1 text-blue-700">
-                    <li>A reception staff account will be created</li>
+                    <li>A staff account will be created with the selected role</li>
                     <li>A temporary password will be generated</li>
                     <li>Login credentials will be sent via email</li>
                     <li>Staff member must verify their email on first login</li>
@@ -185,7 +249,7 @@ export default function AddStaffPage() {
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4" />
-                    Add Reception Staff here
+                    Add Staff Member
                   </>
                 )}
               </button>
@@ -193,7 +257,7 @@ export default function AddStaffPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setFormData({ name: '', email: '' });
+                  setFormData({ name: '', email: '', roleId: '' });
                   setError('');
                   setSuccess('');
                 }}

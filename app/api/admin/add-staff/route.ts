@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email } = await request.json();
+    const { name, email, roleId } = await request.json();
 
     // Validate required fields
-    if (!name || !email) {
+    if (!name || !email || !roleId) {
       return NextResponse.json(
-        { error: 'Name and email are required' },
+        { error: 'Name, email, and role are required' },
         { status: 400 }
       );
     }
@@ -62,46 +62,46 @@ export async function POST(request: NextRequest) {
     const tempPassword = generatePassword();
     const hashedPassword = await hashPassword(tempPassword);
 
-    // Get the Reception role for this company
+    // Validate role exists in company
     const roleResult = await pool.query(
-      'SELECT id FROM roles WHERE company_id = $1 AND name = $2',
-      [session.user.companyId, 'Reception']
+      'SELECT id, name FROM roles WHERE company_id = $1 AND id = $2',
+      [session.user.companyId, roleId]
     );
 
     if (roleResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Reception role not found for this company' },
-        { status: 500 }
+        { error: 'Invalid role selected' },
+        { status: 400 }
       );
     }
 
-    const receptionRoleId = roleResult.rows[0].id;
+    const selectedRole = roleResult.rows[0];
 
-    // Create reception staff user (verified by default since admin creates them)
+    // Create staff user with selected role
     const result = await pool.query(
       `INSERT INTO users (company_id, role_id, name, email, password, is_verified) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING id, email, name`,
-      [session.user.companyId, receptionRoleId, name.trim(), normalizedEmail, hashedPassword, true]
+      [session.user.companyId, roleId, name.trim(), normalizedEmail, hashedPassword, true]
     );
 
     const newUser = result.rows[0];
 
     // Send email with login credentials
     try {
-      await sendStaffCredentialsEmail(normalizedEmail, name.trim(), tempPassword);
+      await sendStaffCredentialsEmail(normalizedEmail, name.trim(), tempPassword, selectedRole.name);
     } catch (emailError) {
       console.error('Failed to send credentials email:', emailError);
       // Don't fail the creation if email fails
     }
 
     return NextResponse.json({
-      message: 'Reception staff added successfully',
+      message: 'Staff member added successfully',
       user: {
         id: newUser.id,
         email: newUser.email,
         name: newUser.name,
-        role: 'Reception',
+        role: selectedRole.name,
       },
     });
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Send credentials email to new staff
-async function sendStaffCredentialsEmail(email: string, name: string, password: string) {
+async function sendStaffCredentialsEmail(email: string, name: string, password: string, roleName: string) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: parseInt(process.env.EMAIL_PORT || '465'),
@@ -134,7 +134,7 @@ async function sendStaffCredentialsEmail(email: string, name: string, password: 
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #ea580c;">Welcome to Our  Gym!</h2>
         <p>Hello ${name},</p>
-        <p>You have been added as a reception staff member at Our  Gym. Here are your login credentials:</p>
+        <p>You have been added as a ${roleName.toLowerCase()} staff member at Our  Gym. Here are your login credentials:</p>
         
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <p><strong>Email:</strong> ${email}</p>
