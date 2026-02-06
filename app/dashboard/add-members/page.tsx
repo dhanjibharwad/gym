@@ -286,6 +286,16 @@ const AddMemberPage = () => {
       let processedValue: string | number = value;
       if (name === 'totalPlanFee' || name === 'amountPaidNow') {
         processedValue = value === '' ? 0 : parseFloat(value) || 0;
+        
+        // Validate totalPlanFee cannot be less than base plan fee
+        if (name === 'totalPlanFee' && basePlanFee > 0) {
+          const enteredFee = parseFloat(value) || 0;
+          if (enteredFee > 0 && enteredFee < basePlanFee) {
+            setErrors(prev => ({ ...prev, totalPlanFee: `Total fee cannot be less than ₹${basePlanFee}` }));
+          } else {
+            setErrors(prev => ({ ...prev, totalPlanFee: '' }));
+          }
+        }
       }
       
       // Auto-calculate age when date of birth changes
@@ -345,6 +355,15 @@ const AddMemberPage = () => {
         const endDate = calculateEndDate(value, formData.selectedPlan);
         setFormData(prev => ({ ...prev, planStartDate: value, planEndDate: endDate }));
         return;
+      }
+      
+      // Validate end date doesn't exceed plan duration
+      if (name === 'planEndDate' && value && formData.selectedPlan && formData.planStartDate) {
+        const maxEndDate = calculateEndDate(formData.planStartDate, formData.selectedPlan);
+        if (new Date(value) > new Date(maxEndDate)) {
+          setErrors(prev => ({ ...prev, planEndDate: 'End date cannot exceed the plan duration' }));
+          return;
+        }
       }
       
       // Default update for other fields
@@ -1023,6 +1042,7 @@ const AddMemberPage = () => {
                     value={formData.planEndDate}
                     onChange={handleInputChange}
                     min={formData.planStartDate}
+                    max={formData.selectedPlan && formData.planStartDate ? calculateEndDate(formData.planStartDate, formData.selectedPlan) : undefined}
                     data-error={!!errors.planEndDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.planEndDate ? 'border-red-500' : 'border-slate-300'
@@ -1164,11 +1184,20 @@ const AddMemberPage = () => {
                     name="totalPlanFee"
                     value={formData.totalPlanFee || 0}
                     onChange={handleInputChange}
-                    className="w-full pl-8 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    min={basePlanFee || 0}
+                    data-error={!!errors.totalPlanFee}
+                    className={`w-full pl-8 pr-4 py-3 bg-white border ${
+                      errors.totalPlanFee ? 'border-red-500' : 'border-slate-300'
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
                     placeholder="0"
-                    min="0"
                   />
                 </div>
+                {errors.totalPlanFee && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.totalPlanFee}
+                  </p>
+                )}
               </div>
 
               {/* Amount Paid Now */}
