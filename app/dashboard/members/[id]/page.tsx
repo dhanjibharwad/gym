@@ -364,7 +364,7 @@ const MemberProfilePage = () => {
                   )}
                   {membership.reference_of_admission && (
                     <div>
-                      <p className="text-gray-500">Reference</p>
+                      <p className="text-gray-500">Reference of Admission</p>
                       <p className="font-medium">{membership.reference_of_admission}</p>
                     </div>
                   )}
@@ -421,7 +421,7 @@ const MemberProfilePage = () => {
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Amount</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Mode</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Receipt</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Transcation ID</th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Status</th>
                               </tr>
                             </thead>
