@@ -4,16 +4,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
-  Filter,
   Phone,
   Mail,
-  Calendar,
-  CreditCard,
   User,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
   Grid3X3,
   List,
   Edit,
@@ -30,29 +23,12 @@ interface Member {
   date_of_birth: string;
   profile_photo_url: string;
   created_at: string;
-  start_date: string;
-  end_date: string;
-  membership_status: string;
-  trainer_assigned: string;
-  batch_time: string;
-  membership_type: string;
-  locker_required: boolean;
-  plan_name: string;
-  duration_months: number;
-  plan_price: number;
-  total_amount: number;
-  paid_amount: number;
-  payment_status: string;
-  payment_mode: string;
-  next_due_date: string;
 }
 
 const MembersPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [paymentFilter, setPaymentFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [editingMember, setEditingMember] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ phone_number: '', email: '' });
@@ -135,65 +111,14 @@ const MembersPage = () => {
                          member.phone_number.includes(searchTerm) ||
                          (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = statusFilter === 'all' || member.membership_status === statusFilter;
-    const matchesPayment = paymentFilter === 'all' || member.payment_status === paymentFilter;
-    
-    return matchesSearch && matchesStatus && matchesPayment;
+    return matchesSearch;
   });
-
-  const getStatusBadge = (status: string) => {
-    if (!status) status = 'inactive';
-    
-    const statusConfig = {
-      active: { bg: 'bg-green-100', text: 'text-green-700', icon: CheckCircle },
-      inactive: { bg: 'bg-gray-100', text: 'text-gray-700', icon: XCircle },
-      expired: { bg: 'bg-red-100', text: 'text-red-700', icon: AlertCircle },
-      suspended: { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: Clock }
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
-    const Icon = config.icon;
-    
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        <Icon className="w-3 h-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
-
-  const getPaymentBadge = (status: string) => {
-    if (!status) status = 'pending';
-    
-    const paymentConfig = {
-      full: { bg: 'bg-green-100', text: 'text-green-700' },
-      partial: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-      pending: { bg: 'bg-red-100', text: 'text-red-700' },
-      refunded: { bg: 'bg-gray-100', text: 'text-gray-700' }
-    };
-    
-    const config = paymentConfig[status as keyof typeof paymentConfig] || paymentConfig.pending;
-    
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const isExpiringSoon = (endDate: string) => {
-    if (!endDate) return false;
-    const today = new Date();
-    const expiry = new Date(endDate);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7 && diffDays >= 0;
-  };
 
   if (loading) {
     return (
@@ -209,7 +134,7 @@ const MembersPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-          <p className="text-gray-600 mt-1">Manage gym members and their memberships</p>
+          <p className="text-gray-600 mt-1">Manage gym members</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
           <span className="text-sm text-gray-500">
@@ -246,47 +171,15 @@ const MembersPage = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, phone, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              {/* <option value="inactive">Inactive</option> */}
-              <option value="expired">Expired</option>
-              {/* <option value="suspended">Suspended</option> */}
-            </select>
-          </div>
-
-          {/* Payment Filter */}
-          <div>
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            >
-              <option value="all">All Payments</option>
-              <option value="full">Paid Full</option>
-              <option value="partial">Partial</option>
-              {/* <option value="pending">Pending</option> */}
-            </select>
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, phone, or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
         </div>
       </div>
 
@@ -304,13 +197,10 @@ const MembersPage = () => {
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Membership
+                    Gender
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Joined Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -388,36 +278,18 @@ const MembersPage = () => {
                       )}
                     </td>
 
-                    {/* Membership */}
+                    {/* Gender */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          {member.plan_name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {formatDate(member.start_date)} - {formatDate(member.end_date)}
-                        </div>
-                        {isExpiringSoon(member.end_date) && (
-                          <div className="text-xs text-amber-600 font-medium">
-                            Expires Soon!
-                          </div>
-                        )}
+                      <div className="text-sm text-gray-900">
+                        {member.gender || 'N/A'}
                       </div>
                     </td>
 
-                    {/* Payment */}
+                    {/* Joined Date */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-1">
-                        <div className="text-sm text-gray-900">
-                          ₹{member.paid_amount} / ₹{member.total_amount}
-                        </div>
-                        <div>{getPaymentBadge(member.payment_status)}</div>
+                      <div className="text-sm text-gray-900">
+                        {formatDate(member.created_at)}
                       </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(member.membership_status)}
                     </td>
 
                     {/* Actions */}
@@ -465,9 +337,7 @@ const MembersPage = () => {
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No members found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || statusFilter !== 'all' || paymentFilter !== 'all'
-                  ? 'Try adjusting your search or filters.'
-                  : 'Get started by adding a new member.'}
+                {searchTerm ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
               </p>
             </div>
           )}
@@ -500,18 +370,8 @@ const MembersPage = () => {
                         {member.full_name}
                       </h3>
                       <p className="text-sm text-gray-500">ID: #{member.id}</p>
-                      <div className="mt-1">
-                        {getStatusBadge(member.membership_status)}
-                      </div>
                     </div>
                   </div>
-                  {isExpiringSoon(member.end_date) && (
-                    <div className="absolute top-4 right-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                        Expires Soon!
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -531,36 +391,12 @@ const MembersPage = () => {
                   )}
                 </div>
 
-                {/* Membership Info */}
+                {/* Member Info */}
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900">{member.plan_name}</span>
-                    <span className="text-sm text-gray-500">{member.membership_type}</span>
+                  <div className="text-sm text-gray-600">
+                    <div>Gender: {member.gender || 'N/A'}</div>
+                    <div className="mt-1">DOB: {member.date_of_birth ? formatDate(member.date_of_birth) : 'N/A'}</div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {formatDate(member.start_date)} - {formatDate(member.end_date)}
-                  </div>
-                  {member.trainer_assigned && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Trainer: {member.trainer_assigned}
-                    </div>
-                  )}
-                  {member.batch_time && (
-                    <div className="text-xs text-gray-500">
-                      Batch: {member.batch_time}
-                    </div>
-                  )}
-                </div>
-
-                {/* Payment Info */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      ₹{member.paid_amount} / ₹{member.total_amount}
-                    </div>
-                    <div className="text-xs text-gray-500">{member.payment_mode}</div>
-                  </div>
-                  <div>{getPaymentBadge(member.payment_status)}</div>
                 </div>
               </div>
 
@@ -578,89 +414,12 @@ const MembersPage = () => {
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No members found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || statusFilter !== 'all' || paymentFilter !== 'all'
-                  ? 'Try adjusting your search or filters.'
-                  : 'Get started by adding a new member.'}
+                {searchTerm ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
               </p>
             </div>
           )}
         </div>
       )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Active Members
-                </dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  {members.filter(m => m.membership_status === 'active').length}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-8 w-8 text-amber-600" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Expiring Soon
-                </dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  {members.filter(m => isExpiringSoon(m.end_date)).length}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CreditCard className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Paid Full
-                </dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  {members.filter(m => m.payment_status === 'full').length}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Clock className="h-8 w-8 text-red-600" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">
-                  Pending Payments
-                </dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  {members.filter(m => m.payment_status === 'pending' || m.payment_status === 'partial').length}
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
