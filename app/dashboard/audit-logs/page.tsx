@@ -75,7 +75,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Logs List */}
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="bg-white rounded-xl shadow-sm">
           {logs.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />

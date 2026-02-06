@@ -366,6 +366,21 @@ const AddMemberPage = () => {
       if (name === 'totalPlanFee' || name === 'amountPaidNow') {
         processedValue = value === '' ? 0 : parseFloat(value) || 0;
         
+        // When totalPlanFee is manually changed, recalculate with payment mode fee
+        if (name === 'totalPlanFee' && formData.paymentMode) {
+          const enteredFee = parseFloat(value) || 0;
+          const selectedMode = paymentModes.find(mode => mode.name === formData.paymentMode);
+          
+          if (selectedMode && selectedMode.processingFee > 0 && enteredFee > 0) {
+            // Calculate processing fee on the entered amount
+            const processingFee = (enteredFee * selectedMode.processingFee) / 100;
+            const totalWithFee = enteredFee + processingFee;
+            
+            setFormData(prev => ({ ...prev, totalPlanFee: Math.round(totalWithFee) }));
+            return;
+          }
+        }
+        
         // Validate totalPlanFee cannot be less than base plan fee
         if (name === 'totalPlanFee' && basePlanFee > 0) {
           const enteredFee = parseFloat(value) || 0;
@@ -412,18 +427,34 @@ const AddMemberPage = () => {
       }
       
       // Recalculate total fee when payment mode changes
-      if (name === 'paymentMode' && value) {
-        const selectedMode = paymentModes.find(mode => mode.name === value);
-        const currentBaseFee = basePlanFee > 0 ? basePlanFee : formData.totalPlanFee;
+      if (name === 'paymentMode') {
+        if (!value) {
+          setFormData(prev => ({ 
+            ...prev, 
+            paymentMode: '',
+            totalPlanFee: basePlanFee > 0 ? basePlanFee : prev.totalPlanFee
+          }));
+          return;
+        }
         
-        if (selectedMode && currentBaseFee > 0) {
-          const processingFee = (currentBaseFee * selectedMode.processingFee) / 100;
-          const totalWithFee = currentBaseFee + processingFee;
+        const selectedMode = paymentModes.find(mode => mode.name === value);
+        // Use current totalPlanFee if manually edited, otherwise use basePlanFee
+        const currentFee = formData.totalPlanFee > 0 ? Number(formData.totalPlanFee) : Number(basePlanFee) || 0;
+        
+        if (selectedMode && currentFee > 0) {
+          const processingFee = (currentFee * selectedMode.processingFee) / 100;
+          const totalWithFee = currentFee + processingFee;
           
           setFormData(prev => ({ 
             ...prev, 
             paymentMode: value as FormData['paymentMode'],
             totalPlanFee: Math.round(totalWithFee) 
+          }));
+          return;
+        } else {
+          setFormData(prev => ({ 
+            ...prev, 
+            paymentMode: value as FormData['paymentMode']
           }));
           return;
         }
