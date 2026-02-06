@@ -8,6 +8,8 @@ interface MembershipPlan {
   plan_name: string;
   duration_months: number;
   price: number;
+  base_duration_months: number;
+  base_price: number;
   created_at: string;
 }
 
@@ -42,6 +44,7 @@ export default function MembershipPlansPage() {
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm>({ show: false, plan: null });
+  const [validationError, setValidationError] = useState<string>('');
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     const id = Date.now();
@@ -76,6 +79,19 @@ export default function MembershipPlansPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (editingPlan) {
+      if (formData.duration_months > editingPlan.base_duration_months) {
+        setValidationError(`Duration cannot exceed ${editingPlan.base_duration_months} months`);
+        return;
+      }
+      if (formData.price < editingPlan.base_price) {
+        setValidationError(`Price cannot be less than ₹${editingPlan.base_price}`);
+        return;
+      }
+    }
+    
+    setValidationError('');
     setSubmitting(true);
 
     try {
@@ -152,6 +168,7 @@ export default function MembershipPlansPage() {
     setFormData({ plan_name: '', duration_months: 1, price: 0 });
     setEditingPlan(null);
     setShowForm(false);
+    setValidationError('');
   };
 
   if (loading) {
@@ -219,11 +236,20 @@ export default function MembershipPlansPage() {
                   <input
                     type="number"
                     min="1"
+                    max={editingPlan ? editingPlan.base_duration_months : undefined}
                     value={formData.duration_months}
-                    onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 });
+                      setValidationError('');
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
+                  {editingPlan && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Maximum duration: {editingPlan.base_duration_months} months
+                    </p>
+                  )}
                 </div>
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -231,14 +257,28 @@ export default function MembershipPlansPage() {
                   </label>
                   <input
                     type="number"
-                    min="0"
+                    min={editingPlan ? editingPlan.base_price : 0}
                     step="0.01"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
+                      setValidationError('');
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
+                  {editingPlan && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minimum price: ₹{editingPlan.base_price}
+                    </p>
+                  )}
                 </div>
+                {validationError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <span className="text-sm text-red-600">{validationError}</span>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <button
                     type="submit"

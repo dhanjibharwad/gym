@@ -4,6 +4,9 @@ import { getSession } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getSession();
+    const companyId = session?.user?.companyId || 1;
+    
     const client = await pool.connect();
     
     try {
@@ -13,10 +16,13 @@ export async function GET() {
           plan_name,
           duration_months,
           price,
+          base_duration_months,
+          base_price,
           created_at
         FROM membership_plans
+        WHERE company_id = $1
         ORDER BY duration_months ASC
-      `);
+      `, [companyId]);
       
       return NextResponse.json({
         success: true,
@@ -52,14 +58,15 @@ export async function POST(request: Request) {
     }
     
     const session = await getSession();
+    const companyId = session?.user?.companyId || 1;
     const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
     
     const client = await pool.connect();
     
     try {
       const result = await client.query(
-        'INSERT INTO membership_plans (plan_name, duration_months, price) VALUES ($1, $2, $3) RETURNING *',
-        [plan_name, duration_months, price]
+        'INSERT INTO membership_plans (company_id, plan_name, duration_months, price, base_duration_months, base_price) VALUES ($1, $2, $3, $4, $3, $4) RETURNING *',
+        [companyId, plan_name, duration_months, price]
       );
       
       // Log the action
@@ -117,20 +124,38 @@ export async function PUT(request: Request) {
     const client = await pool.connect();
     
     try {
-      // Get old plan details for logging
+      // Get old plan details for validation and logging
       const oldPlan = await client.query('SELECT * FROM membership_plans WHERE id = $1', [id]);
       
-      const result = await client.query(
-        'UPDATE membership_plans SET plan_name = $1, duration_months = $2, price = $3 WHERE id = $4 RETURNING *',
-        [plan_name, duration_months, price, id]
-      );
-      
-      if (result.rows.length === 0) {
+      if (oldPlan.rows.length === 0) {
         return NextResponse.json(
           { success: false, message: 'Plan not found' },
           { status: 404 }
         );
       }
+      
+      const baseDuration = oldPlan.rows[0].base_duration_months;
+      const basePrice = oldPlan.rows[0].base_price;
+      
+      // Validate: duration <= base (max), price >= base (min)
+      if (duration_months > baseDuration) {
+        return NextResponse.json(
+          { success: false, message: `Duration cannot exceed maximum ${baseDuration} months` },
+          { status: 400 }
+        );
+      }
+      
+      if (price < basePrice) {
+        return NextResponse.json(
+          { success: false, message: `Price cannot be less than minimum ₹${basePrice}` },
+          { status: 400 }
+        );
+      }
+      
+      const result = await client.query(
+        'UPDATE membership_plans SET plan_name = $1, duration_months = $2, price = $3 WHERE id = $4 RETURNING *',
+        [plan_name, duration_months, price, id]
+      );
       
       // Log the action
       if (oldPlan.rows.length > 0) {

@@ -26,8 +26,12 @@ CREATE TABLE IF NOT EXISTS membership_plans (
     plan_name VARCHAR(100) NOT NULL,
     duration_months INTEGER NOT NULL CHECK (duration_months > 0),
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    base_duration_months INTEGER NOT NULL CHECK (base_duration_months > 0),
+    base_price DECIMAL(10,2) NOT NULL CHECK (base_price >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(company_id, plan_name)
+    UNIQUE(company_id, plan_name),
+    CONSTRAINT check_duration_lte_base CHECK (duration_months <= base_duration_months),
+    CONSTRAINT check_price_gte_base CHECK (price >= base_price)
 );
 
 -- Create memberships table

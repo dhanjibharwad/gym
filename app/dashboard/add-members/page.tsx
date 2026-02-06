@@ -402,7 +402,15 @@ const AddMemberPage = () => {
     if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
     if (!formData.selectedPlan) newErrors.selectedPlan = 'Please select a plan';
     if (!formData.planStartDate) newErrors.planStartDate = 'Start date is required';
+    if (!formData.planEndDate) newErrors.planEndDate = 'End date is required';
     if (formData.amountPaidNow < 0) newErrors.amountPaidNow = 'Payment amount cannot be negative';
+    
+    // Validate end date is after start date
+    if (formData.planStartDate && formData.planEndDate) {
+      if (new Date(formData.planEndDate) <= new Date(formData.planStartDate)) {
+        newErrors.planEndDate = 'End date must be after start date';
+      }
+    }
     
     // Payment mode validation
     if (!formData.paymentMode) {
@@ -1002,16 +1010,31 @@ const AddMemberPage = () => {
                 )}
               </div>
 
-              {/* Plan End Date (Auto-calculated) */}
+              {/* Plan End Date (Editable) */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Plan End Date
+                  Plan End Date <span className="text-orange-600">*</span>
                 </label>
-                <div className="flex items-center h-[52px] px-4 bg-slate-50 border border-slate-300 rounded-xl">
-                  <span className="text-slate-900 font-medium">
-                    {formData.planEndDate ? formatDateDisplay(formData.planEndDate) : 'Select plan and start date'}
-                  </span>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="date"
+                    name="planEndDate"
+                    value={formData.planEndDate}
+                    onChange={handleInputChange}
+                    min={formData.planStartDate}
+                    data-error={!!errors.planEndDate}
+                    className={`w-full pl-11 pr-4 py-3 bg-white border ${
+                      errors.planEndDate ? 'border-red-500' : 'border-slate-300'
+                    } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                  />
                 </div>
+                {errors.planEndDate && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.planEndDate}
+                  </p>
+                )}
               </div>
 
               {/* Reference of Admission */}
