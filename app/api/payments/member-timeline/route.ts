@@ -28,8 +28,26 @@ export async function GET(request: NextRequest) {
           pt.created_at,
           pt.description
         FROM payment_transactions pt
-        WHERE pt.membership_id = $1
-        ORDER BY pt.transaction_date ASC, pt.created_at ASC
+        WHERE pt.membership_id = $1 AND pt.transaction_type != 'membership_fee'
+        
+        UNION ALL
+        
+        SELECT 
+          p.id,
+          'membership_fee' as transaction_type,
+          p.paid_amount as amount,
+          p.payment_mode,
+          p.created_at as transaction_date,
+          p.reference_number as receipt_number,
+          u.name as created_by,
+          p.created_at,
+          NULL as description
+        FROM payments p
+        JOIN memberships ms ON p.membership_id = ms.id
+        LEFT JOIN users u ON ms.created_by = u.id
+        WHERE p.membership_id = $1 AND p.paid_amount > 0
+        
+        ORDER BY transaction_date ASC, created_at ASC
       `, [membershipId]);
       
       return NextResponse.json({

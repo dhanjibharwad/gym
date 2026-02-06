@@ -55,6 +55,7 @@ interface FormData {
   totalPlanFee: number;
   amountPaidNow: number;
   paymentMode: 'Cash' | 'UPI' | 'Card' | 'Online' | 'Cheque' | '';
+  referenceNumber: string;
   nextDueDate: string;
 }
 
@@ -139,6 +140,7 @@ const AddMemberPage = () => {
     totalPlanFee: 0,
     amountPaidNow: 0,
     paymentMode: '',
+    referenceNumber: '',
     nextDueDate: ''
   });
 
@@ -214,6 +216,7 @@ const AddMemberPage = () => {
       totalPlanFee: 0,
       amountPaidNow: 0,
       paymentMode: '',
+      referenceNumber: '',
       nextDueDate: ''
     });
     setErrors({});
@@ -364,11 +367,18 @@ const AddMemberPage = () => {
       // Convert numeric fields to numbers
       let processedValue: string | number = value;
       if (name === 'totalPlanFee' || name === 'amountPaidNow') {
-        processedValue = value === '' ? 0 : parseFloat(value) || 0;
+        const numValue = parseFloat(value) || 0;
+        
+        // Prevent negative values
+        if (numValue < 0) {
+          return;
+        }
+        
+        processedValue = value === '' ? 0 : numValue;
         
         // When totalPlanFee is manually changed, recalculate with payment mode fee
         if (name === 'totalPlanFee' && formData.paymentMode) {
-          const enteredFee = parseFloat(value) || 0;
+          const enteredFee = numValue;
           const selectedMode = paymentModes.find(mode => mode.name === formData.paymentMode);
           
           if (selectedMode && selectedMode.processingFee > 0 && enteredFee > 0) {
@@ -383,7 +393,7 @@ const AddMemberPage = () => {
         
         // Validate totalPlanFee cannot be less than base plan fee
         if (name === 'totalPlanFee' && basePlanFee > 0) {
-          const enteredFee = parseFloat(value) || 0;
+          const enteredFee = numValue;
           if (enteredFee > 0 && enteredFee < basePlanFee) {
             setErrors(prev => ({ ...prev, totalPlanFee: `Total fee cannot be less than ₹${basePlanFee}` }));
           } else {
@@ -1421,13 +1431,13 @@ const AddMemberPage = () => {
                   <input
                     type="number"
                     name="totalPlanFee"
-                    value={formData.totalPlanFee || 0}
+                    value={formData.totalPlanFee || ''}
                     onChange={handleInputChange}
                     min={basePlanFee || 0}
                     data-error={!!errors.totalPlanFee}
                     className={`w-full pl-8 pr-4 py-3 bg-white border ${
                       errors.totalPlanFee ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     placeholder="0"
                   />
                 </div>
@@ -1449,12 +1459,12 @@ const AddMemberPage = () => {
                   <input
                     type="number"
                     name="amountPaidNow"
-                    value={formData.amountPaidNow || 0}
+                    value={formData.amountPaidNow || ''}
                     onChange={handleInputChange}
                     data-error={!!errors.amountPaidNow}
                     className={`w-full pl-8 pr-4 py-3 bg-white border ${
                       errors.amountPaidNow ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     placeholder="0"
                     min="0"
                   />
@@ -1496,6 +1506,23 @@ const AddMemberPage = () => {
                   </p>
                 )}
               </div>
+
+              {/* Reference Number - Show for UPI, Card, Online */}
+              {(formData.paymentMode === 'UPI' || formData.paymentMode === 'Card' || formData.paymentMode === 'Online') && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Reference Number
+                  </label>
+                  <input
+                    type="text"
+                    name="referenceNumber"
+                    value={formData.referenceNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                    placeholder="Enter transaction reference"
+                  />
+                </div>
+              )}
 
               {/* Payment Status */}
               <div>

@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       totalPlanFee: parseFloat(formData.get('totalPlanFee') as string) || 0,
       amountPaidNow: parseFloat(formData.get('amountPaidNow') as string) || 0,
       paymentMode: formData.get('paymentMode') as string,
+      referenceNumber: formData.get('referenceNumber') as string || null,
       nextDueDate: formData.get('nextDueDate') as string || null,
       profilePhoto: formData.get('profilePhoto') as File || null,
     };
@@ -166,14 +167,15 @@ export async function POST(request: NextRequest) {
       await client.query(
         `INSERT INTO payments (
           membership_id, total_amount, paid_amount, payment_mode,
-          payment_status, next_due_date
-        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+          payment_status, reference_number, next_due_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           membershipId,
           data.totalPlanFee,
           data.amountPaidNow,
           data.paymentMode,
           paymentStatus,
+          data.referenceNumber,
           data.nextDueDate || null
         ]
       );

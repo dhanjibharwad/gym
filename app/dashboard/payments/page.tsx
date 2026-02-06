@@ -805,7 +805,7 @@ const PaymentsPage = () => {
                       onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
                       min="1"
                       max={selectedPayment.total_amount - selectedPayment.paid_amount}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="Enter amount"
                     />
                     <p className="text-xs text-gray-500 mt-1">
