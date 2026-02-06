@@ -124,31 +124,13 @@ export async function PUT(request: Request) {
     const client = await pool.connect();
     
     try {
-      // Get old plan details for validation and logging
+      // Get old plan details for logging
       const oldPlan = await client.query('SELECT * FROM membership_plans WHERE id = $1', [id]);
       
       if (oldPlan.rows.length === 0) {
         return NextResponse.json(
           { success: false, message: 'Plan not found' },
           { status: 404 }
-        );
-      }
-      
-      const baseDuration = oldPlan.rows[0].base_duration_months;
-      const basePrice = oldPlan.rows[0].base_price;
-      
-      // Validate: duration <= base (max), price >= base (min)
-      if (duration_months > baseDuration) {
-        return NextResponse.json(
-          { success: false, message: `Duration cannot exceed maximum ${baseDuration} months` },
-          { status: 400 }
-        );
-      }
-      
-      if (price < basePrice) {
-        return NextResponse.json(
-          { success: false, message: `Price cannot be less than minimum ₹${basePrice}` },
-          { status: 400 }
         );
       }
       

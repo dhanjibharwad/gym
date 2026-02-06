@@ -79,19 +79,6 @@ export default function MembershipPlansPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (editingPlan) {
-      if (formData.duration_months > editingPlan.base_duration_months) {
-        setValidationError(`Duration cannot exceed ${editingPlan.base_duration_months} months`);
-        return;
-      }
-      if (formData.price < editingPlan.base_price) {
-        setValidationError(`Price cannot be less than ₹${editingPlan.base_price}`);
-        return;
-      }
-    }
-    
-    setValidationError('');
     setSubmitting(true);
 
     try {
@@ -211,7 +198,7 @@ export default function MembershipPlansPage() {
 
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">
                 {editingPlan ? 'Edit Plan' : 'Add New Plan'}
@@ -236,20 +223,11 @@ export default function MembershipPlansPage() {
                   <input
                     type="number"
                     min="1"
-                    max={editingPlan ? editingPlan.base_duration_months : undefined}
                     value={formData.duration_months}
-                    onChange={(e) => {
-                      setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 });
-                      setValidationError('');
-                    }}
+                    onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
-                  {editingPlan && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum duration: {editingPlan.base_duration_months} months
-                    </p>
-                  )}
                 </div>
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -257,21 +235,13 @@ export default function MembershipPlansPage() {
                   </label>
                   <input
                     type="number"
-                    min={editingPlan ? editingPlan.base_price : 0}
+                    min="0"
                     step="0.01"
                     value={formData.price}
-                    onChange={(e) => {
-                      setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
-                      setValidationError('');
-                    }}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     required
                   />
-                  {editingPlan && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Minimum price: ₹{editingPlan.base_price}
-                    </p>
-                  )}
                 </div>
                 {validationError && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
@@ -303,7 +273,7 @@ export default function MembershipPlansPage() {
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (
-            <div key={plan.id} className="bg-white rounded-lg shadow-md border hover:shadow-lg transition-shadow">
+            <div key={plan.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">{plan.plan_name}</h3>
@@ -370,7 +340,7 @@ export default function MembershipPlansPage() {
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
