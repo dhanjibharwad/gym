@@ -97,7 +97,7 @@ export default function FullPaymentPage() {
       </div>
 
       {/* Stats Card */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 mb-6 text-white">
+      <div className="bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl p-6 mb-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold mb-1">Total Fully Paid Members</h3>
@@ -118,7 +118,7 @@ export default function FullPaymentPage() {
             placeholder="Search by name or phone number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-green-500 focus:border-transparent"
           />
         </div>
       </div>

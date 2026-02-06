@@ -510,7 +510,7 @@ const PaymentsPage = () => {
               placeholder="Search by member name or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
             />
           </div>
 
@@ -518,7 +518,7 @@ const PaymentsPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="full">Paid Full</option>
@@ -532,7 +532,7 @@ const PaymentsPage = () => {
             <select
               value={paymentModeFilter}
               onChange={(e) => setPaymentModeFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="all">All Payment Modes</option>
               <option value="Cash">Cash</option>
@@ -805,7 +805,7 @@ const PaymentsPage = () => {
                       onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
                       min="1"
                       max={selectedPayment.total_amount - selectedPayment.paid_amount}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
                       placeholder="Enter amount"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -818,7 +818,7 @@ const PaymentsPage = () => {
                     <select
                       value={newPayment.payment_mode}
                       onChange={(e) => setNewPayment({...newPayment, payment_mode: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
                     >
                       <option value="Cash">Cash</option>
                       <option value="UPI">UPI</option>
@@ -834,7 +834,7 @@ const PaymentsPage = () => {
                         type="text"
                         value={newPayment.reference_number}
                         onChange={(e) => setNewPayment({...newPayment, reference_number: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
                         placeholder="Enter transaction reference"
                       />
                     </div>
@@ -847,7 +847,7 @@ const PaymentsPage = () => {
                       value={newPayment.payment_date}
                       onChange={(e) => setNewPayment({...newPayment, payment_date: e.target.value})}
                       max={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
                     />
                   </div>
                 </div>
@@ -879,7 +879,7 @@ const PaymentsPage = () => {
       )}
 
       {showTimelineModal && selectedMemberForTimeline && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Payment Timeline - {selectedMemberForTimeline.full_name}</h3>

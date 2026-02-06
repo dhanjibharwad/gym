@@ -126,7 +126,7 @@ export default function SetupPage() {
                 required
                 value={formData.companyName}
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Gym"
               />
             </div>
@@ -141,7 +141,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminName}
                 onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Enter admin full name"
               />
             </div>
@@ -156,7 +156,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminEmail}
                 onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="admin@gym.com"
               />
             </div>
@@ -174,7 +174,7 @@ export default function SetupPage() {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setFormData({ ...formData, adminPhone: value });
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Enter phone number"
               />
             </div>
@@ -189,7 +189,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminPassword}
                 onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Create a strong password"
               />
             </div>
@@ -204,7 +204,7 @@ export default function SetupPage() {
                 required
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white text-gray-900"
                 placeholder="Confirm your password"
               />
             </div>

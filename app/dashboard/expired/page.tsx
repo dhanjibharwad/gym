@@ -105,7 +105,7 @@ export default function ExpiredMembersPage() {
       </div>
 
       {/* Stats Card */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 mb-6 text-white">
+      <div className="bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl p-6 mb-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold mb-1">Total Expired Memberships</h3>
@@ -126,7 +126,7 @@ export default function ExpiredMembersPage() {
             placeholder="Search by name or phone number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-transparent"
           />
         </div>
       </div>

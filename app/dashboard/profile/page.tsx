@@ -196,7 +196,7 @@ const ProfilePage = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -216,7 +216,7 @@ const ProfilePage = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -236,7 +236,7 @@ const ProfilePage = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -330,7 +330,7 @@ const ProfilePage = () => {
                       type={showPasswords.current ? 'text' : 'password'}
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -352,7 +352,7 @@ const ProfilePage = () => {
                       type={showPasswords.new ? 'text' : 'password'}
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                     />
                     <button
                       type="button"
@@ -374,7 +374,7 @@ const ProfilePage = () => {
                       type={showPasswords.confirm ? 'text' : 'password'}
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
                     />
                     <button
                       type="button"

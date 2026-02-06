@@ -783,7 +783,7 @@ const AddMemberPage = () => {
                 data-error={!!errors.selectedMember}
                 className={`w-full px-4 py-3 bg-white border ${
                   errors.selectedMember ? 'border-red-500' : 'border-slate-300'
-                } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
+                } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
                 disabled={membersLoading}
               >
                 <option value="">{membersLoading ? 'Loading members...' : 'Choose a member'}</option>
@@ -871,7 +871,7 @@ const AddMemberPage = () => {
                   data-error={!!errors.fullName}
                   className={`w-full px-4 py-3 bg-white border ${
                     errors.fullName ? 'border-red-500' : 'border-slate-300'
-                  } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                  } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                   placeholder="Enter full name"
                 />
                 {errors.fullName && (
@@ -898,7 +898,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.phoneNumber}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.phoneNumber ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                     placeholder="10-digit number"
                   />
                 </div>
@@ -925,7 +925,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.email}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.email ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                     placeholder="email@example.com"
                   />
                 </div>
@@ -949,7 +949,7 @@ const AddMemberPage = () => {
                     name="emergencyContactName"
                     value={formData.emergencyContactName}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="Emergency contact name"
                   />
                 </div>
@@ -968,7 +968,7 @@ const AddMemberPage = () => {
                     value={formData.emergencyContactPhone}
                     onChange={handleInputChange}
                     maxLength={10}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="10-digit emergency number"
                   />
                 </div>
@@ -983,7 +983,7 @@ const AddMemberPage = () => {
                   name="gender"
                   value={formData.gender}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
@@ -1004,7 +1004,7 @@ const AddMemberPage = () => {
                     name="occupation"
                     value={formData.occupation}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="Enter occupation"
                   />
                 </div>
@@ -1023,7 +1023,7 @@ const AddMemberPage = () => {
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
                     max={today}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -1052,7 +1052,7 @@ const AddMemberPage = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                     placeholder="Enter complete address"
                   />
                 </div>
@@ -1126,7 +1126,7 @@ const AddMemberPage = () => {
                   value={formData.medicalConditions}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                   placeholder="List any medical conditions (e.g., diabetes, heart disease, asthma)"
                 />
               </div>
@@ -1141,7 +1141,7 @@ const AddMemberPage = () => {
                   value={formData.injuriesLimitations}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                   placeholder="Mention any injuries, physical limitations, or exercise restrictions"
                 />
               </div>
@@ -1156,7 +1156,7 @@ const AddMemberPage = () => {
                   value={formData.additionalNotes}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                   placeholder="Any other important information or special requests"
                 />
               </div>
@@ -1193,7 +1193,7 @@ const AddMemberPage = () => {
                   data-error={!!errors.selectedPlan}
                   className={`w-full px-4 py-3 bg-white border ${
                     errors.selectedPlan ? 'border-red-500' : 'border-slate-300'
-                  } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
+                  } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
                   disabled={plansLoading}
                 >
                   <option value="">{plansLoading ? 'Loading plans...' : 'Choose a plan'}</option>
@@ -1226,7 +1226,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.planStartDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.planStartDate ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                   />
                 </div>
                 {errors.planStartDate && (
@@ -1254,7 +1254,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.planEndDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.planEndDate ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                   />
                 </div>
                 {errors.planEndDate && (
@@ -1277,7 +1277,7 @@ const AddMemberPage = () => {
                     name="referenceOfAdmission"
                     value={formData.referenceOfAdmission}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="Enter reference name"
                   />
                 </div>
@@ -1295,7 +1295,7 @@ const AddMemberPage = () => {
                     name="trainerAssigned"
                     value={formData.trainerAssigned}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="Trainer name"
                   />
                 </div>
@@ -1310,7 +1310,7 @@ const AddMemberPage = () => {
                   name="batchTime"
                   value={formData.batchTime}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
                   <option value="">Select batch time</option>
                   <option value="Morning">Morning (6 AM - 12 PM)</option>
@@ -1333,7 +1333,7 @@ const AddMemberPage = () => {
                         value={type}
                         checked={formData.membershipTypes.includes(type)}
                         onChange={handleInputChange}
-                        className="w-4 h-4 text-orange-600 bg-white border-slate-300 rounded focus:ring-orange-500 focus:ring-2"
+                        className="w-4 h-4 text-orange-600 bg-white border-slate-300 rounded focus:ring-orange-500 focus:ring-1"
                       />
                       <span className="text-sm text-slate-700">{type}</span>
                     </label>
@@ -1353,7 +1353,7 @@ const AddMemberPage = () => {
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                     placeholder="Add any special notes or instructions for this membership"
                   />
                 </div>
@@ -1396,7 +1396,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.totalPlanFee}
                     className={`w-full pl-8 pr-4 py-3 bg-white border ${
                       errors.totalPlanFee ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                     placeholder="0"
                   />
                 </div>
@@ -1423,7 +1423,7 @@ const AddMemberPage = () => {
                     data-error={!!errors.amountPaidNow}
                     className={`w-full pl-8 pr-4 py-3 bg-white border ${
                       errors.amountPaidNow ? 'border-red-500' : 'border-slate-300'
-                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
                     placeholder="0"
                     min="0"
                   />
@@ -1448,7 +1448,7 @@ const AddMemberPage = () => {
                   data-error={!!errors.paymentMode}
                   className={`w-full px-4 py-3 bg-white border ${
                     errors.paymentMode ? 'border-red-500' : 'border-slate-300'
-                  } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
+                  } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
                   disabled={paymentModesLoading}
                 >
                   <option value="">{paymentModesLoading ? 'Loading payment modes...' : 'Select payment mode'}</option>
@@ -1497,7 +1497,7 @@ const AddMemberPage = () => {
                       name="nextDueDate"
                       value={formData.nextDueDate}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     />
                   </div>
                   <p className="mt-2 text-sm text-amber-600 flex items-center gap-1">

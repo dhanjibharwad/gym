@@ -212,7 +212,7 @@ export default function MembershipPlansPage() {
                     type="text"
                     value={formData.plan_name}
                     onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                     required
                   />
                 </div>
@@ -225,7 +225,7 @@ export default function MembershipPlansPage() {
                     min="1"
                     value={formData.duration_months}
                     onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                     required
                   />
                 </div>
@@ -239,7 +239,7 @@ export default function MembershipPlansPage() {
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                     required
                   />
                 </div>

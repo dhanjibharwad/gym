@@ -168,7 +168,7 @@ const SettingsPage = () => {
                       type="text"
                       value={settings.gymName}
                       onChange={(e) => setSettings({...settings, gymName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                     />
                   </div>
 
@@ -182,7 +182,7 @@ const SettingsPage = () => {
                         type="tel"
                         value={settings.phone}
                         onChange={(e) => setSettings({...settings, phone: e.target.value})}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                         placeholder="Enter phone number"
                       />
                     </div>
@@ -198,7 +198,7 @@ const SettingsPage = () => {
                         type="email"
                         value={settings.email}
                         onChange={(e) => setSettings({...settings, email: e.target.value})}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                         placeholder="Enter email address"
                       />
                     </div>
@@ -214,7 +214,7 @@ const SettingsPage = () => {
                         value={settings.address}
                         onChange={(e) => setSettings({...settings, address: e.target.value})}
                         rows={3}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
                         placeholder="Enter gym address"
                       />
                     </div>
@@ -235,7 +235,7 @@ const SettingsPage = () => {
                         type="time"
                         value={settings.openingTime}
                         onChange={(e) => setSettings({...settings, openingTime: e.target.value})}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
                     </div>
                   </div>
@@ -250,7 +250,7 @@ const SettingsPage = () => {
                         type="time"
                         value={settings.closingTime}
                         onChange={(e) => setSettings({...settings, closingTime: e.target.value})}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
                     </div>
                   </div>
@@ -267,7 +267,7 @@ const SettingsPage = () => {
                     <select
                       value={settings.currency}
                       onChange={(e) => setSettings({...settings, currency: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                     >
                       <option value="INR">Indian Rupee (₹)</option>
                       <option value="USD">US Dollar ($)</option>
@@ -285,7 +285,7 @@ const SettingsPage = () => {
                         type="number"
                         value={settings.taxRate}
                         onChange={(e) => setSettings({...settings, taxRate: e.target.value})}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                         placeholder="18"
                         min="0"
                         max="100"
@@ -411,7 +411,7 @@ const SettingsPage = () => {
                                   [mode]: { ...config, processingFee: parseFloat(e.target.value) || 0 }
                                 }
                               })}
-                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                               placeholder="0.00"
                               min="0"
                               max="10"
