@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   Search,
@@ -11,7 +12,8 @@ import {
   List,
   Edit,
   Save,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 
 interface Member {
@@ -26,6 +28,7 @@ interface Member {
 }
 
 const MembersPage = () => {
+  const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -317,13 +320,22 @@ const MembersPage = () => {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => handleEditMember(member)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="Edit contact info"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => router.push(`/dashboard/members/${member.id}`)}
+                            className="text-orange-600 hover:text-orange-900"
+                            title="View profile"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditMember(member)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit contact info"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -401,10 +413,16 @@ const MembersPage = () => {
               </div>
 
               {/* Card Footer */}
-              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-xs text-gray-500">
                   Joined {formatDate(member.created_at)}
                 </div>
+                <button
+                  onClick={() => router.push(`/dashboard/members/${member.id}`)}
+                  className="text-orange-600 hover:text-orange-900 text-sm font-medium"
+                >
+                  View Profile
+                </button>
               </div>
             </div>
           ))}
