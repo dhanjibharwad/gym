@@ -70,6 +70,22 @@ interface MembershipPlan {
   created_at: string;
 }
 
+interface Member {
+  id: number;
+  full_name: string;
+  phone_number: string;
+  email: string;
+}
+
+interface MembershipHistory {
+  id: number;
+  plan_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  price: number;
+}
+
 interface StaffMember {
   id: number;
   name: string;
@@ -78,6 +94,7 @@ interface StaffMember {
 
 const AddMemberPage = () => {
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const [memberType, setMemberType] = useState<'new' | 'existing'>('new');
   const [showSuccess, setShowSuccess] = useState(false);
   const [memberId, setMemberId] = useState<number | null>(null);
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
@@ -87,6 +104,12 @@ const AddMemberPage = () => {
   const [paymentModes, setPaymentModes] = useState<{name: string, processingFee: number}[]>([]);
   const [paymentModesLoading, setPaymentModesLoading] = useState(true);
   const [basePlanFee, setBasePlanFee] = useState(0);
+  
+  const [members, setMembers] = useState<Member[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  const [membershipHistory, setMembershipHistory] = useState<MembershipHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     serialNumber: '',
@@ -245,6 +268,46 @@ const AddMemberPage = () => {
     }
   };
 
+  // Fetch members for existing member dropdown
+  const fetchMembers = async () => {
+    setMembersLoading(true);
+    try {
+      const response = await fetch('/api/members');
+      const data = await response.json();
+      
+      if (data.success) {
+        setMembers(data.members);
+      } else {
+        showToast('Failed to load members', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      showToast('Error loading members', 'error');
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  // Fetch membership history for selected member
+  const fetchMembershipHistory = async (memberId: string) => {
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(`/api/members/${memberId}/memberships`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setMembershipHistory(data.memberships || []);
+      } else {
+        setMembershipHistory([]);
+      }
+    } catch (error) {
+      console.error('Error fetching membership history:', error);
+      setMembershipHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Add window focus event to refresh payment modes when user returns to tab
   useEffect(() => {
     const handleFocus = () => {
@@ -260,6 +323,22 @@ const AddMemberPage = () => {
     fetchPlans();
     fetchPaymentModes();
   }, []);
+
+  // Fetch members when switching to existing member mode
+  useEffect(() => {
+    if (memberType === 'existing') {
+      fetchMembers();
+    }
+  }, [memberType]);
+
+  // Fetch membership history when member is selected
+  useEffect(() => {
+    if (selectedMemberId) {
+      fetchMembershipHistory(selectedMemberId);
+    } else {
+      setMembershipHistory([]);
+    }
+  }, [selectedMemberId]);
 
   // Handle input changes
   const handleInputChange = (
@@ -416,9 +495,32 @@ const AddMemberPage = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Required fields validation
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+    // For existing members, validate member selection
+    if (memberType === 'existing') {
+      if (!selectedMemberId) {
+        newErrors.selectedMember = 'Please select a member';
+      }
+    } else {
+      // For new members, validate personal information
+      if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+      if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+      
+      // Phone number format validation
+      const phoneRegex = /^[0-9]{10}$/;
+      if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber.replace(/[^0-9]/g, ''))) {
+        newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
+      }
+
+      // Email validation (if provided)
+      if (formData.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          newErrors.email = 'Please enter a valid email address';
+        }
+      }
+    }
+
+    // Common validations for both new and existing members
     if (!formData.selectedPlan) newErrors.selectedPlan = 'Please select a plan';
     if (!formData.planStartDate) newErrors.planStartDate = 'Start date is required';
     if (!formData.planEndDate) newErrors.planEndDate = 'End date is required';
@@ -436,20 +538,6 @@ const AddMemberPage = () => {
       newErrors.paymentMode = 'Payment mode is required';
     } else if (!paymentModes.find(mode => mode.name === formData.paymentMode)) {
       newErrors.paymentMode = 'Selected payment mode is not available';
-    }
-
-    // Phone number format validation
-    const phoneRegex = /^[0-9]{10}$/;
-    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber.replace(/[^0-9]/g, ''))) {
-      newErrors.phoneNumber = 'Please enter a valid 10-digit phone number';
-    }
-
-    // Email validation (if provided)
-    if (formData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-      }
     }
 
     // Amount validation - ensure both values are numbers
@@ -472,6 +560,12 @@ const AddMemberPage = () => {
       try {
         // Create FormData for file upload support
         const formDataToSend = new FormData();
+        
+        // Add member type and existing member ID if applicable
+        formDataToSend.append('memberType', memberType);
+        if (memberType === 'existing' && selectedMemberId) {
+          formDataToSend.append('existingMemberId', selectedMemberId);
+        }
         
         // Convert plan ID to plan name before sending to API
         const selectedPlanId = formData.selectedPlan;
@@ -627,17 +721,128 @@ const AddMemberPage = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Add New Member</h1>
           <p className="text-gray-600 mt-1">Register a new gym member with complete details</p>
+        </div>
+        
+        {/* Member Type Toggle */}
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setMemberType('new')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              memberType === 'new'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            New Member
+          </button>
+          <button
+            type="button"
+            onClick={() => setMemberType('existing')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              memberType === 'existing'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Existing Member
+          </button>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* SECTION 1: Personal Information */}
+        {/* Select Existing Member - Only for Existing Members */}
+        {memberType === 'existing' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <User className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Select Member</h2>
+                <p className="text-sm text-slate-600">Choose an existing member to renew membership</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Select Member <span className="text-orange-600">*</span>
+              </label>
+              <select
+                value={selectedMemberId}
+                onChange={(e) => setSelectedMemberId(e.target.value)}
+                data-error={!!errors.selectedMember}
+                className={`w-full px-4 py-3 bg-white border ${
+                  errors.selectedMember ? 'border-red-500' : 'border-slate-300'
+                } rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
+                disabled={membersLoading}
+              >
+                <option value="">{membersLoading ? 'Loading members...' : 'Choose a member'}</option>
+                {members.map((member, index) => (
+                  <option key={`${member.id}-${index}`} value={member.id}>
+                    {member.full_name} - {member.phone_number}
+                  </option>
+                ))}
+              </select>
+              {errors.selectedMember && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.selectedMember}
+                </p>
+              )}
+            </div>
+
+            {/* Membership History */}
+            {selectedMemberId && (
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3">Membership History</h3>
+                {historyLoading ? (
+                  <div className="text-center py-4 text-slate-500">Loading history...</div>
+                ) : membershipHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {membershipHistory.map((membership) => (
+                      <div key={membership.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-slate-900">{membership.plan_name}</p>
+                            <p className="text-sm text-slate-600 mt-1">
+                              {new Date(membership.start_date).toLocaleDateString()} - {new Date(membership.end_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-slate-900">₹{membership.price}</p>
+                            <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${
+                              membership.status === 'active' ? 'bg-green-100 text-green-700' :
+                              membership.status === 'expired' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {membership.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-slate-500">No membership history found</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        )}
+        
+        {/* SECTION 1: Personal Information - Only for New Members */}
+        {memberType === 'new' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
             <div className="flex items-center gap-3">
@@ -892,8 +1097,10 @@ const AddMemberPage = () => {
             </div>
           </div>
         </div>
+        )}
 
-        {/* SECTION 2: Medical & Notes */}
+        {/* SECTION 2: Medical & Notes - Only for New Members */}
+        {memberType === 'new' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
             <div className="flex items-center gap-3">
@@ -956,6 +1163,7 @@ const AddMemberPage = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* SECTION 3: Membership Details */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">

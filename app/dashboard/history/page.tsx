@@ -210,9 +210,9 @@ const HistoryPage = () => {
             </div>
             
             <div className="divide-y divide-gray-200">
-              {filteredMembers.map((member) => (
+              {filteredMembers.map((member, index) => (
                 <div
-                  key={member.id}
+                  key={`${member.id}-${index}`}
                   onClick={() => handleMemberSelect(member)}
                   className="p-6 hover:bg-gray-50 cursor-pointer transition-colors"
                 >

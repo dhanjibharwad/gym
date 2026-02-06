@@ -27,10 +27,11 @@ const navItems = [
   { label: "Our Staff", href: "/dashboard/ourstaff", icon: User, roles: ["admin"], permissions: ["view_staff"] },
   { label: "Roles", href: "/dashboard/roles", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
   { label: "Permissions", href: "/dashboard/permissions", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
+   { label: "Membership Plans", href: "/dashboard/membership-plans", icon: Crown, roles: ["admin"], permissions: ["manage_settings"] },
   { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"], permissions: ["view_members"] },
   { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"], permissions: ["add_members"] },
   { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"], permissions: ["manage_payments"] },
-  { label: "Membership Plans", href: "/dashboard/membership-plans", icon: Crown, roles: ["admin"], permissions: ["manage_settings"] },
+ 
   { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"], permissions: ["view_reports"] },
   { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
   { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },

@@ -9,6 +9,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const session = await getSession();
     
+    // Check if this is for an existing member
+    const memberType = formData.get('memberType') as string;
+    const existingMemberId = formData.get('existingMemberId') as string;
+    
     // Extract data from FormData
     const data = {
       fullName: formData.get('fullName') as string,
@@ -23,6 +27,7 @@ export async function POST(request: NextRequest) {
       emergencyContactPhone: formData.get('emergencyContactPhone') as string || null,
       selectedPlan: formData.get('selectedPlan') as string,
       planStartDate: formData.get('planStartDate') as string,
+      planEndDate: formData.get('planEndDate') as string,
       trainerAssigned: formData.get('trainerAssigned') as string || null,
       batchTime: formData.get('batchTime') as string || null,
       membershipTypes: formData.get('membershipTypes') as string || null,
@@ -43,43 +48,63 @@ export async function POST(request: NextRequest) {
     try {
       await client.query('BEGIN');
       
-      // Insert member first
-      const memberResult = await client.query(
-        `INSERT INTO members (
-          company_id, full_name, phone_number, email, gender, occupation,
-          date_of_birth, age, address, emergency_contact_name, emergency_contact_phone
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-        [
-          session?.user?.companyId,
-          data.fullName,
-          data.phoneNumber,
-          data.email,
-          data.gender,
-          data.occupation,
-          data.dateOfBirth,
-          data.age,
-          data.address,
-          data.emergencyContactName,
-          data.emergencyContactPhone
-        ]
-      );
+      let memberId: number;
       
-      const memberId = memberResult.rows[0].id;
-      
-      // Handle profile photo upload after getting memberId
-      if (data.profilePhoto && data.profilePhoto.size > 0) {
-        const bytes = await data.profilePhoto.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+      // Handle existing member or create new member
+      if (memberType === 'existing' && existingMemberId) {
+        memberId = parseInt(existingMemberId);
+      } else {
+        // Insert new member
+        const memberResult = await client.query(
+          `INSERT INTO members (
+            company_id, full_name, phone_number, email, gender, occupation,
+            date_of_birth, age, address, emergency_contact_name, emergency_contact_phone
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+          [
+            session?.user?.companyId,
+            data.fullName,
+            data.phoneNumber,
+            data.email,
+            data.gender,
+            data.occupation,
+            data.dateOfBirth,
+            data.age,
+            data.address,
+            data.emergencyContactName,
+            data.emergencyContactPhone
+          ]
+        );
         
-        const fileName = `${memberId}_${data.profilePhoto.name}`;
-        const filePath = path.join(process.cwd(), 'public/uploads/members', fileName);
+        memberId = memberResult.rows[0].id;
         
-        await writeFile(filePath, buffer);
+        // Handle profile photo upload for new members
+        if (data.profilePhoto && data.profilePhoto.size > 0) {
+          const bytes = await data.profilePhoto.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+          
+          const fileName = `${memberId}_${data.profilePhoto.name}`;
+          const filePath = path.join(process.cwd(), 'public/uploads/members', fileName);
+          
+          await writeFile(filePath, buffer);
+          
+          const profilePhotoUrl = `/uploads/members/${fileName}`;
+          await client.query(
+            'UPDATE members SET profile_photo_url = $1 WHERE id = $2',
+            [profilePhotoUrl, memberId]
+          );
+        }
         
-        const profilePhotoUrl = `/uploads/members/${fileName}`;
+        // Insert medical info for new members
         await client.query(
-          'UPDATE members SET profile_photo_url = $1 WHERE id = $2',
-          [profilePhotoUrl, memberId]
+          `INSERT INTO medical_info (
+            member_id, medical_conditions, injuries_limitations, additional_notes
+          ) VALUES ($1, $2, $3, $4)`,
+          [
+            memberId,
+            data.medicalConditions || null,
+            data.injuriesLimitations || null,
+            data.additionalNotes || null
+          ]
         );
       }
       
@@ -95,16 +120,22 @@ export async function POST(request: NextRequest) {
       
       const planId = planResult.rows[0].id;
       
-      // Calculate end date
-      const planDetailsResult = await client.query(
-        'SELECT duration_months FROM membership_plans WHERE id = $1',
-        [planId]
-      );
-      
-      const startDate = new Date(data.planStartDate);
-      const endDate = new Date(startDate);
-      const monthsToAdd = planDetailsResult.rows[0].duration_months;
-      endDate.setMonth(endDate.getMonth() + monthsToAdd);
+      // Use provided end date or calculate it
+      let endDate: string;
+      if (data.planEndDate) {
+        endDate = data.planEndDate;
+      } else {
+        const planDetailsResult = await client.query(
+          'SELECT duration_months FROM membership_plans WHERE id = $1',
+          [planId]
+        );
+        
+        const startDate = new Date(data.planStartDate);
+        const calculatedEndDate = new Date(startDate);
+        const monthsToAdd = planDetailsResult.rows[0].duration_months;
+        calculatedEndDate.setMonth(calculatedEndDate.getMonth() + monthsToAdd);
+        endDate = calculatedEndDate.toISOString().split('T')[0];
+      }
       
       // Insert membership
       const membershipResult = await client.query(
@@ -116,7 +147,7 @@ export async function POST(request: NextRequest) {
           memberId,
           planId,
           data.planStartDate,
-          endDate.toISOString().split('T')[0],
+          endDate,
           data.trainerAssigned,
           data.batchTime,
           data.membershipTypes ? data.membershipTypes.split(',') : null,
@@ -165,24 +196,11 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // Insert medical info
-      await client.query(
-        `INSERT INTO medical_info (
-          member_id, medical_conditions, injuries_limitations, additional_notes
-        ) VALUES ($1, $2, $3, $4)`,
-        [
-          memberId,
-          data.medicalConditions || null,
-          data.injuriesLimitations || null,
-          data.additionalNotes || null
-        ]
-      );
-      
       await client.query('COMMIT');
       
       return NextResponse.json({
         success: true,
-        message: 'Member registered successfully',
+        message: memberType === 'existing' ? 'Membership renewed successfully' : 'Member registered successfully',
         memberId: memberId
       });
       

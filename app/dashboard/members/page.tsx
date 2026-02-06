@@ -208,8 +208,8 @@ const MembersPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50">
+                {filteredMembers.map((member, index) => (
+                  <tr key={`${member.id}-${index}`} className="hover:bg-gray-50">
                     {/* Member Info */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -344,8 +344,8 @@ const MembersPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMembers.map((member) => (
-            <div key={member.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+          {filteredMembers.map((member, index) => (
+            <div key={`${member.id}-${index}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Card Header */}
               <div className="relative p-6 pb-4">
                 <div className="flex items-start justify-between">
