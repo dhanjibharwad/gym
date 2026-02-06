@@ -84,8 +84,9 @@ const AddMemberPage = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   
-  const [paymentModes, setPaymentModes] = useState<string[]>([]);
+  const [paymentModes, setPaymentModes] = useState<{name: string, processingFee: number}[]>([]);
   const [paymentModesLoading, setPaymentModesLoading] = useState(true);
+  const [basePlanFee, setBasePlanFee] = useState(0);
   
   const [formData, setFormData] = useState<FormData>({
     serialNumber: '',
@@ -230,7 +231,7 @@ const AddMemberPage = () => {
       const data = await response.json();
       
       if (data.success) {
-        setPaymentModes(data.paymentModes.map((mode: any) => mode.name));
+        setPaymentModes(data.paymentModes);
         console.log('Fetched payment modes:', data.paymentModes);
       } else {
         console.error('Failed to fetch payment modes:', data.message);
@@ -287,12 +288,11 @@ const AddMemberPage = () => {
         processedValue = value === '' ? 0 : parseFloat(value) || 0;
       }
       
-      setFormData(prev => ({ ...prev, [name]: processedValue }));
-      
       // Auto-calculate age when date of birth changes
       if (name === 'dateOfBirth' && value) {
         const calculatedAge = calculateAge(value);
-        setFormData(prev => ({ ...prev, age: calculatedAge }));
+        setFormData(prev => ({ ...prev, dateOfBirth: value, age: calculatedAge }));
+        return;
       }
       
       // Auto-fill total plan fee and calculate end date when plan is selected
@@ -300,19 +300,55 @@ const AddMemberPage = () => {
         const selectedPlan = plansMap.get(value);
         if (selectedPlan) {
           const endDate = calculateEndDate(formData.planStartDate, value);
+          setBasePlanFee(selectedPlan.price);
+          
+          // Calculate with current payment mode if selected
+          let totalFee = selectedPlan.price;
+          if (formData.paymentMode) {
+            const selectedMode = paymentModes.find(mode => mode.name === formData.paymentMode);
+            if (selectedMode) {
+              const processingFee = (selectedPlan.price * selectedMode.processingFee) / 100;
+              totalFee = selectedPlan.price + processingFee;
+            }
+          }
+          
           setFormData(prev => ({ 
             ...prev, 
-            totalPlanFee: selectedPlan.price,
+            selectedPlan: value,
+            totalPlanFee: Math.round(totalFee),
             planEndDate: endDate
           }));
+          return;
+        }
+      }
+      
+      // Recalculate total fee when payment mode changes
+      if (name === 'paymentMode' && value) {
+        const selectedMode = paymentModes.find(mode => mode.name === value);
+        const currentBaseFee = basePlanFee > 0 ? basePlanFee : formData.totalPlanFee;
+        
+        if (selectedMode && currentBaseFee > 0) {
+          const processingFee = (currentBaseFee * selectedMode.processingFee) / 100;
+          const totalWithFee = currentBaseFee + processingFee;
+          
+          setFormData(prev => ({ 
+            ...prev, 
+            paymentMode: value as FormData['paymentMode'],
+            totalPlanFee: Math.round(totalWithFee) 
+          }));
+          return;
         }
       }
       
       // Recalculate end date when start date changes
       if (name === 'planStartDate' && value && formData.selectedPlan) {
         const endDate = calculateEndDate(value, formData.selectedPlan);
-        setFormData(prev => ({ ...prev, planEndDate: endDate }));
+        setFormData(prev => ({ ...prev, planStartDate: value, planEndDate: endDate }));
+        return;
       }
+      
+      // Default update for other fields
+      setFormData(prev => ({ ...prev, [name]: processedValue }));
     }
     
     // Clear error for this field
@@ -371,7 +407,7 @@ const AddMemberPage = () => {
     // Payment mode validation
     if (!formData.paymentMode) {
       newErrors.paymentMode = 'Payment mode is required';
-    } else if (!paymentModes.includes(formData.paymentMode)) {
+    } else if (!paymentModes.find(mode => mode.name === formData.paymentMode)) {
       newErrors.paymentMode = 'Selected payment mode is not available';
     }
 
@@ -483,6 +519,18 @@ const AddMemberPage = () => {
   };
 
   const showNextDueDate = formData.amountPaidNow > 0 && formData.amountPaidNow < formData.totalPlanFee;
+
+  // Prevent scroll on number inputs
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'number') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -818,7 +866,71 @@ const AddMemberPage = () => {
           </div>
         </div>
 
-        {/* SECTION 2: Membership Details */}
+        {/* SECTION 2: Medical & Notes */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Medical & Notes</h2>
+                <p className="text-sm text-slate-600">Health information and special notes</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              {/* Medical Conditions */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Medical Conditions
+                </label>
+                <textarea
+                  name="medicalConditions"
+                  value={formData.medicalConditions}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  placeholder="List any medical conditions (e.g., diabetes, heart disease, asthma)"
+                />
+              </div>
+
+              {/* Injuries / Limitations */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Injuries / Limitations
+                </label>
+                <textarea
+                  name="injuriesLimitations"
+                  value={formData.injuriesLimitations}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Mention any injuries, physical limitations, or exercise restrictions"
+                />
+              </div>
+
+              {/* Additional Notes */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Additional Notes
+                </label>
+                <textarea
+                  name="additionalNotes"
+                  value={formData.additionalNotes}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Any other important information or special requests"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 3: Membership Details */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
             <div className="flex items-center gap-3">
@@ -999,69 +1111,7 @@ const AddMemberPage = () => {
           </div>
         </div>
 
-        {/* SECTION 3: Medical & Notes */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Medical & Notes</h2>
-                <p className="text-sm text-slate-600">Health information and special notes</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              {/* Medical Conditions */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Medical Conditions
-                </label>
-                <textarea
-                  name="medicalConditions"
-                  value={formData.medicalConditions}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
-                  placeholder="List any medical conditions (e.g., diabetes, heart disease, asthma)"
-                />
-              </div>
-
-              {/* Injuries / Limitations */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Injuries / Limitations
-                </label>
-                <textarea
-                  name="injuriesLimitations"
-                  value={formData.injuriesLimitations}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
-                  placeholder="Mention any injuries, physical limitations, or exercise restrictions"
-                />
-              </div>
-
-              {/* Additional Notes */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Additional Notes
-                </label>
-                <textarea
-                  name="additionalNotes"
-                  value={formData.additionalNotes}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
-                  placeholder="Any other important information or special requests"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* SECTION 4: Payment Information */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
@@ -1089,7 +1139,7 @@ const AddMemberPage = () => {
                   <input
                     type="number"
                     name="totalPlanFee"
-                    value={formData.totalPlanFee}
+                    value={formData.totalPlanFee || 0}
                     onChange={handleInputChange}
                     className="w-full pl-8 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="0"
@@ -1108,7 +1158,7 @@ const AddMemberPage = () => {
                   <input
                     type="number"
                     name="amountPaidNow"
-                    value={formData.amountPaidNow}
+                    value={formData.amountPaidNow || 0}
                     onChange={handleInputChange}
                     data-error={!!errors.amountPaidNow}
                     className={`w-full pl-8 pr-4 py-3 bg-white border ${
@@ -1143,7 +1193,9 @@ const AddMemberPage = () => {
                 >
                   <option value="">{paymentModesLoading ? 'Loading payment modes...' : 'Select payment mode'}</option>
                   {paymentModes.map((mode) => (
-                    <option key={mode} value={mode}>{mode}</option>
+                    <option key={mode.name} value={mode.name}>
+                      {mode.name} {mode.processingFee > 0 ? `(+${mode.processingFee}% fee)` : ''}
+                    </option>
                   ))}
                 </select>
                 {errors.paymentMode && (
