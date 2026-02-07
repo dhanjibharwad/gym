@@ -4,8 +4,8 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/', '/unauthorized', '/setup'];
-const authPaths = ['/auth/login', '/auth/register'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/auth/superadmin-login', '/', '/unauthorized', '/setup'];
+const authPaths = ['/auth/login', '/auth/register', '/auth/superadmin-login'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,10 +21,10 @@ export async function middleware(request: NextRequest) {
     // Redirect authenticated users away from auth pages
     if (token && authPaths.some(path => pathname.startsWith(path))) {
       try {
-        await jwtVerify(token, JWT_SECRET);
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        const { payload } = await jwtVerify(token, JWT_SECRET);
+        const redirectPath = payload.role === 'SuperAdmin' ? '/superadmin' : '/dashboard';
+        return NextResponse.redirect(new URL(redirectPath, request.url));
       } catch {
-        // Invalid token, allow access to auth pages
         const response = NextResponse.next();
         response.cookies.delete('session');
         return response;
@@ -39,11 +39,32 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verify JWT and extract company context
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    const { userId, companyId, role } = payload as { userId: number; companyId: number; role: string };
+    const { userId, companyId, role, isSuperAdmin } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean };
 
-    // Add tenant context to headers for API routes
+    // SuperAdmin access control
+    if (isSuperAdmin || role === 'SuperAdmin') {
+      if (!pathname.startsWith('/superadmin')) {
+        return NextResponse.redirect(new URL('/superadmin', request.url));
+      }
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-user-id', userId.toString());
+      requestHeaders.set('x-user-role', 'SuperAdmin');
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    }
+
+    // Regular user - must have companyId
+    if (!companyId) {
+      const response = NextResponse.redirect(new URL('/auth/login', request.url));
+      response.cookies.delete('session');
+      return response;
+    }
+
+    // Prevent regular users from accessing superadmin routes
+    if (pathname.startsWith('/superadmin')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-user-id', userId.toString());
     requestHeaders.set('x-company-id', companyId.toString());

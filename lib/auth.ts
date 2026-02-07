@@ -52,6 +52,17 @@ export async function getSession() {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     
+    // Handle SuperAdmin (no database session)
+    if (payload.isSuperAdmin || payload.role === 'SuperAdmin') {
+      return {
+        user: {
+          id: payload.userId as number,
+          name: 'Super Administrator',
+          role: 'SuperAdmin',
+        },
+      };
+    }
+    
     const result = await pool.query(
       `SELECT 
         s.id as session_id,

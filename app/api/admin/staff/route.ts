@@ -13,9 +13,15 @@ export async function GET() {
       );
     }
 
+    const companyId = session.user.companyId;
+
     const result = await pool.query(
-      'SELECT id, name, email, role, is_verified, created_at FROM users WHERE role IN ($1, $2) ORDER BY role DESC, created_at DESC',
-      ['admin', 'reception']
+      `SELECT u.id, u.name, u.email, r.name as role, u.is_verified, u.created_at 
+       FROM users u
+       LEFT JOIN roles r ON u.role_id = r.id
+       WHERE u.company_id = $1
+       ORDER BY u.created_at DESC`,
+      [companyId]
     );
 
     return NextResponse.json({ staff: result.rows });

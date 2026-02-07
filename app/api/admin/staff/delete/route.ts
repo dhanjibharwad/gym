@@ -31,10 +31,10 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Delete staff member
+    // Delete staff member with company verification
     const result = await pool.query(
-      'DELETE FROM users WHERE id = $1 AND role = $2 RETURNING id, name',
-      [staffId, 'reception']
+      'DELETE FROM users WHERE id = $1 AND company_id = $2 RETURNING id, name',
+      [staffId, session.user.companyId]
     );
 
     if (result.rows.length === 0) {

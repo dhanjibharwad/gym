@@ -5,9 +5,18 @@ export async function GET(request: NextRequest) {
   let client;
   
   try {
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     client = await pool.connect();
     
-    // Get members data with their latest membership status
+    // Get members data with their latest membership status - FILTERED BY COMPANY
     const result = await client.query(`
       SELECT 
         m.*,
@@ -23,8 +32,9 @@ export async function GET(request: NextRequest) {
         LIMIT 1
       ) ms ON true
       LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
+      WHERE m.company_id = $1
       ORDER BY m.created_at DESC
-    `);
+    `, [companyId]);
     
     return NextResponse.json({
       success: true,

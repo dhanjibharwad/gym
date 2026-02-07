@@ -3,6 +3,15 @@ import pool from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
+    
     const client = await pool.connect();
     
     try {
@@ -30,8 +39,9 @@ export async function GET(request: NextRequest) {
         JOIN members m ON pt.member_id = m.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN payments p ON pt.membership_id = p.membership_id
+        WHERE m.company_id = $1
         ORDER BY pt.transaction_date DESC, pt.created_at DESC
-      `);
+      `, [companyId]);
       
       return NextResponse.json({
         success: true,

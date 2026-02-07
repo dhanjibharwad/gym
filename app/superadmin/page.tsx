@@ -26,15 +26,16 @@ export default function SuperAdminPage() {
 
   const checkAuth = async () => {
     try {
-      const authUser = await verifyAuth();
+      const response = await verifyAuth();
+      const authUser = response.user;
       if (!authUser || authUser.role !== 'SuperAdmin') {
-        router.push('/auth/login');
+        router.push('/auth/superadmin-login');
         return;
       }
       setUser(authUser);
       fetchPendingCompanies();
     } catch (error) {
-      router.push('/auth/login');
+      router.push('/auth/superadmin-login');
     }
   };
 
@@ -81,7 +82,6 @@ export default function SuperAdminPage() {
         <p className="text-gray-600 mt-2">Manage companies and system overview</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
@@ -140,7 +140,6 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
-      {/* Company Management Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Company Management</h2>

@@ -15,13 +15,9 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { label: "Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
-  { label: "Companies", href: "/super-admin/companies", icon: Building2 },
-  { label: "Subscriptions", href: "/super-admin/subscriptions", icon: CreditCard },
-  // { label: "Usage", href: "/super-admin/usage", icon: BarChart3 },
-  // { label: "Admins", href: "/super-admin/admins", icon: UserCog },
-  // { label: "Settings", href: "/super-admin/settings", icon: Settings },
-  //  { label: "Blogs", href: "/super-admin/blogs", icon: NotebookTabs },
+  { label: "Dashboard", href: "/superadmin", icon: LayoutDashboard },
+  { label: "Companies", href: "/superadmin/companies", icon: Building2 },
+  // { label: "Subscriptions", href: "/superadmin/subscriptions", icon: CreditCard },
 ];
 
 export default function SuperAdminSidebar() {
@@ -41,30 +37,22 @@ export default function SuperAdminSidebar() {
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className={`absolute top-6 bg-white shadow-md rounded-full p-2 border border-gray-200 hover:bg-gray-100 hover:shadow-lg transition-all duration-200 z-10 focus:outline-none focus:ring-1 focus:ring-[#4A70A9] focus:ring-opacity-50 ${
-          isCollapsed ? 'left-1/2 transform -translate-x-1/2' : 'right-2'
+        type="button"
+        className={`absolute top-6 bg-white shadow-md rounded-full p-2 border border-gray-200 hover:bg-gray-100 transition-all z-50 ${
+          isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-2'
         }`}
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        {isCollapsed ? (
-          <ChevronRight className="w-5 h-5 text-gray-600" />
-        ) : (
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        )}
+        {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
       </button>
 
       {/* Logo Section - Fixed */}
       {!isCollapsed && (
         <div className="border-b border-gray-100 flex justify-center items-center p-4">
           <Link 
-            href="/home" 
+            href="/superadmin" 
             className="transition-transform duration-200 hover:scale-105"
           >
-            <img 
-              src="/images/lg1.png" 
-              alt="Store Manager" 
-              className="h-10 w-auto"
-            />
+            <h1 className="text-2xl font-bold text-[#4A70A9]">SuperAdmin</h1>
           </Link>
         </div>
       )}
@@ -82,7 +70,7 @@ export default function SuperAdminSidebar() {
             <ul className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                const isActive = pathname === item.href || (pathname.startsWith(item.href + '/') && item.href !== '/superadmin');
 
                 return (
                   <li key={item.href}>

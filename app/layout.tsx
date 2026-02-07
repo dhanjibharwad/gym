@@ -27,8 +27,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isDashboardRoute = pathname?.startsWith('/dashboard');
   const isAuthRoute = pathname?.startsWith('/auth') || pathname?.startsWith('/setup');
+  const isSuperAdminRoute = pathname?.startsWith('/superadmin');
   
-  if (isDashboardRoute || isAuthRoute) {
+  if (isDashboardRoute || isAuthRoute || isSuperAdminRoute) {
     return <div className="bg-gray-50">{children}</div>;
   }
 

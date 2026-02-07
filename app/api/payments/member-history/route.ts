@@ -5,10 +5,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const memberId = searchParams.get('member_id');
+    const companyId = request.headers.get('x-company-id');
     
     if (!memberId) {
       return NextResponse.json(
         { success: false, message: 'Member ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
         { status: 400 }
       );
     }
@@ -46,9 +54,9 @@ export async function GET(request: NextRequest) {
         JOIN members m ON pt.member_id = m.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN payments p ON pt.membership_id = p.membership_id
-        WHERE pt.member_id = $1
+        WHERE pt.member_id = $1 AND m.company_id = $2
         ORDER BY pt.transaction_date DESC, pt.created_at DESC
-      `, [memberId]);
+      `, [memberId, companyId]);
       
       const transactionsWithNumbers = result.rows.map(transaction => ({
         ...transaction,

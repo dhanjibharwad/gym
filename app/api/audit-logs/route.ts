@@ -3,14 +3,14 @@ import pool from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
-    const { action, entity_type, entity_id, details, user_role } = await request.json();
+    const { action, entity_type, entity_id, details, user_role, company_id } = await request.json();
     
     const client = await pool.connect();
     
     try {
       await client.query(
-        'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role) VALUES ($1, $2, $3, $4, $5)',
-        [action, entity_type, entity_id, details, user_role]
+        'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
+        [action, entity_type, entity_id, details, user_role, company_id]
       );
       
       return NextResponse.json({ success: true });
@@ -28,8 +28,17 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const client = await pool.connect();
     
     try {
@@ -43,9 +52,10 @@ export async function GET() {
           user_role,
           created_at
         FROM audit_logs
+        WHERE company_id = $1
         ORDER BY created_at DESC
         LIMIT 100
-      `);
+      `, [companyId]);
       
       return NextResponse.json({
         success: true,

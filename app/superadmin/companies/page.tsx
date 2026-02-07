@@ -26,15 +26,16 @@ export default function SuperAdminPage() {
 
   const checkAuth = async () => {
     try {
-      const authUser = await verifyAuth();
+      const response = await verifyAuth();
+      const authUser = response.user;
       if (!authUser || authUser.role !== 'SuperAdmin') {
-        router.push('/auth/login');
+        router.push('/auth/superadmin-login');
         return;
       }
       setUser(authUser);
       fetchPendingCompanies();
     } catch (error) {
-      router.push('/auth/login');
+      router.push('/auth/superadmin-login');
     }
   };
 

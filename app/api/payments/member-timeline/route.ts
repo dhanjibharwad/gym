@@ -5,10 +5,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const membershipId = searchParams.get('membership_id');
+    const companyId = request.headers.get('x-company-id');
     
     if (!membershipId) {
       return NextResponse.json(
         { success: false, message: 'Membership ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
         { status: 400 }
       );
     }
@@ -30,9 +38,11 @@ export async function GET(request: NextRequest) {
           p.reference_number
         FROM payment_transactions pt
         LEFT JOIN payments p ON pt.membership_id = p.membership_id
-        WHERE pt.membership_id = $1
+        JOIN memberships m ON pt.membership_id = m.id
+        JOIN members mem ON m.member_id = mem.id
+        WHERE pt.membership_id = $1 AND mem.company_id = $2
         ORDER BY transaction_date ASC, created_at ASC
-      `, [membershipId]);
+      `, [membershipId, companyId]);
       
       return NextResponse.json({
         success: true,

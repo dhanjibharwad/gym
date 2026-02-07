@@ -54,6 +54,16 @@ export async function POST(request: NextRequest) {
       // Handle existing member or create new member
       if (memberType === 'existing' && existingMemberId) {
         memberId = parseInt(existingMemberId);
+        
+        // Verify member belongs to user's company
+        const memberCheck = await client.query(
+          'SELECT id FROM members WHERE id = $1 AND company_id = $2',
+          [memberId, session?.user?.companyId]
+        );
+        
+        if (memberCheck.rows.length === 0) {
+          throw new Error('Member not found or unauthorized');
+        }
       } else {
         // Insert new member
         const memberResult = await client.query(

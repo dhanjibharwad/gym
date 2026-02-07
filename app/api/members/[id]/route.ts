@@ -7,13 +7,22 @@ export async function GET(
 ) {
   try {
     const { id: memberId } = await params;
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
+    
     const client = await pool.connect();
     
     try {
-      // Get member details
+      // Get member details with company verification
       const memberResult = await client.query(
-        'SELECT * FROM members WHERE id = $1',
-        [memberId]
+        'SELECT * FROM members WHERE id = $1 AND company_id = $2',
+        [memberId, companyId]
       );
       
       if (memberResult.rows.length === 0) {
@@ -98,13 +107,21 @@ export async function PATCH(
     const { id: memberId } = await params;
     const body = await request.json();
     const { phone_number, email } = body;
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
 
     const client = await pool.connect();
     
     try {
       const result = await client.query(
-        'UPDATE members SET phone_number = $1, email = $2 WHERE id = $3 RETURNING *',
-        [phone_number, email || null, memberId]
+        'UPDATE members SET phone_number = $1, email = $2 WHERE id = $3 AND company_id = $4 RETURNING *',
+        [phone_number, email || null, memberId, companyId]
       );
       
       if (result.rows.length === 0) {

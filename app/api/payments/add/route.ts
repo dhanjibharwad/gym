@@ -8,13 +8,25 @@ export async function POST(request: NextRequest) {
     const { member_id, membership_id, amount, payment_mode, payment_date, reference_number } = body;
 
     const session = await getSession();
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
+    
     const client = await pool.connect();
     
     try {
-      // Get current payment record
+      // Get current payment record with company verification
       const currentPayment = await client.query(
-        'SELECT * FROM payments WHERE membership_id = $1',
-        [membership_id]
+        `SELECT p.* FROM payments p
+         JOIN memberships m ON p.membership_id = m.id
+         JOIN members mem ON m.member_id = mem.id
+         WHERE p.membership_id = $1 AND mem.company_id = $2`,
+        [membership_id, companyId]
       );
       
       if (currentPayment.rows.length === 0) {

@@ -119,13 +119,22 @@ export async function PUT(request: Request) {
     }
     
     const session = await getSession();
+    const companyId = session?.user?.companyId;
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
     
     const client = await pool.connect();
     
     try {
-      // Get old plan details for logging
-      const oldPlan = await client.query('SELECT * FROM membership_plans WHERE id = $1', [id]);
+      // Get old plan details for logging with company verification
+      const oldPlan = await client.query('SELECT * FROM membership_plans WHERE id = $1 AND company_id = $2', [id, companyId]);
       
       if (oldPlan.rows.length === 0) {
         return NextResponse.json(
@@ -135,8 +144,8 @@ export async function PUT(request: Request) {
       }
       
       const result = await client.query(
-        'UPDATE membership_plans SET plan_name = $1, duration_months = $2, price = $3 WHERE id = $4 RETURNING *',
-        [plan_name, duration_months, price, id]
+        'UPDATE membership_plans SET plan_name = $1, duration_months = $2, price = $3 WHERE id = $4 AND company_id = $5 RETURNING *',
+        [plan_name, duration_months, price, id, companyId]
       );
       
       // Log the action
@@ -193,15 +202,24 @@ export async function DELETE(request: Request) {
     }
     
     const session = await getSession();
+    const companyId = session?.user?.companyId;
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
     
     const client = await pool.connect();
     
     try {
-      // Check if plan is being used by any memberships
+      // Check if plan is being used by any memberships with company verification
       const membershipCheck = await client.query(
-        'SELECT COUNT(*) FROM memberships WHERE plan_id = $1',
-        [id]
+        'SELECT COUNT(*) FROM memberships m JOIN membership_plans mp ON m.plan_id = mp.id WHERE m.plan_id = $1 AND mp.company_id = $2',
+        [id, companyId]
       );
       
       if (parseInt(membershipCheck.rows[0].count) > 0) {
@@ -211,12 +229,12 @@ export async function DELETE(request: Request) {
         );
       }
       
-      // Get plan details for logging
-      const planDetails = await client.query('SELECT * FROM membership_plans WHERE id = $1', [id]);
+      // Get plan details for logging with company verification
+      const planDetails = await client.query('SELECT * FROM membership_plans WHERE id = $1 AND company_id = $2', [id, companyId]);
       
       const result = await client.query(
-        'DELETE FROM membership_plans WHERE id = $1 RETURNING *',
-        [id]
+        'DELETE FROM membership_plans WHERE id = $1 AND company_id = $2 RETURNING *',
+        [id, companyId]
       );
       
       if (result.rows.length === 0) {

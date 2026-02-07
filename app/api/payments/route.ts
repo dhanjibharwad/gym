@@ -3,10 +3,19 @@ import pool from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
     const client = await pool.connect();
     
     try {
-      // Fetch payments with member and membership details
+      // Fetch payments with member and membership details - FILTERED BY COMPANY
       const result = await client.query(`
         SELECT 
           p.id,
@@ -29,8 +38,9 @@ export async function GET(request: NextRequest) {
         JOIN memberships ms ON p.membership_id = ms.id
         JOIN members m ON ms.member_id = m.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
+        WHERE m.company_id = $1
         ORDER BY p.created_at DESC
-      `);
+      `, [companyId]);
       
       // Convert numeric fields to numbers
       const paymentsWithNumbers = result.rows.map(payment => ({

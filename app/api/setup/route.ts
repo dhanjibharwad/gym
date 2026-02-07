@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
 
       // Create default membership plans for the company
       await client.query(
-        `INSERT INTO membership_plans (company_id, plan_name, duration_months, price) VALUES
-         ($1, 'Monthly', 1, 1500.00),
-         ($1, '3 Months', 3, 4000.00),
-         ($1, '6 Months', 6, 7500.00),
-         ($1, '1 Year', 12, 14000.00)`,
+        `INSERT INTO membership_plans (company_id, plan_name, duration_months, price, base_duration_months, base_price) VALUES
+         ($1, 'Monthly', 1, 1500.00, 1, 1500.00),
+         ($1, '3 Months', 3, 4000.00, 3, 4000.00),
+         ($1, '6 Months', 6, 7500.00, 6, 7500.00),
+         ($1, '1 Year', 12, 14000.00, 12, 14000.00)`,
         [company.id]
       );
 
