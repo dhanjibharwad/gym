@@ -236,7 +236,7 @@ export default function AddStaffPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 focus:ring-1 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                className="flex-1 bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 focus:ring-1 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -261,7 +261,7 @@ export default function AddStaffPage() {
                   setError('');
                   setSuccess('');
                 }}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-1 focus:ring-gray-500 focus:ring-offset-2 transition"
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-1 focus:ring-gray-500 focus:ring-offset-2 transition cursor-pointer"
               >
                 Clear
               </button>

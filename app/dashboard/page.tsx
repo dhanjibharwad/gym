@@ -430,7 +430,7 @@ const Dashboard = () => {
                 <button
                   key={action.href}
                   onClick={() => router.push(action.href)}
-                  className={`flex items-center gap-3 p-4 bg-gradient-to-r ${action.color} text-white rounded-lg transition-all`}
+                  className={`flex items-center gap-3 p-4 bg-gradient-to-r ${action.color} text-white rounded-lg transition-all cursor-pointer`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium">{action.label}</span>

@@ -178,7 +178,7 @@ const HistoryPage = () => {
               setSelectedMember(null);
               setMemberTransactions([]);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Members

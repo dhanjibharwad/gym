@@ -77,7 +77,7 @@ export default function RolesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2"
+          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Create Role
@@ -125,14 +125,14 @@ export default function RolesPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? 'Creating...' : 'Create Role'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 cursor-pointer"
               >
                 Cancel
               </button>

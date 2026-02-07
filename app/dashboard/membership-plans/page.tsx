@@ -189,7 +189,7 @@ export default function MembershipPlansPage() {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2"
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add Plan
@@ -253,14 +253,14 @@ export default function MembershipPlansPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? 'Saving...' : (editingPlan ? 'Update' : 'Create')}
                   </button>
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition"
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -280,14 +280,14 @@ export default function MembershipPlansPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(plan)}
-                      className="text-gray-400 hover:text-orange-600 p-1 rounded transition"
+                      className="text-gray-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(plan)}
                       disabled={deleteLoading === plan.id}
-                      className="text-gray-400 hover:text-red-600 p-1 rounded transition disabled:opacity-50"
+                      className="text-gray-400 hover:text-red-600 p-1 rounded transition disabled:opacity-50 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

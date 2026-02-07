@@ -773,7 +773,7 @@ const AddMemberPage = () => {
           <button
             type="button"
             onClick={() => setMemberType('new')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all cursor-pointer ${
               memberType === 'new'
                 ? 'bg-orange-600 text-white shadow-md'
                 : 'text-slate-600 hover:text-slate-900'
@@ -784,7 +784,7 @@ const AddMemberPage = () => {
           <button
             type="button"
             onClick={() => setMemberType('existing')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+            className={`px-6 py-2 rounded-lg font-semibold transition-all cursor-pointer ${
               memberType === 'existing'
                 ? 'bg-orange-600 text-white shadow-md'
                 : 'text-slate-600 hover:text-slate-900'

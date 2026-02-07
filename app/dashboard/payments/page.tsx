@@ -422,7 +422,7 @@ const PaymentsPage = () => {
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('summary')}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 viewMode === 'summary' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -430,7 +430,7 @@ const PaymentsPage = () => {
             </button>
             <button
               onClick={() => setViewMode('history')}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 viewMode === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -610,7 +610,7 @@ const PaymentsPage = () => {
                       <div className="flex items-center space-x-2">
                         <button 
                           onClick={() => handleAddPayment(payment)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors"
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer"
                           title="Add Payment"
                         >
                           <Plus className="w-3 h-3" />
@@ -618,7 +618,7 @@ const PaymentsPage = () => {
                         </button>
                         <button 
                           onClick={() => handleViewTimeline(payment)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer"
                           title="View Timeline"
                         >
                           <Clock className="w-3 h-3" />
@@ -738,7 +738,7 @@ const PaymentsPage = () => {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Add Payment</h3>
+              <h3 className="text-lg font-semibold text-gray-900 cursor-pointer">Add Payment</h3>
               <button onClick={closePaymentModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -858,14 +858,14 @@ const PaymentsPage = () => {
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
               <button
                 onClick={closePaymentModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitPayment}
                 disabled={submitting || !newPayment.amount || parseFloat(newPayment.amount) <= 0}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 {submitting ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
