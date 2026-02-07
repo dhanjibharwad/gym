@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { verifyAuth } from '@/lib/auth-utils';
+import { Building2, Clock, CheckCircle, XCircle, TrendingUp, Users, Mail, Phone, Calendar, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 
 interface Company {
   id: number;
@@ -69,143 +71,162 @@ export default function SuperAdminPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
+  const stats = {
+    total: companies.length,
+    pending: companies.filter(c => c.status === 'pending').length,
+    approved: companies.filter(c => c.status === 'approved').length,
+    rejected: companies.filter(c => c.status === 'rejected').length,
+  };
+
+  const recentCompanies = companies.slice(0, 5);
+
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Manage companies and system overview</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+        <p className="text-gray-600">Welcome back! Here's what's happening with your platform.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-4 text-white hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <Building2 className="w-5 h-5" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Companies</p>
-              <p className="text-2xl font-bold text-gray-900">{companies.length}</p>
-            </div>
+            <TrendingUp className="w-4 h-4 opacity-80" />
           </div>
+          <p className="text-xs font-medium opacity-90 mb-1">Total Companies</p>
+          <p className="text-3xl font-bold">{stats.total}</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-md p-4 text-white hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <Clock className="w-5 h-5" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Approval</p>
-              <p className="text-2xl font-bold text-gray-900">{companies.filter(c => c.status === 'pending').length}</p>
-            </div>
+            {stats.pending > 0 && (
+              <span className="bg-white/30 px-2 py-0.5 rounded-full text-xs font-semibold">!</span>
+            )}
           </div>
+          <p className="text-xs font-medium opacity-90 mb-1">Pending Approval</p>
+          <p className="text-3xl font-bold">{stats.pending}</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Approved</p>
-              <p className="text-2xl font-bold text-gray-900">{companies.filter(c => c.status === 'approved').length}</p>
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-4 text-white hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <CheckCircle className="w-5 h-5" />
             </div>
           </div>
+          <p className="text-xs font-medium opacity-90 mb-1">Approved</p>
+          <p className="text-3xl font-bold">{stats.approved}</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Rejected</p>
-              <p className="text-2xl font-bold text-gray-900">{companies.filter(c => c.status === 'rejected').length}</p>
+        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-md p-4 text-white hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <XCircle className="w-5 h-5" />
             </div>
           </div>
+          <p className="text-xs font-medium opacity-90 mb-1">Rejected</p>
+          <p className="text-3xl font-bold">{stats.rejected}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Company Management</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {companies.map((company) => (
-                <tr key={company.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{company.name}</div>
-                      <div className="text-sm text-gray-500">{company.email}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{company.admin_name}</div>
-                      <div className="text-sm text-gray-500">{company.admin_phone}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      company.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      company.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {company.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(company.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {company.status === 'pending' && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleApproval(company.id, 'approve')}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleApproval(company.id, 'reject')}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          Reject
-                        </button>
+      {/* Recent Companies Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Recent Companies</h2>
+              <p className="text-sm text-gray-600 mt-1">Latest registration requests</p>
+            </div>
+            <Link 
+              href="/superadmin/companies"
+              className="flex items-center gap-1 text-sm font-medium text-orange-600 hover:text-orange-700 transition-colors"
+            >
+              View All
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {recentCompanies.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No companies registered yet</p>
+              </div>
+            ) : (
+              recentCompanies.map((company) => (
+                <div key={company.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="bg-orange-100 p-2 rounded-lg mt-1">
+                        <Building2 className="w-5 h-5 text-orange-600" />
                       </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 mb-1">{company.name}</h3>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Mail className="w-3 h-3" />
+                            <span className="truncate">{company.email}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{company.admin_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(company.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap ${
+                        company.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        company.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {company.status === 'pending' && <Clock className="w-3 h-3" />}
+                        {company.status === 'approved' && <CheckCircle className="w-3 h-3" />}
+                        {company.status === 'rejected' && <XCircle className="w-3 h-3" />}
+                        {company.status.charAt(0).toUpperCase() + company.status.slice(1)}
+                      </span>
+                      {company.status === 'pending' && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleApproval(company.id, 'approve')}
+                            className="p-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            title="Approve"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleApproval(company.id, 'reject')}
+                            className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            title="Reject"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
     </div>
   );
 }
