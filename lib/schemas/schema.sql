@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS payments (
     membership_id INTEGER REFERENCES memberships(id) ON DELETE CASCADE,
     total_amount DECIMAL(10,2) NOT NULL CHECK (total_amount >= 0),
     paid_amount DECIMAL(10,2) NOT NULL CHECK (paid_amount >= 0),
-    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('Cash', 'UPI', 'Card', 'Online')),
+    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('Cash', 'UPI', 'Card', 'Online', 'Cheque')),
     payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'partial', 'full', 'refunded')),
     next_due_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -824,10 +824,11 @@ const PaymentsPage = () => {
                       <option value="UPI">UPI</option>
                       <option value="Card">Card</option>
                       <option value="Online">Online Transfer</option>
+                      <option value="Cheque">Cheque</option>
                     </select>
                   </div>
                   
-                  {(newPayment.payment_mode === 'UPI' || newPayment.payment_mode === 'Online') && (
+                  {(newPayment.payment_mode === 'UPI' || newPayment.payment_mode === 'Online' || newPayment.payment_mode === 'Card' || newPayment.payment_mode === 'Cheque') && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
                       <input

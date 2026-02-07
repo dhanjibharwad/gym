@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
     membership_id INTEGER REFERENCES memberships(id) ON DELETE CASCADE,
     transaction_type VARCHAR(50) NOT NULL CHECK (transaction_type IN ('membership_fee', 'renewal', 'additional_payment', 'refund', 'penalty')),
     amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
-    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('Cash', 'UPI', 'Card', 'Online')),
+    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('Cash', 'UPI', 'Card', 'Online', 'Cheque')),
     payment_status VARCHAR(20) DEFAULT 'completed' CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
     transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
