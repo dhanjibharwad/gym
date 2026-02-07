@@ -31,7 +31,6 @@ const navItems = [
   { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"], permissions: ["view_members"] },
   { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"], permissions: ["add_members"] },
   { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"], permissions: ["manage_payments"] },
- 
   { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"], permissions: ["view_reports"] },
   { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
   { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },
