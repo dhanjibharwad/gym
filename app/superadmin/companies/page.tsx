@@ -56,15 +56,28 @@ export default function SuperAdminPage() {
 
   const handleApproval = async (companyId: number, action: 'approve' | 'reject') => {
     try {
+      const company = companies.find(c => c.id === companyId);
+      
       const res = await fetch('/api/superadmin/companies', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyId, action }),
       });
 
-      if (res.ok) {
-        fetchPendingCompanies();
+      if (res.ok && action === 'approve' && company) {
+        // Send approval email
+        await fetch('/api/superadmin/send-approval-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyName: company.name,
+            adminName: company.admin_name,
+            adminEmail: company.email,
+          }),
+        });
       }
+      
+      fetchPendingCompanies();
     } catch (error) {
       console.error('Failed to update company:', error);
     }
