@@ -17,6 +17,19 @@ export async function POST(request: NextRequest) {
     const client = await pool.connect();
     
     try {
+      // Check if email already exists in users table
+      const emailCheck = await client.query(
+        'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+        [adminEmail.trim()]
+      );
+      
+      if (emailCheck.rows.length > 0) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists' },
+          { status: 409 }
+        );
+      }
+
       await client.query('BEGIN');
 
       // Create company in pending status (no subdomain until approved)
