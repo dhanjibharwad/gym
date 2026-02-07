@@ -433,7 +433,7 @@ const MemberProfilePage = () => {
                                   <td className="px-3 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-3 py-2 font-medium text-green-700">₹{transaction.amount}</td>
                                   <td className="px-3 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : 'N/A'}</td>
+                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : (transaction.receipt_number || 'N/A')}</td>
                                   <td className="px-3 py-2">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(transaction.payment_status)}`}>
                                       {transaction.payment_status}
@@ -571,7 +571,7 @@ const MemberProfilePage = () => {
                                   <td className="px-3 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-3 py-2 font-medium text-green-700">₹{transaction.amount}</td>
                                   <td className="px-3 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : 'N/A'}</td>
+                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : (transaction.receipt_number || 'N/A')}</td>
                                   <td className="px-3 py-2">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(transaction.payment_status)}`}>
                                       {transaction.payment_status}
