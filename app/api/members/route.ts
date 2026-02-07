@@ -7,10 +7,23 @@ export async function GET(request: NextRequest) {
   try {
     client = await pool.connect();
     
-    // Get members data only from members table
+    // Get members data with their latest membership status
     const result = await client.query(`
-      SELECT * FROM members
-      ORDER BY created_at DESC
+      SELECT 
+        m.*,
+        ms.status as membership_status,
+        ms.end_date,
+        mp.plan_name
+      FROM members m
+      LEFT JOIN LATERAL (
+        SELECT ms.status, ms.end_date, ms.plan_id
+        FROM memberships ms
+        WHERE ms.member_id = m.id
+        ORDER BY ms.created_at DESC
+        LIMIT 1
+      ) ms ON true
+      LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
+      ORDER BY m.created_at DESC
     `);
     
     return NextResponse.json({

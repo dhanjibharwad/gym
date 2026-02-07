@@ -388,8 +388,11 @@ const HistoryPage = () => {
                             
                             {transaction.receipt_number && (
                               <div className="mt-3 pt-3 border-t border-gray-200">
-                                <span className="text-xs text-gray-500">Reference: </span>
-                                <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{transaction.receipt_number}</span>
+                                <div className="flex items-center gap-2">
+                                  <Receipt className="w-4 h-4 text-gray-500" />
+                                  <span className="text-xs text-gray-500">Reference: </span>
+                                  <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{transaction.receipt_number}</span>
+                                </div>
                               </div>
                             )}
                           </div>

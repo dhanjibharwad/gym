@@ -1007,7 +1007,12 @@ const AddMemberPage = () => {
                     type="tel"
                     name="emergencyContactPhone"
                     value={formData.emergencyContactPhone}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 10) {
+                        setFormData(prev => ({ ...prev, emergencyContactPhone: value }));
+                      }
+                    }}
                     maxLength={10}
                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
                     placeholder="10-digit emergency number"

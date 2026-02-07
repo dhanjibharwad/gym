@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           pt.amount,
           pt.payment_mode,
           pt.transaction_date,
-          pt.receipt_number,
+          COALESCE(pt.receipt_number, p.reference_number) as receipt_number,
           pt.created_by,
           pt.created_at,
           m.full_name,
