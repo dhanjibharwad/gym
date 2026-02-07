@@ -1512,8 +1512,8 @@ const AddMemberPage = () => {
                 )}
               </div>
 
-              {/* Reference Number - Show for UPI, Card, Online */}
-              {(formData.paymentMode === 'UPI' || formData.paymentMode === 'Card' || formData.paymentMode === 'Online') && (
+              {/* Reference Number - Show for UPI, Card, Online, Cheque */}
+              {(formData.paymentMode === 'UPI' || formData.paymentMode === 'Card' || formData.paymentMode === 'Online' || formData.paymentMode === 'Cheque') && (
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Reference Number

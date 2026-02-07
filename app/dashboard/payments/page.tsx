@@ -49,6 +49,7 @@ interface PaymentTransaction {
   payment_mode: string;
   transaction_date: string;
   receipt_number: string;
+  reference_number: string;
   created_by?: string;
   created_at: string;
   full_name: string;
@@ -178,8 +179,7 @@ const PaymentsPage = () => {
                   ...p,
                   paid_amount: p.paid_amount + amount,
                   payment_status: (p.paid_amount + amount) >= p.total_amount ? 'full' : 
-                                 (p.paid_amount + amount) > 0 ? 'partial' : 'pending',
-                  payment_mode: newPayment.payment_mode
+                                 (p.paid_amount + amount) > 0 ? 'partial' : 'pending'
                 }
               : p
           )
@@ -911,8 +911,8 @@ const PaymentsPage = () => {
                             </div>
                           </div>
                         </div>
-                        {transaction.receipt_number && (
-                          <p className="text-xs text-gray-500 mt-1">Ref: {transaction.receipt_number}</p>
+                        {(transaction.transaction_type === 'membership_fee' ? transaction.reference_number : transaction.receipt_number) && (
+                          <p className="text-xs text-gray-500 mt-1">Ref: {transaction.transaction_type === 'membership_fee' ? transaction.reference_number : transaction.receipt_number}</p>
                         )}
                       </div>
                     </div>

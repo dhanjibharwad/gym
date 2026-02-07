@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
         newStatus = 'pending';
       }
       
-      // Update payment record
+      // Update payment record (keep original payment_mode)
       await client.query(
         `UPDATE payments 
-         SET paid_amount = $1, payment_status = $2, payment_mode = $3
-         WHERE membership_id = $4`,
-        [newPaidAmount, newStatus, payment_mode, membership_id]
+         SET paid_amount = $1, payment_status = $2
+         WHERE membership_id = $3`,
+        [newPaidAmount, newStatus, membership_id]
       );
       
       // Insert transaction record with current timestamp

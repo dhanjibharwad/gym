@@ -47,8 +47,9 @@ export async function GET(
       
       // Get payment transactions
       const transactionsResult = await client.query(
-        `SELECT pt.*
+        `SELECT pt.*, p.reference_number
          FROM payment_transactions pt
+         LEFT JOIN payments p ON pt.membership_id = p.membership_id
          WHERE pt.member_id = $1
          ORDER BY pt.transaction_date DESC`,
         [memberId]
