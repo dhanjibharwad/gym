@@ -91,7 +91,12 @@ const MembersPage = () => {
   const fetchMembers = async () => {
     try {
       console.log('Fetching members...');
-      const response = await fetch('/api/members');
+      const response = await fetch('/api/members', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
       console.log('Response status:', response.status);
       const result = await response.json();
       console.log('API result:', result);

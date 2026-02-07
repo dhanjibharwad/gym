@@ -6,9 +6,10 @@ import { useState, useRef, useEffect } from 'react';
 interface TopbarProps {
   userRole?: string;
   userName?: string;
+  companyName?: string;
 }
 
-export default function Topbar({ userRole = "admin", userName = "User" }: TopbarProps) {
+export default function Topbar({ userRole = "admin", userName = "User", companyName = "" }: TopbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,8 +50,14 @@ export default function Topbar({ userRole = "admin", userName = "User" }: Topbar
         </span>
       </div>
 
-      {/* Right side - Profile dropdown */}
-      <div className="flex items-center gap-3">
+      {/* Right side - Company name and Profile dropdown */}
+      <div className="flex items-center gap-4">
+        {companyName && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-lg border border-orange-200">
+            {/* <div className="w-2 h-2 bg-orange-500 rounded-full"></div> */}
+            <span className="text-sm font-semibold text-orange-700">{companyName}</span>
+          </div>
+        )}
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}

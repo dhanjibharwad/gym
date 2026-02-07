@@ -11,9 +11,43 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('session')?.value;
 
-  // Skip middleware for static files, API routes, and setup
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')) {
+  // Skip middleware for static files and setup
+  if (pathname.startsWith('/_next') || pathname.includes('.')) {
     return NextResponse.next();
+  }
+
+  // Handle API routes that need authentication
+  if (pathname.startsWith('/api')) {
+    // Skip auth APIs
+    if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/setup')) {
+      return NextResponse.next();
+    }
+
+    // Check token for protected API routes
+    if (!token) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      const { userId, companyId, role, isSuperAdmin } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean };
+
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-user-id', userId.toString());
+      requestHeaders.set('x-user-role', role);
+      
+      if (companyId) {
+        requestHeaders.set('x-company-id', companyId.toString());
+      }
+      
+      if (isSuperAdmin) {
+        requestHeaders.set('x-is-superadmin', 'true');
+      }
+
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    } catch (error) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   // Allow public paths

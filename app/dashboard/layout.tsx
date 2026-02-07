@@ -10,6 +10,7 @@ interface User {
   name: string;
   role: string;
   permissions: string[];
+  companyName?: string;
 }
 
 export default function DashboardLayout({
@@ -59,7 +60,7 @@ export default function DashboardLayout({
     <div className="min-h-screen flex bg-gray-50">
       <Sidebar userRole={user.role} userPermissions={user.permissions} />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar userRole={user.role} userName={user.name} />
+        <Topbar userRole={user.role} userName={user.name} companyName={user.companyName} />
         <main className="p-3 sm:p-4 lg:p-6 flex-1 overflow-auto">
           {children}
         </main>

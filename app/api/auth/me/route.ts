@@ -33,6 +33,7 @@ export async function GET() {
 
     // Get user permissions from database
     let userPermissions: string[] = [];
+    let companyName = '';
     try {
       const result = await pool.query(`
         SELECT DISTINCT p.name 
@@ -43,6 +44,18 @@ export async function GET() {
       `, [session.user.id]);
       
       userPermissions = result.rows.map(row => row.name);
+      
+      // Get company name
+      const companyResult = await pool.query(`
+        SELECT c.name 
+        FROM users u
+        JOIN companies c ON u.company_id = c.id
+        WHERE u.id = $1
+      `, [session.user.id]);
+      
+      if (companyResult.rows.length > 0) {
+        companyName = companyResult.rows[0].name;
+      }
       
       // If no permissions found, use default based on role
       if (userPermissions.length === 0) {
@@ -57,7 +70,8 @@ export async function GET() {
       id: session.user.id,
       name: session.user.name,
       role: session.user.role,
-      permissions: userPermissions
+      permissions: userPermissions,
+      companyName
     };
 
     return NextResponse.json({
