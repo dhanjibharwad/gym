@@ -25,6 +25,7 @@ export default function SetupPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     const id = Date.now();
@@ -96,8 +97,7 @@ export default function SetupPage() {
       }
 
       // Show success message for pending approval
-      showToast('Registration submitted successfully! Your company is pending approval. You will be notified once approved.', 'success');
-      setTimeout(() => router.push('/auth/login'), 2000);
+      setRegistrationSuccess(true);
     } catch (err) {
       console.error('Setup error:', err);
       setError('An error occurred. Please try again.');
@@ -105,6 +105,34 @@ export default function SetupPage() {
       setLoading(false);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
+            <p className="text-gray-600 mb-4">Your company has been successfully registered.</p>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+              <p className="text-orange-800 font-medium">⏳ Approval Pending</p>
+              <p className="text-orange-700 text-sm mt-1">Your account is awaiting approval from our team. You will be notified once approved.</p>
+            </div>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Go to Home Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (checkingSetup) {
     return (
@@ -166,7 +194,7 @@ export default function SetupPage() {
               <p className="text-gray-600 text-lg text-center">Create your company and admin account</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm flex items-start gap-3">
@@ -310,7 +338,7 @@ export default function SetupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3.5 px-4 rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3.5 px-4 rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
