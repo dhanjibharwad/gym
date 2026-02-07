@@ -38,7 +38,7 @@ export default function SuperAdminSidebar() {
       <button
         onClick={toggleSidebar}
         type="button"
-        className={`absolute top-6 bg-white shadow-md rounded-full p-2 border border-gray-200 hover:bg-gray-100 transition-all z-50 ${
+        className={`absolute top-4 bg-white shadow-md rounded-full p-2 border border-gray-200 hover:bg-gray-100 transition-all z-50 ${
           isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-2'
         }`}
       >
@@ -47,7 +47,7 @@ export default function SuperAdminSidebar() {
 
       {/* Logo Section - Fixed */}
       {!isCollapsed && (
-        <div className="border-b border-gray-100 flex justify-center items-center p-4">
+        <div className="border-b border-gray-100 flex justify-center items-center p-5">
           <Link 
             href="/superadmin" 
             className="transition-transform duration-200 hover:scale-105"
