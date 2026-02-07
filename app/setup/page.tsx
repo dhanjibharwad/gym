@@ -152,19 +152,21 @@ export default function SetupPage() {
         ))}
       </div>
 
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          {/* <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div> */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">Setup New Company</h1>
-          <p className="text-gray-600 text-lg">Create your company and admin account</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Side - Illustration */}
+          <div className="hidden lg:flex items-center justify-center">
+            <img src="/images/gym.svg" alt="Setup Illustration" className="w-full max-w-lg" />
+          </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          {/* Right Side - Form */}
+          <div className="w-full">
+            <div className="text-center lg:text-left mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight text-center">Setup New Company</h1>
+              <p className="text-gray-600 text-lg text-center">Create your company and admin account</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm flex items-start gap-3">
@@ -185,7 +187,7 @@ export default function SetupPage() {
                 required
                 value={formData.companyName}
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Gym"
               />
             </div>
@@ -200,7 +202,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminName}
                 onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Enter admin full name"
               />
             </div>
@@ -215,7 +217,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminEmail}
                 onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="admin@gym.com"
               />
             </div>
@@ -233,7 +235,7 @@ export default function SetupPage() {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setFormData({ ...formData, adminPhone: value });
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Enter phone number"
               />
             </div>
@@ -249,7 +251,7 @@ export default function SetupPage() {
                   required
                   value={formData.adminPassword}
                   onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                   placeholder="Create a strong password"
                 />
                 <button
@@ -283,7 +285,7 @@ export default function SetupPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -330,6 +332,7 @@ export default function SetupPage() {
           </form>
         </div>
       </div>
+    </div>
       </div>
     </>
   );
