@@ -3,14 +3,23 @@ import pool from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
-    const { action, entity_type, entity_id, details, user_role, company_id } = await request.json();
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const { action, entity_type, entity_id, details, user_role } = await request.json();
     
     const client = await pool.connect();
     
     try {
       await client.query(
         'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
-        [action, entity_type, entity_id, details, user_role, company_id]
+        [action, entity_type, entity_id, details, user_role, companyId]
       );
       
       return NextResponse.json({ success: true });

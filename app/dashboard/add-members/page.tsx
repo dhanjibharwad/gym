@@ -754,7 +754,7 @@ const AddMemberPage = () => {
               
               <div className="bg-gradient-to-r from-orange-50 to-blue-50 rounded-xl p-4 mb-6">
                 <p className="text-sm text-slate-600 mb-1">Member ID</p>
-                <p className="text-lg font-bold text-slate-900">#GF{memberId}</p>
+                <p className="text-lg font-bold text-slate-900">ID.NO {memberId}</p>
               </div>
             </div>
           </div>
