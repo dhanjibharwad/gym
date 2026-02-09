@@ -29,15 +29,17 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-black/90 backdrop-blur-sm fixed w-full z-50 top-0">
+    <nav className="bg-gradient-to-r from-black via-gray-900 to-black backdrop-blur-md fixed w-full z-50 top-0 shadow-lg border-b border-orange-500/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo - Left Side */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center">
-              <div className="text-white font-bold text-2xl">
-                <span className="text-3xl text-white">OUR GYM</span>
-                {/* <span className="">GYM</span> */}
+            <Link href="/" className="flex items-center group">
+              <div className="relative">
+                <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500 group-hover:from-orange-400 group-hover:via-orange-300 group-hover:to-orange-400 transition-all duration-300 tracking-tight">
+                  OUR GYM
+                </span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-400 group-hover:w-full transition-all duration-300"></div>
               </div>
             </Link>
           </div>
@@ -49,30 +51,30 @@ const Navbar: React.FC<NavbarProps> = ({
                 <Link
                   key={index}
                   href={item.href}
-                  className="text-white hover:text-orange-500 transition-colors duration-300 text-sm font-semibold tracking-wider"
+                  className="relative text-gray-300 hover:text-orange-500 transition-all duration-300 text-sm font-semibold tracking-wider group"
                 >
                   {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Buttons & Social Icons - Right Side */}
-          <div className="hidden lg:flex items-center space-x-4">
-
-
+          {/* Buttons - Right Side */}
+          <div className="hidden lg:flex items-center space-x-3">
             {/* Login Button */}
             <Link
               href="/auth/login"
-              className="px-6 py-2.5 text-white border border-white hover:bg-white hover:text-black transition-all duration-300 font-semibold text-sm"
+              className="relative px-6 py-2.5 text-white border-2 border-orange-500/50 rounded-lg hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold text-sm overflow-hidden group"
             >
-              UNIVERSAL LOGIN
+              <span className="relative z-10">UNIVERSAL LOGIN</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
             </Link>
 
             {/* Start Now Button */}
             <Link
               href="/setup"
-              className="px-6 py-2.5 bg-orange-500 text-white hover:bg-orange-600 transition-all duration-300 font-semibold text-sm"
+              className="relative px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 transform"
             >
               START HERE
             </Link>
@@ -82,7 +84,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="lg:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-orange-500 focus:outline-none"
+              className="text-white hover:text-orange-500 focus:outline-none p-2 rounded-lg hover:bg-orange-500/10 transition-all duration-300"
             >
               <svg
                 className="h-6 w-6"
@@ -106,25 +108,32 @@ const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-black/95">
-          <div className="px-2 pt-2 pb-3 space-y-1">
+        <div className="lg:hidden bg-gradient-to-b from-gray-900 to-black border-t border-orange-500/20">
+          <div className="px-4 pt-2 pb-4 space-y-1">
             {menuItems.map((item, index) => (
               <Link
                 key={index}
                 href={item.href}
-                className="block px-3 py-2 text-white hover:text-orange-500 hover:bg-gray-900 transition-colors duration-300 text-sm font-semibold"
+                className="block px-4 py-3 text-gray-300 hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-all duration-300 text-sm font-semibold"
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="pt-4 pb-2 px-3 space-y-2">
+            <div className="pt-4 space-y-3">
               <Link
                 href="/auth/login"
-                className="block w-full px-6 py-2.5 text-center text-white border border-white hover:bg-white hover:text-black transition-all duration-300 font-semibold text-sm"
+                className="block w-full px-6 py-3 text-center text-white border-2 border-orange-500/50 rounded-lg hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold text-sm"
                 onClick={() => setIsOpen(false)}
               >
-                LOGIN
+                UNIVERSAL LOGIN
+              </Link>
+              <Link
+                href="/setup"
+                className="block w-full px-6 py-3 text-center bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 font-semibold text-sm shadow-lg shadow-orange-500/30"
+                onClick={() => setIsOpen(false)}
+              >
+                START HERE
               </Link>
             </div>
           </div>
