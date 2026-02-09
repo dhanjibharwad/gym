@@ -18,6 +18,7 @@ const navItems = [
   { label: "Dashboard", href: "/superadmin", icon: LayoutDashboard },
   { label: "Companies", href: "/superadmin/companies", icon: Building2 },
   // { label: "Subscriptions", href: "/superadmin/subscriptions", icon: CreditCard },
+  { label: "Settings", href: "/superadmin/settings", icon: Settings }
 ];
 
 export default function SuperAdminSidebar() {
@@ -52,7 +53,7 @@ export default function SuperAdminSidebar() {
             href="/superadmin" 
             className="transition-transform duration-200 hover:scale-105"
           >
-            <h1 className="text-2xl font-bold text-[#4A70A9]">SuperAdmin</h1>
+            <h1 className="text-2xl font-bold text-indigo-800">SuperAdmin</h1>
           </Link>
         </div>
       )}
@@ -78,8 +79,8 @@ export default function SuperAdminSidebar() {
                       href={item.href}
                       className={`flex items-center font-medium transition-all duration-200 group relative ${
                         isActive
-                          ? 'bg-[#4A70A9] text-white shadow-md'
-                          : 'text-gray-700 hover:bg-[#4A70A9]/10 hover:text-[#4A70A9]'
+                          ? 'bg-indigo-800 text-white shadow-md'
+                          : 'text-gray-700 hover:bg-indigo-800/10 hover:text-indigo-800'
                       } ${
                         isCollapsed 
                           ? 'w-12 h-12 mx-2 justify-center rounded-lg' 
@@ -97,7 +98,7 @@ export default function SuperAdminSidebar() {
 
                       {/* Tooltip for collapsed state */}
                       {isCollapsed && (
-                        <span className="absolute left-full ml-2 px-2 py-1.5 bg-[#4A70A9] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
+                        <span className="absolute left-full ml-2 px-2 py-1.5 bg-indigo-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
                           {item.label}
                         </span>
                       )}

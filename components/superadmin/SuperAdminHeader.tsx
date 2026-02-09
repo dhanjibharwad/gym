@@ -23,16 +23,20 @@ export default function SuperAdminHeader() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/superadmin/profile');
         if (res.ok) {
           const userData = await res.json();
-          setUser(userData.user);
+          setUser({ ...userData.user, role: 'SuperAdmin' });
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);
       }
     };
     fetchUser();
+    
+    const handleStorageChange = () => fetchUser();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const handleLogout = async () => {
@@ -78,7 +82,7 @@ export default function SuperAdminHeader() {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 pl-2 pr-3 py-1.5 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <div className="w-8 h-8 bg-[#4A70A9] rounded-full flex items-center justify-center text-white font-semibold text-sm">
+            <div className="w-8 h-8 bg-indigo-800 rounded-full flex items-center justify-center text-white font-semibold text-sm">
               {user.name ? user.name.charAt(0).toUpperCase() : 'S'}
             </div>
             <div className="flex flex-col">
