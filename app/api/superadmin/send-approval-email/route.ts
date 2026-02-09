@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
               <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                   <tr>
-                    <td style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 40px 30px; text-align: center;">
+                    <td style="background: linear-gradient(135deg, #2c2b2b 0%, #2c2b2b 100%); padding: 40px 30px; text-align: center;">
                       <h1 style="margin: 0; color: #ffffff; font-size: 32px;">🎉 Congratulations!</h1>
                       <p style="margin: 10px 0 0 0; color: #fff3e0; font-size: 16px;">Your company has been approved</p>
                     </td>
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
                       <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px;">
                         We are thrilled to inform you that <strong>${companyName}</strong> has been successfully approved.
                       </p>
-                      <div style="background-color: #f9fafb; border-left: 4px solid #ea580c; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                      <div style="background-color: #f9fafb; border-left: 4px solid #2c2b2b; padding: 20px; margin: 30px 0; border-radius: 8px;">
                         <p style="margin: 0; color: #1f2937; font-size: 15px;">
                           <strong>✅ What's Next?</strong><br><br>
                           • Access your dashboard<br>
