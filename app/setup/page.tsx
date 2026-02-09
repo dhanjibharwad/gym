@@ -108,16 +108,16 @@ export default function SetupPage() {
 
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="text-center w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
-            <p className="text-gray-600 mb-4">Your company has been successfully registered.</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4">Your company has been successfully registered.</p>
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
               <p className="text-orange-800 font-medium">⏳ Approval Pending</p>
               <p className="text-orange-700 text-sm mt-1">Your account is awaiting approval from our team. You will be notified once approved.</p>
@@ -148,11 +148,11 @@ export default function SetupPage() {
   return (
     <>
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 space-y-2">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`min-w-[320px] max-w-md px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 animate-slide-in ${
+            className={`w-full sm:min-w-[320px] max-w-md px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 animate-slide-in ${
               toast.type === 'success' ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'
             }`}
           >
@@ -180,8 +180,8 @@ export default function SetupPage() {
         ))}
       </div>
 
-      <div className="min-h-screen flex items-center justify-center px-4 py-12">
-        <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
+      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Side - Illustration */}
           <div className="hidden lg:flex items-center justify-center">
             <img src="/images/gym.svg" alt="Setup Illustration" className="w-full max-w-lg" />
@@ -189,15 +189,15 @@ export default function SetupPage() {
 
           {/* Right Side - Form */}
           <div className="w-full">
-            <div className="text-center lg:text-left mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight text-center">Setup New Company</h1>
-              <p className="text-gray-600 text-lg text-center">Create your company and admin account</p>
+            <div className="text-center lg:text-left mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight text-center">Setup New Company</h1>
+              <p className="text-gray-600 text-base sm:text-lg text-center">Create your company and admin account</p>
             </div>
 
-            <div className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="p-4 sm:p-6 lg:p-8">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm flex items-start gap-3">
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm flex items-start gap-2 sm:gap-3">
                 <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
@@ -215,7 +215,7 @@ export default function SetupPage() {
                 required
                 value={formData.companyName}
                 onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Gym"
               />
             </div>
@@ -230,7 +230,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminName}
                 onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Enter admin full name"
               />
             </div>
@@ -245,7 +245,7 @@ export default function SetupPage() {
                 required
                 value={formData.adminEmail}
                 onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="admin@gym.com"
               />
             </div>
@@ -263,7 +263,7 @@ export default function SetupPage() {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setFormData({ ...formData, adminPhone: value });
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                 placeholder="Enter phone number"
               />
             </div>
@@ -279,7 +279,7 @@ export default function SetupPage() {
                   required
                   value={formData.adminPassword}
                   onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                   placeholder="Create a strong password"
                 />
                 <button
@@ -299,7 +299,7 @@ export default function SetupPage() {
                   )}
                 </button>
               </div>
-              <p className="mt-1.5 text-xs text-gray-500">Minimum 8 characters required</p>
+              <p className="mt-1 sm:mt-1.5 text-xs text-gray-500">Minimum 8 characters required</p>
             </div>
 
             <div>
@@ -313,7 +313,7 @@ export default function SetupPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -338,7 +338,7 @@ export default function SetupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3.5 px-4 rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3 sm:py-3.5 px-4 text-sm sm:text-base rounded-lg font-semibold hover:from-orange-700 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
