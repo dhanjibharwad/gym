@@ -86,7 +86,7 @@ const CardioSection = () => {
               <div className="absolute -bottom-4 -left-4 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-white/20">
                 <div className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-500" />
-                  <span className="text-sm font-bold text-gray-800">AI Coaching</span>
+                  <span className="text-sm font-bold text-gray-800">Personal Trainer</span>
                 </div>
               </div>
             </div>
