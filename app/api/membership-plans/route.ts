@@ -77,18 +77,20 @@ export async function POST(request: Request) {
       );
       
       // Log the action
-      const userName = session?.user?.name || 'Unknown User';
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'CREATE',
-          entity_type: 'membership_plan',
-          entity_id: result.rows[0].id,
-          details: `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`,
-          user_role: userRole
-        })
-      });
+      try {
+        const userName = session?.user?.name || 'Unknown User';
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'CREATE',
+            entity_type: 'membership_plan',
+            entity_id: result.rows[0].id,
+            details: `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`,
+            user_role: userRole
+          })
+        });
+      } catch {}
       
       return NextResponse.json({
         success: true,
@@ -156,7 +158,7 @@ export async function PUT(request: Request) {
       );
       
       // Log the action
-      if (oldPlan.rows.length > 0) {
+      try {
         const old = oldPlan.rows[0];
         const userName = session?.user?.name || 'Unknown User';
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
@@ -170,7 +172,7 @@ export async function PUT(request: Request) {
             user_role: userRole
           })
         });
-      }
+      } catch {}
       
       return NextResponse.json({
         success: true,
@@ -252,7 +254,7 @@ export async function DELETE(request: Request) {
       }
       
       // Log the action
-      if (planDetails.rows.length > 0) {
+      try {
         const plan = planDetails.rows[0];
         const userName = session?.user?.name || 'Unknown User';
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
@@ -266,7 +268,7 @@ export async function DELETE(request: Request) {
             user_role: userRole
           })
         });
-      }
+      } catch {}
       
       return NextResponse.json({
         success: true,
