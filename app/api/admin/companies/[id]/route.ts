@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   let action = 'unknown';
   
   try {
     // Validate company ID
-    const companyId = parseInt(params.id);
+    const { id } = await params;
+    const companyId = parseInt(id);
     if (isNaN(companyId) || companyId <= 0) {
       return NextResponse.json(
         { error: 'Invalid company ID' },
