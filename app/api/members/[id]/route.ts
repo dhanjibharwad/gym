@@ -44,6 +44,31 @@ export async function GET(
         [memberId]
       );
       
+      // Get hold history for each membership
+      const holdHistoryResult = await client.query(
+        `SELECT mh.*, ms.member_id
+         FROM membership_holds mh
+         JOIN memberships ms ON mh.membership_id = ms.id
+         WHERE ms.member_id = $1
+         ORDER BY mh.created_at DESC`,
+        [memberId]
+      );
+      
+      // Group hold history by membership_id
+      const holdHistoryMap = new Map();
+      holdHistoryResult.rows.forEach(hold => {
+        if (!holdHistoryMap.has(hold.membership_id)) {
+          holdHistoryMap.set(hold.membership_id, []);
+        }
+        holdHistoryMap.get(hold.membership_id).push(hold);
+      });
+      
+      // Add hold history to memberships
+      const membershipsWithHistory = membershipsResult.rows.map(membership => ({
+        ...membership,
+        hold_history: holdHistoryMap.get(membership.id) || []
+      }));
+      
       // Get payments
       const paymentsResult = await client.query(
         `SELECT p.*
@@ -79,7 +104,7 @@ export async function GET(
       return NextResponse.json({
         success: true,
         member: memberResult.rows[0],
-        memberships: membershipsResult.rows,
+        memberships: membershipsWithHistory,
         payments: paymentsResult.rows,
         transactions: transactionsResult.rows,
         medicalInfo: medicalResult.rows[0] || null,

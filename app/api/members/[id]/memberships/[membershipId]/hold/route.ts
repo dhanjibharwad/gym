@@ -9,7 +9,7 @@ export async function POST(
   try {
     const { membershipId } = await params;
     const body = await request.json();
-    const { action, hold_reason } = body;
+    const { action, hold_reason, hold_duration, hold_unit } = body;
     
     const session = await getSession();
     const userId = session?.user?.id;
@@ -50,30 +50,41 @@ export async function POST(
           );
         }
         
+        if (!hold_duration || hold_duration <= 0) {
+          return NextResponse.json(
+            { success: false, message: 'Hold duration is required' },
+            { status: 400 }
+          );
+        }
+        
         await client.query('BEGIN');
+        
+        // Calculate hold end date based on duration and unit
+        const daysToAdd = hold_unit === 'months' ? hold_duration * 30 : hold_duration;
         
         await client.query(
           `UPDATE memberships 
            SET status = 'on_hold',
                is_on_hold = TRUE,
                hold_start_date = CURRENT_DATE,
-               hold_reason = $1,
+               hold_end_date = CURRENT_DATE + ($1 || ' days')::interval,
+               hold_reason = $2,
                original_end_date = CASE WHEN original_end_date IS NULL THEN end_date ELSE original_end_date END
-           WHERE id = $2`,
-          [hold_reason || 'No reason provided', membershipId]
+           WHERE id = $3`,
+          [daysToAdd, hold_reason || 'No reason provided', membershipId]
         );
         
         await client.query(
-          `INSERT INTO membership_holds (membership_id, hold_start_date, hold_reason, created_by)
-           VALUES ($1, CURRENT_DATE, $2, $3)`,
-          [membershipId, hold_reason || 'No reason provided', userId]
+          `INSERT INTO membership_holds (membership_id, hold_start_date, hold_end_date, hold_reason, days_on_hold, created_by)
+           VALUES ($1, CURRENT_DATE, CURRENT_DATE + ($2 || ' days')::interval, $3, $2::integer, $4)`,
+          [membershipId, daysToAdd, hold_reason || 'No reason provided', userId]
         );
         
         await client.query('COMMIT');
         
         return NextResponse.json({
           success: true,
-          message: 'Membership put on hold successfully'
+          message: `Membership put on hold for ${hold_duration} ${hold_unit}`
         });
         
       } else if (action === 'resume') {

@@ -44,7 +44,19 @@ interface Membership {
   created_by_name: string;
   is_on_hold: boolean;
   hold_start_date: string;
+  hold_end_date: string;
   hold_reason: string;
+  hold_history?: HoldHistory[];
+}
+
+interface HoldHistory {
+  id: number;
+  hold_start_date: string;
+  hold_end_date: string;
+  hold_reason: string;
+  days_on_hold: number;
+  resumed_at: string;
+  created_at: string;
 }
 
 interface Payment {
@@ -106,6 +118,7 @@ const MemberProfilePage = () => {
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [holdReason, setHoldReason] = useState('');
+  const [holdDuration, setHoldDuration] = useState({ value: '', unit: 'days' });
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedMembershipId, setSelectedMembershipId] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -253,12 +266,22 @@ const MemberProfilePage = () => {
       return;
     }
     
+    if (!holdDuration.value || parseInt(holdDuration.value) <= 0) {
+      showToast('Please provide a valid hold duration', 'error');
+      return;
+    }
+    
     setProcessing(true);
     try {
       const response = await fetch(`/api/members/${memberId}/memberships/${selectedMembershipId}/hold`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'hold', hold_reason: holdReason })
+        body: JSON.stringify({ 
+          action: 'hold', 
+          hold_reason: holdReason,
+          hold_duration: parseInt(holdDuration.value),
+          hold_unit: holdDuration.unit
+        })
       });
       
       const result = await response.json();
@@ -266,6 +289,7 @@ const MemberProfilePage = () => {
         showToast(result.message, 'success');
         setShowHoldModal(false);
         setHoldReason('');
+        setHoldDuration({ value: '', unit: 'days' });
         fetchMemberData();
       } else {
         showToast(result.message, 'error');
@@ -325,14 +349,43 @@ const MemberProfilePage = () => {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Hold Membership</h3>
             <p className="text-sm text-gray-600 mb-4">The membership will be paused and the end date will be extended when resumed.</p>
-            <textarea
-              value={holdReason}
-              onChange={(e) => setHoldReason(e.target.value)}
-              placeholder="Reason for holding (required)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
-              rows={3}
-            />
-            <div className="flex gap-3 mt-4">
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Hold Duration *</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={holdDuration.value}
+                    onChange={(e) => setHoldDuration({ ...holdDuration, value: e.target.value })}
+                    placeholder="Enter duration"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  <select
+                    value={holdDuration.unit}
+                    onChange={(e) => setHoldDuration({ ...holdDuration, unit: e.target.value })}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="days">Days</option>
+                    <option value="months">Months</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Hold *</label>
+                <textarea
+                  value={holdReason}
+                  onChange={(e) => setHoldReason(e.target.value)}
+                  placeholder="Enter reason for holding"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
               <button
                 onClick={submitHold}
                 disabled={processing}
@@ -341,7 +394,7 @@ const MemberProfilePage = () => {
                 {processing ? 'Processing...' : 'Hold Membership'}
               </button>
               <button
-                onClick={() => { setShowHoldModal(false); setHoldReason(''); }}
+                onClick={() => { setShowHoldModal(false); setHoldReason(''); setHoldDuration({ value: '', unit: 'days' }); }}
                 disabled={processing}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
@@ -549,12 +602,17 @@ const MemberProfilePage = () => {
                   <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-4">
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-bold text-blue-900">Membership On Hold</p>
-                        <p className="text-xs text-blue-700 mt-1">Since: {formatDate(membership.hold_start_date)}</p>
-                        {membership.hold_reason && (
-                          <p className="text-xs text-blue-600 mt-1">Reason: {membership.hold_reason}</p>
-                        )}
+                        <div className="text-xs text-blue-700 mt-1 space-y-1">
+                          <p>Since: {formatDate(membership.hold_start_date)}</p>
+                          {membership.hold_end_date && (
+                            <p>Until: {formatDate(membership.hold_end_date)}</p>
+                          )}
+                          {membership.hold_reason && (
+                            <p className="text-blue-600">Reason: {membership.hold_reason}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -598,6 +656,55 @@ const MemberProfilePage = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Hold History */}
+                {membership.hold_history && membership.hold_history.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <details className="cursor-pointer">
+                      <summary className="text-sm font-semibold text-gray-900 mb-3 hover:text-orange-600">⏸️ Hold History ({membership.hold_history.length})</summary>
+                      <div className="space-y-2 mt-3">
+                        {membership.hold_history.map((hold) => {
+                          const actualStart = new Date(hold.hold_start_date);
+                          const actualEnd = hold.hold_end_date ? new Date(hold.hold_end_date) : null;
+                          const wasResumedEarly = hold.resumed_at && actualEnd;
+                          
+                          return (
+                            <div key={hold.id} className="bg-blue-50 rounded-lg p-3 text-xs border border-blue-200">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-blue-900 mb-1">Hold Period</p>
+                                  <p className="text-blue-700">Started: {formatDate(hold.hold_start_date)}</p>
+                                  {actualEnd && (
+                                    <p className="text-blue-700">Ended: {formatDate(hold.hold_end_date)}</p>
+                                  )}
+                                  {!actualEnd && <p className="text-orange-600 font-semibold">Status: Ongoing</p>}
+                                </div>
+                                <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded-full font-semibold">
+                                  {hold.days_on_hold} {hold.days_on_hold === 1 ? 'day' : 'days'}
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-blue-600"><span className="font-semibold">Reason:</span> {hold.hold_reason}</p>
+                                {hold.resumed_at && (
+                                  <p className="text-green-600 font-semibold">
+                                    ✓ Resumed: {new Date(hold.resumed_at).toLocaleString('en-IN', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                    {wasResumedEarly && <span className="text-xs"> (manually resumed)</span>}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  </div>
+                )}
 
                 {/* Payment Details */}
                 {(getPaymentsForMembership(membership.id).length > 0 || getTransactionsForMembership(membership.id).length > 0) && (
