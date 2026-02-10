@@ -66,7 +66,7 @@ const PaymentsPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
   const [memberTransactions, setMemberTransactions] = useState<PaymentTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
   const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
   const [selectedMemberForTimeline, setSelectedMemberForTimeline] = useState<Payment | null>(null);
@@ -281,6 +281,7 @@ const PaymentsPage = () => {
   };
 
   const fetchPayments = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/payments');
       

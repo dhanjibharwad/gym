@@ -16,7 +16,7 @@ interface AuditLog {
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,6 +24,7 @@ export default function AuditLogsPage() {
   }, []);
 
   const fetchLogs = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/audit-logs', {
         headers: {

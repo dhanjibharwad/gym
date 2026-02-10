@@ -48,7 +48,7 @@ const HistoryPage = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberTransactions, setMemberTransactions] = useState<MemberTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
@@ -58,6 +58,7 @@ const HistoryPage = () => {
   }, []);
 
   const fetchMembers = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/members');
       const result = await response.json();

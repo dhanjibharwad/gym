@@ -30,7 +30,7 @@ interface Member {
 const MembersPage = () => {
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [editingMember, setEditingMember] = useState<number | null>(null);
@@ -89,6 +89,7 @@ const MembersPage = () => {
   };
 
   const fetchMembers = async () => {
+    setLoading(true);
     try {
       console.log('Fetching members...');
       const response = await fetch('/api/members', {

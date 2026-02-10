@@ -104,7 +104,7 @@ const MemberProfilePage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [medicalInfo, setMedicalInfo] = useState<MedicalInfo | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [holdReason, setHoldReason] = useState('');
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedMembershipId, setSelectedMembershipId] = useState<number | null>(null);
@@ -140,6 +140,7 @@ const MemberProfilePage = () => {
   };
 
   const fetchMemberData = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/members/${memberId}`);
       const data = await response.json();

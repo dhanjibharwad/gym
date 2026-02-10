@@ -32,7 +32,7 @@ interface DeleteConfirm {
 
 export default function MembershipPlansPage() {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const [formData, setFormData] = useState<PlanFormData>({
@@ -63,6 +63,7 @@ export default function MembershipPlansPage() {
   }, []);
 
   const fetchPlans = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/membership-plans');
       const data = await response.json();

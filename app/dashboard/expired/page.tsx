@@ -21,7 +21,7 @@ interface Member {
 
 export default function ExpiredMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -29,6 +29,7 @@ export default function ExpiredMembersPage() {
   }, []);
 
   const fetchExpiredMembers = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/members');
       if (!response.ok) {

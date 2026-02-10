@@ -6,10 +6,11 @@ import Link from 'next/link';
 
 export default function OurStaffPage() {
   const [staff, setStaff] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   const fetchStaff = async () => {
+    setLoading(true);
     try {
       const res = await fetch('/api/admin/staff');
       const data = await res.json();
