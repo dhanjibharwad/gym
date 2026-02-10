@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 interface Role {
   id: number;
@@ -9,19 +9,34 @@ interface Role {
   description: string;
 }
 
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'warning';
+}
+
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
 
   useEffect(() => {
     fetchRoles();
   }, []);
 
   const fetchRoles = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/admin/roles');
       const data = await response.json();
@@ -35,29 +50,70 @@ export default function RolesPage() {
     }
   };
 
+  const handleEdit = (role: Role) => {
+    setEditingRole(role);
+    setFormData({ name: role.name, description: role.description });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (role: Role) => {
+    if (!confirm(`Delete "${role.name}"? This action cannot be undone.`)) return;
+    
+    setDeleteLoading(role.id);
+    try {
+      const response = await fetch(`/api/admin/roles?id=${role.id}`, { method: 'DELETE' });
+      const data = await response.json();
+
+      if (response.ok) {
+        setRoles(roles.filter(r => r.id !== role.id));
+        showToast('Role deleted successfully!', 'success');
+      } else {
+        showToast(data.error || 'Failed to delete role', 'error');
+      }
+    } catch (error) {
+      showToast('Error deleting role', 'error');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', description: '' });
+    setEditingRole(null);
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/admin/roles', {
-        method: 'POST',
+      const url = '/api/admin/roles';
+      const method = editingRole ? 'PUT' : 'POST';
+      const body = editingRole ? { ...formData, id: editingRole.id } : formData;
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setRoles([...roles, data.role]);
-        setFormData({ name: '', description: '' });
-        setShowForm(false);
+        if (editingRole) {
+          setRoles(roles.map(r => r.id === editingRole.id ? data.role : r));
+          showToast('Role updated successfully!', 'success');
+        } else {
+          setRoles([...roles, data.role]);
+          showToast('Role created successfully!', 'success');
+        }
+        resetForm();
       } else {
-        setError(data.error);
+        showToast(data.error || 'Failed to save role', 'error');
       }
     } catch (error) {
-      setError('Failed to create role');
+      showToast('Error saving role', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -86,14 +142,8 @@ export default function RolesPage() {
 
       {showForm && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Create New Role</h2>
+          <h2 className="text-lg font-semibold mb-4">{editingRole ? 'Edit Role' : 'Create New Role'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Role Name
@@ -127,11 +177,11 @@ export default function RolesPage() {
                 disabled={submitting}
                 className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? 'Creating...' : 'Create Role'}
+                {submitting ? (editingRole ? 'Updating...' : 'Creating...') : (editingRole ? 'Update Role' : 'Create Role')}
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={resetForm}
                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 cursor-pointer"
               >
                 Cancel
@@ -153,17 +203,80 @@ export default function RolesPage() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {roles.map((role) => (
-                <div key={role.id} className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900">{role.name}</h3>
-                  {role.description && (
-                    <p className="text-gray-600 text-sm mt-1">{role.description}</p>
-                  )}
-                </div>
-              ))}
+              {roles.map((role) => {
+                const isSystemRole = role.name.toLowerCase() === 'admin' || role.name.toLowerCase() === 'reception';
+                return (
+                  <div key={role.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">{role.name}</h3>
+                        {isSystemRole && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">System</span>
+                        )}
+                      </div>
+                      {role.description && (
+                        <p className="text-gray-600 text-sm mt-1">{role.description}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(role)}
+                        disabled={isSystemRole}
+                        className={`p-1 rounded transition ${
+                          isSystemRole 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-400 hover:text-orange-600 cursor-pointer'
+                        }`}
+                        title={isSystemRole ? 'Cannot edit system role' : 'Edit role'}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(role)}
+                        disabled={deleteLoading === role.id || isSystemRole}
+                        className={`p-1 rounded transition ${
+                          isSystemRole 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : deleteLoading === role.id
+                            ? 'text-gray-400 cursor-not-allowed opacity-50'
+                            : 'text-gray-400 hover:text-red-600 cursor-pointer'
+                        }`}
+                        title={isSystemRole ? 'Cannot delete system role' : 'Delete role'}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+              toast.type === 'success' ? 'bg-green-500 text-white' :
+              toast.type === 'error' ? 'bg-red-500 text-white' :
+              'bg-yellow-500 text-white'
+            }`}
+          >
+            {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
+            {toast.type === 'error' && <XCircle className="w-5 h-5" />}
+            {toast.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+            <span className="font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+              className="ml-2 hover:opacity-70"
+            >
+              ×
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
