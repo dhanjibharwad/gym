@@ -21,6 +21,7 @@ import {
   X,
   Save
 } from 'lucide-react';
+import Toast from '@/app/components/Toast';
 
 interface Payment {
   id: number;
@@ -402,16 +403,7 @@ const PaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          <div className="flex items-center gap-2">
-            {notification.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
-            {notification.message}
-          </div>
-        </div>
-      )}
+      {notification && <Toast message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>

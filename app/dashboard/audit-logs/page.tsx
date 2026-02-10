@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FileText, Clock, User, Activity } from 'lucide-react';
+import Toast from '@/app/components/Toast';
 
 interface AuditLog {
   id: number;
@@ -16,6 +17,7 @@ interface AuditLog {
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogs();
@@ -23,14 +25,21 @@ export default function AuditLogsPage() {
 
   const fetchLogs = async () => {
     try {
-      const response = await fetch('/api/audit-logs');
+      const response = await fetch('/api/audit-logs', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       const data = await response.json();
       
       if (data.success) {
         setLogs(data.logs);
+      } else {
+        setError(data.message || 'Failed to load audit logs');
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
+      setError('Unable to load audit logs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -62,6 +71,8 @@ export default function AuditLogsPage() {
 
   return (
     <div className="p-6">
+      {error && <Toast message={error} type="error" onClose={() => setError(null)} />}
+      
       <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">

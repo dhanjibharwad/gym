@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     
     const session = await getSession();
     const companyId = session?.user?.companyId || 1;
-    const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
+    const userRole = session?.user?.role || 'user not logged in';
     
     const client = await pool.connect();
     
@@ -79,18 +79,13 @@ export async function POST(request: Request) {
       // Log the action
       try {
         const userName = session?.user?.name || 'Unknown User';
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'CREATE',
-            entity_type: 'membership_plan',
-            entity_id: result.rows[0].id,
-            details: `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`,
-            user_role: userRole
-          })
-        });
-      } catch {}
+        await client.query(
+          'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
+          ['CREATE', 'membership_plan', result.rows[0].id, `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`, userRole, companyId]
+        );
+      } catch (logError) {
+        console.error('Failed to create audit log:', logError);
+      }
       
       return NextResponse.json({
         success: true,
@@ -137,7 +132,7 @@ export async function PUT(request: Request) {
       );
     }
     
-    const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
+    const userRole = session?.user?.role || 'user not logged in';
     
     const client = await pool.connect();
     
@@ -161,18 +156,13 @@ export async function PUT(request: Request) {
       try {
         const old = oldPlan.rows[0];
         const userName = session?.user?.name || 'Unknown User';
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'UPDATE',
-            entity_type: 'membership_plan',
-            entity_id: id,
-            details: `Updated plan by (${userName}): ${old.plan_name} → ${plan_name}, ${old.duration_months}m → ${duration_months}m, ₹${old.price} → ₹${price}`,
-            user_role: userRole
-          })
-        });
-      } catch {}
+        await client.query(
+          'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
+          ['UPDATE', 'membership_plan', id, `Updated plan by (${userName}): ${old.plan_name} → ${plan_name}, ${old.duration_months}m → ${duration_months}m, ₹${old.price} → ₹${price}`, userRole, companyId]
+        );
+      } catch (logError) {
+        console.error('Failed to create audit log:', logError);
+      }
       
       return NextResponse.json({
         success: true,
@@ -220,7 +210,7 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const userRole = request.headers.get('referer')?.includes('/admin/') ? 'admin' : 'reception';
+    const userRole = session?.user?.role || 'user not logged in';
     
     const client = await pool.connect();
     
@@ -257,18 +247,13 @@ export async function DELETE(request: Request) {
       try {
         const plan = planDetails.rows[0];
         const userName = session?.user?.name || 'Unknown User';
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8004'}/api/audit-logs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'DELETE',
-            entity_type: 'membership_plan',
-            entity_id: id,
-            details: `Deleted plan by (${userName}): ${plan.plan_name} (${plan.duration_months} months, ₹${plan.price})`,
-            user_role: userRole
-          })
-        });
-      } catch {}
+        await client.query(
+          'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
+          ['DELETE', 'membership_plan', id, `Deleted plan by (${userName}): ${plan.plan_name} (${plan.duration_months} months, ₹${plan.price})`, userRole, companyId]
+        );
+      } catch (logError) {
+        console.error('Failed to create audit log:', logError);
+      }
       
       return NextResponse.json({
         success: true,

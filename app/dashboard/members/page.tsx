@@ -328,10 +328,10 @@ const MembersPage = () => {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => router.push(`/dashboard/members/${member.id}`)}
-                            className="text-orange-600 hover:text-orange-900"
+                            className="px-3 py-1 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
                             title="View profile"
                           >
-                            <Eye className="w-4 h-4" />
+                            View
                           </button>
                           <button
                             onClick={() => handleEditMember(member)}

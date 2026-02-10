@@ -7,6 +7,7 @@ import {
   CreditCard, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft,
   Heart, Activity, FileText, DollarSign, TrendingUp
 } from 'lucide-react';
+import Toast from '@/app/components/Toast';
 
 interface Member {
   id: number;
@@ -41,6 +42,9 @@ interface Membership {
   created_at: string;
   updated_at: string;
   created_by_name: string;
+  is_on_hold: boolean;
+  hold_start_date: string;
+  hold_reason: string;
 }
 
 interface Payment {
@@ -101,12 +105,30 @@ const MemberProfilePage = () => {
   const [medicalInfo, setMedicalInfo] = useState<MedicalInfo | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [holdReason, setHoldReason] = useState('');
+  const [showHoldModal, setShowHoldModal] = useState(false);
+  const [selectedMembershipId, setSelectedMembershipId] = useState<number | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [selectedResumeMembershipId, setSelectedResumeMembershipId] = useState<number | null>(null);
 
   useEffect(() => {
     if (memberId) {
       fetchMemberData();
     }
   }, [memberId]);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+  };
 
   const fetchMemberData = async () => {
     try {
@@ -133,7 +155,8 @@ const MemberProfilePage = () => {
       active: 'bg-green-100 text-green-800',
       expired: 'bg-red-100 text-red-800',
       inactive: 'bg-gray-100 text-gray-800',
-      suspended: 'bg-yellow-100 text-yellow-800'
+      suspended: 'bg-yellow-100 text-yellow-800',
+      on_hold: 'bg-blue-100 text-blue-800'
     };
     return styles[status as keyof typeof styles] || styles.inactive;
   };
@@ -166,7 +189,7 @@ const MemberProfilePage = () => {
     );
   }
 
-  const activeMemberships = memberships.filter(m => m.status === 'active');
+  const activeMemberships = memberships.filter(m => m.status === 'active' || m.status === 'on_hold');
   const expiredMemberships = memberships.filter(m => m.status === 'expired');
 
   const getPaymentsForMembership = (membershipId: number) => {
@@ -177,8 +200,148 @@ const MemberProfilePage = () => {
     return transactions.filter(t => t.membership_id === membershipId);
   };
 
+  const handleHoldMembership = (membershipId: number) => {
+    setSelectedMembershipId(membershipId);
+    setShowHoldModal(true);
+  };
+
+  const handleResumeMembership = (membershipId: number) => {
+    setSelectedResumeMembershipId(membershipId);
+    setShowResumeModal(true);
+  };
+
+  const confirmResumeMembership = async () => {
+    if (!selectedResumeMembershipId) return;
+    
+    setProcessing(true);
+    setShowResumeModal(false);
+    try {
+      const response = await fetch(`/api/members/${memberId}/memberships/${selectedResumeMembershipId}/hold`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'resume' })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        showToast(result.message, 'success');
+        fetchMemberData();
+      } else {
+        showToast(result.message, 'error');
+      }
+    } catch (error) {
+      showToast('Failed to resume membership', 'error');
+    } finally {
+      setProcessing(false);
+      setSelectedResumeMembershipId(null);
+    }
+  };
+
+  const submitHold = async () => {
+    if (!holdReason.trim()) {
+      showToast('Please provide a reason for holding the membership', 'error');
+      return;
+    }
+    
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/members/${memberId}/memberships/${selectedMembershipId}/hold`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'hold', hold_reason: holdReason })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        showToast(result.message, 'success');
+        setShowHoldModal(false);
+        setHoldReason('');
+        fetchMemberData();
+      } else {
+        showToast(result.message, 'error');
+      }
+    } catch (error) {
+      showToast('Failed to hold membership', 'error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* Resume Confirmation Modal */}
+      {showResumeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border-2 border-green-200">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Resume Membership</h3>
+                <p className="text-sm text-gray-600">Confirm to continue</p>
+              </div>
+            </div>
+            <div className="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                The membership will be resumed and the <span className="font-bold text-green-700">end date will be extended</span> by the number of days it was on hold.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmResumeMembership}
+                disabled={processing}
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg"
+              >
+                {processing ? 'Processing...' : '▶ Resume Membership'}
+              </button>
+              <button
+                onClick={() => { setShowResumeModal(false); setSelectedResumeMembershipId(null); }}
+                disabled={processing}
+                className="px-5 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hold Modal */}
+      {showHoldModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Hold Membership</h3>
+            <p className="text-sm text-gray-600 mb-4">The membership will be paused and the end date will be extended when resumed.</p>
+            <textarea
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              placeholder="Reason for holding (required)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+              rows={3}
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={submitHold}
+                disabled={processing}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {processing ? 'Processing...' : 'Hold Membership'}
+              </button>
+              <button
+                onClick={() => { setShowHoldModal(false); setHoldReason(''); }}
+                disabled={processing}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -318,136 +481,177 @@ const MemberProfilePage = () => {
 
       {/* Active Memberships */}
       {activeMemberships.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Memberships</h3>
-          <div className="space-y-6">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-lg border-2 border-green-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Active Memberships</h3>
+                  <p className="text-green-100 text-sm">Currently enrolled plans</p>
+                </div>
+              </div>
+              <div className="bg-white/20 px-4 py-2 rounded-xl">
+                <p className="text-white font-bold text-lg">{activeMemberships.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
             {activeMemberships.map((membership) => (
-              <div key={membership.id} className="border border-green-200 bg-green-50 rounded-lg p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{membership.plan_name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {membership.duration_months} months - ₹{membership.plan_price}
+              <div key={membership.id} className="bg-white rounded-xl shadow-md border-l-4 border-green-500 p-5 hover:shadow-xl transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="text-lg font-bold text-gray-900">{membership.plan_name}</h4>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(membership.status)}`}>
+                        {membership.status === 'on_hold' ? '⏸️ ON HOLD' : '✓ ACTIVE'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      {membership.duration_months} months • ₹{membership.plan_price.toLocaleString()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(membership.status)}`}>
-                      {membership.status}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-2">Created by: {membership.created_by_name || `User #${membership.created_by}`}</p>
-                    <p className="text-xs text-gray-500">{new Date(membership.created_at).toLocaleString()}</p>
+                  <div className="flex gap-2">
+                    {membership.status === 'active' && (
+                      <button
+                        onClick={() => handleHoldMembership(membership.id)}
+                        disabled={processing}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md"
+                      >
+                        ⏸ Hold
+                      </button>
+                    )}
+                    {membership.status === 'on_hold' && (
+                      <button
+                        onClick={() => handleResumeMembership(membership.id)}
+                        disabled={processing}
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md"
+                      >
+                        ▶ Resume
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    <p className="text-gray-500">Start Date</p>
-                    <p className="font-medium">{new Date(membership.start_date).toLocaleDateString()}</p>
+                
+                {membership.is_on_hold && membership.hold_start_date && (
+                  <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-bold text-blue-900">Membership On Hold</p>
+                        <p className="text-xs text-blue-700 mt-1">Since: {new Date(membership.hold_start_date).toLocaleDateString()}</p>
+                        {membership.hold_reason && (
+                          <p className="text-xs text-blue-600 mt-1">Reason: {membership.hold_reason}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-500">End Date</p>
-                    <p className="font-medium">{new Date(membership.end_date).toLocaleDateString()}</p>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Start Date</p>
+                    <p className="font-semibold text-gray-900">{new Date(membership.start_date).toLocaleDateString()}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Batch Time</p>
-                    <p className="font-medium">{membership.batch_time}</p>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">End Date</p>
+                    <p className="font-semibold text-gray-900">{new Date(membership.end_date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Batch Time</p>
+                    <p className="font-semibold text-gray-900">{membership.batch_time}</p>
                   </div>
                   {membership.trainer_assigned && (
-                    <div>
-                      <p className="text-gray-500">Trainer</p>
-                      <p className="font-medium">{membership.trainer_assigned}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Trainer</p>
+                      <p className="font-semibold text-gray-900">{membership.trainer_assigned}</p>
                     </div>
                   )}
                   {membership.locker_required && (
-                    <div>
-                      <p className="text-gray-500">Locker</p>
-                      <p className="font-medium">Required</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Locker</p>
+                      <p className="font-semibold text-gray-900">Required</p>
                     </div>
                   )}
                   {membership.reference_of_admission && (
-                    <div>
-                      <p className="text-gray-500">Reference of Admission</p>
-                      <p className="font-medium">{membership.reference_of_admission}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Reference</p>
+                      <p className="font-semibold text-gray-900">{membership.reference_of_admission}</p>
                     </div>
                   )}
                   {membership.membership_types && membership.membership_types.length > 0 && (
-                    <div className="col-span-2">
-                      <p className="text-gray-500">Membership Types</p>
-                      <p className="font-medium">{membership.membership_types.join(', ')}</p>
+                    <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                      <p className="text-xs text-gray-500 mb-1">Membership Types</p>
+                      <p className="font-semibold text-gray-900">{membership.membership_types.join(', ')}</p>
                     </div>
                   )}
                 </div>
-                
-                {/* Payment Summary and Transactions */}
+
+                {/* Payment Details */}
                 {(getPaymentsForMembership(membership.id).length > 0 || getTransactionsForMembership(membership.id).length > 0) && (
                   <div className="mt-4 pt-4 border-t border-green-200">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3">Payment Details</h5>
-                    
-                    {/* Payment Summary */}
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3">💳 Payment Details</h5>
                     {getPaymentsForMembership(membership.id).map((payment) => (
-                      <div key={payment.id} className="bg-white/50 rounded-lg p-3 mb-3">
+                      <div key={payment.id} className="bg-green-50 rounded-lg p-3 mb-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500">Total Amount</p>
-                            <p className="font-semibold text-gray-900">₹{payment.total_amount}</p>
+                            <p className="text-xs text-gray-600">Total Amount</p>
+                            <p className="font-bold text-gray-900">₹{payment.total_amount}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Paid Amount</p>
-                            <p className="font-semibold text-green-700">₹{payment.paid_amount}</p>
+                            <p className="text-xs text-gray-600">Paid Amount</p>
+                            <p className="font-bold text-green-700">₹{payment.paid_amount}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Status</p>
-                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(payment.payment_status)}`}>
-                              {payment.payment_status}
+                            <p className="text-xs text-gray-600">Status</p>
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${getPaymentStatusBadge(payment.payment_status)}`}>
+                              {payment.payment_status.toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="text-gray-500">Next Due</p>
-                            <p className="font-medium text-gray-900">
-                              {payment.next_due_date ? new Date(payment.next_due_date).toLocaleDateString() : 'N/A'}
-                            </p>
+                            <p className="text-xs text-gray-600">Payment Mode</p>
+                            <p className="font-bold text-gray-900">{payment.payment_mode}</p>
                           </div>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Transaction History */}
                     {getTransactionsForMembership(membership.id).length > 0 && (
-                      <div className="mt-3">
-                        <h6 className="text-xs font-semibold text-gray-700 mb-2">Transaction History</h6>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-white/50">
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold text-gray-700 hover:text-gray-900">View Transaction History ({getTransactionsForMembership(membership.id).length})</summary>
+                        <div className="mt-2 overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-green-100">
                               <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Date</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Amount</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Mode</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Reference</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Status</th>
+                                <th className="px-2 py-2 text-left font-semibold">Date</th>
+                                <th className="px-2 py-2 text-left font-semibold">Type</th>
+                                <th className="px-2 py-2 text-left font-semibold">Amount</th>
+                                <th className="px-2 py-2 text-left font-semibold">Mode</th>
+                                <th className="px-2 py-2 text-left font-semibold">Reference</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-green-100">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
-                                <tr key={transaction.id} className="bg-white/30">
-                                  <td className="px-3 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
-                                  <td className="px-3 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
-                                  <td className="px-3 py-2 font-medium text-green-700">₹{transaction.amount}</td>
-                                  <td className="px-3 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : (transaction.receipt_number || 'N/A')}</td>
-                                  <td className="px-3 py-2">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(transaction.payment_status)}`}>
-                                      {transaction.payment_status}
-                                    </span>
-                                  </td>
+                                <tr key={transaction.id} className="hover:bg-green-50">
+                                  <td className="px-2 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
+                                  <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
+                                  <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
+                                  <td className="px-2 py-2">{transaction.payment_mode}</td>
+                                  <td className="px-2 py-2">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                      </div>
+                      </details>
                     )}
                   </div>
                 )}
+
+                <div className="text-xs text-gray-500 border-t pt-3">
+                  Created by {membership.created_by_name || `User #${membership.created_by}`} • {new Date(membership.created_at).toLocaleString()}
+                </div>
               </div>
             ))}
           </div>
@@ -456,136 +660,142 @@ const MemberProfilePage = () => {
 
       {/* Expired Memberships */}
       {expiredMemberships.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Expired Memberships</h3>
-          <div className="space-y-6">
+        <div className="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl shadow-lg border-2 border-gray-300 overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-600 to-slate-600 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Expired Memberships</h3>
+                  <p className="text-gray-200 text-sm">Past membership history</p>
+                </div>
+              </div>
+              <div className="bg-white/20 px-4 py-2 rounded-xl">
+                <p className="text-white font-bold text-lg">{expiredMemberships.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
             {expiredMemberships.map((membership) => (
-              <div key={membership.id} className="border border-gray-200 bg-gray-50 rounded-lg p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{membership.plan_name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {membership.duration_months} months - ₹{membership.plan_price}
+              <div key={membership.id} className="bg-white rounded-xl shadow-md border-l-4 border-gray-400 p-5 opacity-75 hover:opacity-100 transition-opacity">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="text-lg font-bold text-gray-700">{membership.plan_name}</h4>
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                        ✕ EXPIRED
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 font-medium">
+                      {membership.duration_months} months • ₹{membership.plan_price.toLocaleString()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(membership.status)}`}>
-                      {membership.status}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-2">Created by: {membership.created_by_name || `User #${membership.created_by}`}</p>
-                    <p className="text-xs text-gray-500">{new Date(membership.created_at).toLocaleString()}</p>
-                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    <p className="text-gray-500">Start Date</p>
-                    <p className="font-medium">{new Date(membership.start_date).toLocaleDateString()}</p>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Start Date</p>
+                    <p className="font-semibold text-gray-700">{new Date(membership.start_date).toLocaleDateString()}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">End Date</p>
-                    <p className="font-medium">{new Date(membership.end_date).toLocaleDateString()}</p>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">End Date</p>
+                    <p className="font-semibold text-red-600">{new Date(membership.end_date).toLocaleDateString()}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Batch Time</p>
-                    <p className="font-medium">{membership.batch_time}</p>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Batch Time</p>
+                    <p className="font-semibold text-gray-700">{membership.batch_time}</p>
                   </div>
                   {membership.trainer_assigned && (
-                    <div>
-                      <p className="text-gray-500">Trainer</p>
-                      <p className="font-medium">{membership.trainer_assigned}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Trainer</p>
+                      <p className="font-semibold text-gray-700">{membership.trainer_assigned}</p>
                     </div>
                   )}
                   {membership.locker_required && (
-                    <div>
-                      <p className="text-gray-500">Locker</p>
-                      <p className="font-medium">Required</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Locker</p>
+                      <p className="font-semibold text-gray-700">Required</p>
                     </div>
                   )}
                   {membership.reference_of_admission && (
-                    <div>
-                      <p className="text-gray-500">Reference</p>
-                      <p className="font-medium">{membership.reference_of_admission}</p>
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Reference</p>
+                      <p className="font-semibold text-gray-700">{membership.reference_of_admission}</p>
                     </div>
                   )}
                   {membership.membership_types && membership.membership_types.length > 0 && (
-                    <div className="col-span-2">
-                      <p className="text-gray-500">Membership Types</p>
-                      <p className="font-medium">{membership.membership_types.join(', ')}</p>
+                    <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                      <p className="text-xs text-gray-500 mb-1">Membership Types</p>
+                      <p className="font-semibold text-gray-700">{membership.membership_types.join(', ')}</p>
                     </div>
                   )}
                 </div>
-                
-                {/* Payment Summary and Transactions */}
+
+                {/* Payment Details */}
                 {(getPaymentsForMembership(membership.id).length > 0 || getTransactionsForMembership(membership.id).length > 0) && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3">Payment Details</h5>
-                    
-                    {/* Payment Summary */}
+                  <div className="mt-4 pt-4 border-t border-gray-300">
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3">💳 Payment Details</h5>
                     {getPaymentsForMembership(membership.id).map((payment) => (
-                      <div key={payment.id} className="bg-white/50 rounded-lg p-3 mb-3">
+                      <div key={payment.id} className="bg-gray-100 rounded-lg p-3 mb-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500">Total Amount</p>
-                            <p className="font-semibold text-gray-900">₹{payment.total_amount}</p>
+                            <p className="text-xs text-gray-600">Total Amount</p>
+                            <p className="font-bold text-gray-900">₹{payment.total_amount}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Paid Amount</p>
-                            <p className="font-semibold text-green-700">₹{payment.paid_amount}</p>
+                            <p className="text-xs text-gray-600">Paid Amount</p>
+                            <p className="font-bold text-green-700">₹{payment.paid_amount}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">Status</p>
-                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(payment.payment_status)}`}>
-                              {payment.payment_status}
+                            <p className="text-xs text-gray-600">Status</p>
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${getPaymentStatusBadge(payment.payment_status)}`}>
+                              {payment.payment_status.toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="text-gray-500">Next Due</p>
-                            <p className="font-medium text-gray-900">
-                              {payment.next_due_date ? new Date(payment.next_due_date).toLocaleDateString() : 'N/A'}
-                            </p>
+                            <p className="text-xs text-gray-600">Payment Mode</p>
+                            <p className="font-bold text-gray-900">{payment.payment_mode}</p>
                           </div>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Transaction History */}
                     {getTransactionsForMembership(membership.id).length > 0 && (
-                      <div className="mt-3">
-                        <h6 className="text-xs font-semibold text-gray-700 mb-2">Transaction History</h6>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-white/50">
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold text-gray-700 hover:text-gray-900">View Transaction History ({getTransactionsForMembership(membership.id).length})</summary>
+                        <div className="mt-2 overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-gray-200">
                               <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Date</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Type</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Amount</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Mode</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Receipt</th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Status</th>
+                                <th className="px-2 py-2 text-left font-semibold">Date</th>
+                                <th className="px-2 py-2 text-left font-semibold">Type</th>
+                                <th className="px-2 py-2 text-left font-semibold">Amount</th>
+                                <th className="px-2 py-2 text-left font-semibold">Mode</th>
+                                <th className="px-2 py-2 text-left font-semibold">Reference</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-200">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
-                                <tr key={transaction.id} className="bg-white/30">
-                                  <td className="px-3 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
-                                  <td className="px-3 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
-                                  <td className="px-3 py-2 font-medium text-green-700">₹{transaction.amount}</td>
-                                  <td className="px-3 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-3 py-2 text-xs">{transaction.transaction_type === 'membership_fee' ? (transaction.reference_number || 'N/A') : (transaction.receipt_number || 'N/A')}</td>
-                                  <td className="px-3 py-2">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadge(transaction.payment_status)}`}>
-                                      {transaction.payment_status}
-                                    </span>
-                                  </td>
+                                <tr key={transaction.id} className="hover:bg-gray-100">
+                                  <td className="px-2 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
+                                  <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
+                                  <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
+                                  <td className="px-2 py-2">{transaction.payment_mode}</td>
+                                  <td className="px-2 py-2">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
-                      </div>
+                      </details>
                     )}
                   </div>
                 )}
+
+                <div className="text-xs text-gray-500 border-t pt-3">
+                  Created by {membership.created_by_name || `User #${membership.created_by}`} • {new Date(membership.created_at).toLocaleString()}
+                </div>
               </div>
             ))}
           </div>
