@@ -5,7 +5,14 @@ import { getSession } from '@/lib/auth';
 export async function GET() {
   try {
     const session = await getSession();
-    const companyId = session?.user?.companyId || 1;
+    const companyId = session?.user?.companyId;
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
     
     const client = await pool.connect();
     
