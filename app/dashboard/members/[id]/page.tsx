@@ -130,6 +130,15 @@ const MemberProfilePage = () => {
     setToast({ message, type });
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const fetchMemberData = async () => {
     try {
       const response = await fetch(`/api/members/${memberId}`);
@@ -381,7 +390,7 @@ const MemberProfilePage = () => {
             </div>
             <div className="text-right text-white">
               <p className="text-xs text-orange-100">Joined</p>
-              <p className="text-sm font-medium">{new Date(member.created_at).toLocaleDateString()}</p>
+              <p className="text-sm font-medium">{formatDate(member.created_at)}</p>
             </div>
           </div>
         </div>
@@ -418,7 +427,7 @@ const MemberProfilePage = () => {
             <div>
               <p className="text-sm text-gray-500">Date of Birth</p>
               <p className="font-medium text-gray-900">
-                {member.date_of_birth ? new Date(member.date_of_birth).toLocaleDateString() : 'N/A'}
+                {member.date_of_birth ? formatDate(member.date_of_birth) : 'N/A'}
               </p>
             </div>
           </div>
@@ -541,7 +550,7 @@ const MemberProfilePage = () => {
                       <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                       <div>
                         <p className="text-sm font-bold text-blue-900">Membership On Hold</p>
-                        <p className="text-xs text-blue-700 mt-1">Since: {new Date(membership.hold_start_date).toLocaleDateString()}</p>
+                        <p className="text-xs text-blue-700 mt-1">Since: {formatDate(membership.hold_start_date)}</p>
                         {membership.hold_reason && (
                           <p className="text-xs text-blue-600 mt-1">Reason: {membership.hold_reason}</p>
                         )}
@@ -553,11 +562,11 @@ const MemberProfilePage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Start Date</p>
-                    <p className="font-semibold text-gray-900">{new Date(membership.start_date).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-900">{formatDate(membership.start_date)}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">End Date</p>
-                    <p className="font-semibold text-gray-900">{new Date(membership.end_date).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-900">{formatDate(membership.end_date)}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Batch Time</p>
@@ -634,7 +643,7 @@ const MemberProfilePage = () => {
                             <tbody className="divide-y divide-green-100">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
                                 <tr key={transaction.id} className="hover:bg-green-50">
-                                  <td className="px-2 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
+                                  <td className="px-2 py-2">{formatDate(transaction.transaction_date)}</td>
                                   <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
                                   <td className="px-2 py-2">{transaction.payment_mode}</td>
@@ -697,11 +706,11 @@ const MemberProfilePage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Start Date</p>
-                    <p className="font-semibold text-gray-700">{new Date(membership.start_date).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-700">{formatDate(membership.start_date)}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">End Date</p>
-                    <p className="font-semibold text-red-600">{new Date(membership.end_date).toLocaleDateString()}</p>
+                    <p className="font-semibold text-red-600">{formatDate(membership.end_date)}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Batch Time</p>
@@ -778,7 +787,7 @@ const MemberProfilePage = () => {
                             <tbody className="divide-y divide-gray-200">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
                                 <tr key={transaction.id} className="hover:bg-gray-100">
-                                  <td className="px-2 py-2">{new Date(transaction.transaction_date).toLocaleDateString()}</td>
+                                  <td className="px-2 py-2">{formatDate(transaction.transaction_date)}</td>
                                   <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
                                   <td className="px-2 py-2">{transaction.payment_mode}</td>
