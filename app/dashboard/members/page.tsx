@@ -424,7 +424,7 @@ const MembersPage = () => {
                 </div>
                 <button
                   onClick={() => router.push(`/dashboard/members/${member.id}`)}
-                  className="text-orange-600 hover:text-orange-900 text-sm font-medium"
+                  className="text-orange-600 hover:text-orange-900 text-sm font-medium cursor-pointer"
                 >
                   View Profile
                 </button>
