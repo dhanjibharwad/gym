@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users } from 'lucide-react';
+import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield } from 'lucide-react';
+import Dropdown from '@/app/components/Dropdown';
 
 interface Role {
   id: number;
@@ -162,26 +163,16 @@ export default function AddStaffPage() {
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
                 Role <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Users className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  id="role"
-                  required
-                  value={formData.roleId}
-                  onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
-                  disabled={rolesLoading}
-                >
-                  <option value="">Select a role</option>
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Dropdown
+                options={roles.map(role => ({
+                  value: role.id.toString(),
+                  label: role.name
+                }))}
+                value={formData.roleId}
+                onChange={(value) => setFormData({ ...formData, roleId: value })}
+                placeholder="Select a role"
+                disabled={rolesLoading}
+              />
               {rolesLoading && (
                 <p className="mt-2 text-sm text-gray-500">Loading roles...</p>
               )}

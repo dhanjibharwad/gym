@@ -16,22 +16,28 @@ export async function GET(request: NextRequest) {
     
     client = await pool.connect();
     
-    // Get members data with their latest membership status - FILTERED BY COMPANY
+    // Get members data with their latest membership status and payment info - FILTERED BY COMPANY
     const result = await client.query(`
       SELECT 
         m.*,
         ms.status as membership_status,
+        ms.start_date,
         ms.end_date,
-        mp.plan_name
+        mp.plan_name,
+        p.total_amount,
+        p.paid_amount,
+        p.payment_mode,
+        p.payment_status
       FROM members m
       LEFT JOIN LATERAL (
-        SELECT ms.status, ms.end_date, ms.plan_id
+        SELECT ms.status, ms.start_date, ms.end_date, ms.plan_id, ms.id as membership_id
         FROM memberships ms
         WHERE ms.member_id = m.id
         ORDER BY ms.created_at DESC
         LIMIT 1
       ) ms ON true
       LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
+      LEFT JOIN payments p ON p.membership_id = ms.membership_id
       WHERE m.company_id = $1
       ORDER BY m.created_at DESC
     `, [companyId]);

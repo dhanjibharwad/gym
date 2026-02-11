@@ -45,6 +45,26 @@ const ProfilePage = () => {
     confirm: false
   });
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -265,7 +285,7 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-900">
-                  {new Date(profile.created_at).toLocaleDateString()}
+                  {formatDate(profile.created_at)}
                 </span>
               </div>
             </div>
@@ -278,10 +298,7 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-900">
-                  {profile.last_login_at 
-                    ? new Date(profile.last_login_at).toLocaleString()
-                    : 'Never'
-                  }
+                  {profile.last_login_at ? formatDateTime(profile.last_login_at) : 'Never'}
                 </span>
               </div>
             </div>

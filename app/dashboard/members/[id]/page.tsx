@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   User, Mail, Phone, Calendar, MapPin, Briefcase, Users,
   CreditCard, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft,
-  Heart, Activity, FileText, DollarSign, TrendingUp
+  Heart, Activity, FileText, DollarSign, TrendingUp, Pause, Play, History
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 
@@ -327,9 +327,11 @@ const MemberProfilePage = () => {
               <button
                 onClick={confirmResumeMembership}
                 disabled={processing}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg"
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
               >
-                {processing ? 'Processing...' : '▶ Resume Membership'}
+                {processing ? 'Processing...' : (
+                  <><Play className="w-5 h-5" /> Resume Membership</>
+                )}
               </button>
               <button
                 onClick={() => { setShowResumeModal(false); setSelectedResumeMembershipId(null); }}
@@ -568,8 +570,12 @@ const MemberProfilePage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-lg font-bold text-gray-900">{membership.plan_name}</h4>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(membership.status)}`}>
-                        {membership.status === 'on_hold' ? '⏸️ ON HOLD' : '✓ ACTIVE'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${getStatusBadge(membership.status)}`}>
+                        {membership.status === 'on_hold' ? (
+                          <><Pause className="w-3 h-3" /> ON HOLD</>
+                        ) : (
+                          <><CheckCircle className="w-3 h-3" /> ACTIVE</>
+                        )}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 font-medium">
@@ -581,18 +587,18 @@ const MemberProfilePage = () => {
                       <button
                         onClick={() => handleHoldMembership(membership.id)}
                         disabled={processing}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md"
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1 cursor-pointer"
                       >
-                        ⏸ Hold
+                        <Pause className="w-4 h-4" /> Hold
                       </button>
                     )}
                     {membership.status === 'on_hold' && (
                       <button
                         onClick={() => handleResumeMembership(membership.id)}
                         disabled={processing}
-                        className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md"
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1"
                       >
-                        ▶ Resume
+                        <Play className="w-4 h-4" /> Resume
                       </button>
                     )}
                   </div>
@@ -661,7 +667,9 @@ const MemberProfilePage = () => {
                 {membership.hold_history && membership.hold_history.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-green-200">
                     <details className="cursor-pointer">
-                      <summary className="text-sm font-semibold text-gray-900 mb-3 hover:text-orange-600">⏸️ Hold History ({membership.hold_history.length})</summary>
+                      <summary className="text-sm font-semibold text-gray-900 mb-3 hover:text-orange-600 flex items-center gap-2">
+                        <History className="w-4 h-4" /> Hold History ({membership.hold_history.length})
+                      </summary>
                       <div className="space-y-2 mt-3">
                         {membership.hold_history.map((hold) => {
                           const actualStart = new Date(hold.hold_start_date);
@@ -686,8 +694,8 @@ const MemberProfilePage = () => {
                               <div className="space-y-1">
                                 <p className="text-blue-600"><span className="font-semibold">Reason:</span> {hold.hold_reason}</p>
                                 {hold.resumed_at && (
-                                  <p className="text-green-600 font-semibold">
-                                    ✓ Resumed: {new Date(hold.resumed_at).toLocaleString('en-IN', {
+                                  <p className="text-green-600 font-semibold flex items-start gap-1">
+                                    <CheckCircle className="w-3 h-3 mt-0.5" /> Resumed: {new Date(hold.resumed_at).toLocaleString('en-IN', {
                                       day: '2-digit',
                                       month: 'short',
                                       year: 'numeric',
@@ -709,7 +717,9 @@ const MemberProfilePage = () => {
                 {/* Payment Details */}
                 {(getPaymentsForMembership(membership.id).length > 0 || getTransactionsForMembership(membership.id).length > 0) && (
                   <div className="mt-4 pt-4 border-t border-green-200">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3">💳 Payment Details</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" /> Payment Details
+                    </h5>
                     {getPaymentsForMembership(membership.id).map((payment) => (
                       <div key={payment.id} className="bg-green-50 rounded-lg p-3 mb-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -801,8 +811,8 @@ const MemberProfilePage = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-lg font-bold text-gray-700">{membership.plan_name}</h4>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
-                        ✕ EXPIRED
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 flex items-center gap-1">
+                        <XCircle className="w-3 h-3" /> EXPIRED
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 font-medium">
@@ -853,7 +863,9 @@ const MemberProfilePage = () => {
                 {/* Payment Details */}
                 {(getPaymentsForMembership(membership.id).length > 0 || getTransactionsForMembership(membership.id).length > 0) && (
                   <div className="mt-4 pt-4 border-t border-gray-300">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-3">💳 Payment Details</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" /> Payment Details
+                    </h5>
                     {getPaymentsForMembership(membership.id).map((payment) => (
                       <div key={payment.id} className="bg-gray-100 rounded-lg p-3 mb-3">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

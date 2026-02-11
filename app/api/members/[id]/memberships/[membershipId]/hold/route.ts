@@ -57,6 +57,20 @@ export async function POST(
           );
         }
         
+        // Check for existing active hold
+        const existingHold = await client.query(
+          `SELECT id FROM membership_holds 
+           WHERE membership_id = $1 AND resumed_at IS NULL`,
+          [membershipId]
+        );
+        
+        if (existingHold.rows.length > 0) {
+          return NextResponse.json(
+            { success: false, message: 'Membership already has an active hold' },
+            { status: 400 }
+          );
+        }
+        
         await client.query('BEGIN');
         
         // Calculate hold end date based on duration and unit
@@ -119,7 +133,7 @@ export async function POST(
            SET hold_end_date = CURRENT_DATE,
                days_on_hold = $1,
                resumed_at = CURRENT_TIMESTAMP
-           WHERE membership_id = $2 AND hold_end_date IS NULL`,
+           WHERE membership_id = $2 AND resumed_at IS NULL`,
           [holdDays, membershipId]
         );
         
