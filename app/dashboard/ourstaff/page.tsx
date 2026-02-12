@@ -142,7 +142,7 @@ function OurStaffPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Our Staff</h1>
-              <p className="text-gray-600">Manage reception staff members</p>
+              <p className="text-gray-600">Manage staff members</p>
             </div>
           </div>
           {can('add_staff') && (
@@ -161,7 +161,7 @@ function OurStaffPage() {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-orange-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Reception Staff</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Staff</h2>
               <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                 {staff.length} {staff.length === 1 ? 'member' : 'members'}
               </span>
