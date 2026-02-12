@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Users, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, Shield } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, AlertTriangle, Shield } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import Toast from '@/app/components/Toast';
 
 interface Role {
   id: number;
@@ -15,12 +16,6 @@ interface Role {
   user_count: number;
 }
 
-interface Toast {
-  id: number;
-  message: string;
-  type: 'success' | 'error' | 'warning';
-}
-
 function RolesPage() {
   const { can } = usePermission();
   const [roles, setRoles] = useState<Role[]>([]);
@@ -30,12 +25,16 @@ function RolesPage() {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  // Toast state using shared Toast component
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
   };
 
   useEffect(() => {
@@ -63,22 +62,34 @@ function RolesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (role: Role) => {
-    if (!confirm(`Delete "${role.name}"? This action cannot be undone.`)) return;
+  const handleDeleteClick = (role: Role) => {
+    setRoleToDelete(role);
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setRoleToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete) return;
     
-    setDeleteLoading(role.id);
+    setDeleteLoading(roleToDelete.id);
     try {
-      const response = await fetch(`/api/admin/roles?id=${role.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/admin/roles?id=${roleToDelete.id}`, { method: 'DELETE' });
       const data = await response.json();
 
       if (response.ok) {
-        setRoles(roles.filter(r => r.id !== role.id));
-        showToast('Role deleted successfully!', 'success');
+        setRoles(roles.filter(r => r.id !== roleToDelete.id));
+        setShowDeleteModal(false);
+        setRoleToDelete(null);
+        showToastMessage('Role deleted successfully!', 'success');
       } else {
-        showToast(data.error || 'Failed to delete role', 'error');
+        showToastMessage(data.error || 'Failed to delete role', 'error');
       }
     } catch (error) {
-      showToast('Error deleting role', 'error');
+      showToastMessage('Error deleting role', 'error');
     } finally {
       setDeleteLoading(null);
     }
@@ -110,17 +121,17 @@ function RolesPage() {
       if (response.ok) {
         if (editingRole) {
           setRoles(roles.map(r => r.id === editingRole.id ? data.role : r));
-          showToast('Role updated successfully!', 'success');
+          showToastMessage('Role updated successfully!', 'success');
         } else {
           setRoles([...roles, data.role]);
-          showToast('Role created successfully!', 'success');
+          showToastMessage('Role created successfully!', 'success');
         }
         resetForm();
       } else {
-        showToast(data.error || 'Failed to save role', 'error');
+        showToastMessage(data.error || 'Failed to save role', 'error');
       }
     } catch (error) {
-      showToast('Error saving role', 'error');
+      showToastMessage('Error saving role', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -256,7 +267,7 @@ function RolesPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(role)}
+                            onClick={() => handleDeleteClick(role)}
                             disabled={deleteLoading === role.id || isProtected}
                             className={`p-1 rounded transition ${
                               isProtected 
@@ -280,30 +291,71 @@ function RolesPage() {
         </div>
       </div>
 
-      {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-              toast.type === 'success' ? 'bg-green-500 text-white' :
-              toast.type === 'error' ? 'bg-red-500 text-white' :
-              'bg-yellow-500 text-white'
-            }`}
-          >
-            {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
-            {toast.type === 'error' && <XCircle className="w-5 h-5" />}
-            {toast.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
-            <span className="font-medium">{toast.message}</span>
-            <button
-              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-              className="ml-2 hover:opacity-70"
-            >
-              ×
-            </button>
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && roleToDelete && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="bg-red-50 px-6 py-4 border-b border-red-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Role</h3>
+                  <p className="text-sm text-red-600">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-6 py-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete the role <span className="font-semibold text-gray-900">"{roleToDelete.name}"</span>?
+              </p>
+              {roleToDelete.user_count > 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    This role is assigned to {roleToDelete.user_count} user{roleToDelete.user_count !== 1 ? 's' : ''}.
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-gray-500 mt-3">
+                All associated permissions will be removed from this role.
+              </p>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={handleCancelDelete}
+                disabled={deleteLoading === roleToDelete.id}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleteLoading === roleToDelete.id}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium flex items-center gap-2"
+              >
+                {deleteLoading === roleToDelete.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

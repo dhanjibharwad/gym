@@ -337,6 +337,8 @@ const MembersPage = () => {
                           >
                             View
                           </button>
+                          {/* Edit button - allows inline editing of member's phone and email
+                              Only visible to users with 'edit_members' permission */}
                           {can('edit_members') && (
                             <button
                               onClick={() => handleEditMember(member)}

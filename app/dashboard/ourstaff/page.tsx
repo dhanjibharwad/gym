@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, Shield, Trash2, User, Plus, Edit } from 'lucide-react';
+import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X } from 'lucide-react';
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -15,6 +15,10 @@ function OurStaffPage() {
   const [editForm, setEditForm] = useState({ name: '', email: '', role_id: '' });
   const [roles, setRoles] = useState([]);
   const [updating, setUpdating] = useState(false);
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<{ id: number; name: string } | null>(null);
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -43,19 +47,29 @@ function OurStaffPage() {
     }
   };
 
-  const handleDelete = async (staffId: number, staffName: string) => {
-    if (!confirm(`Are you sure you want to delete ${staffName}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteClick = (staffId: number, staffName: string) => {
+    setStaffToDelete({ id: staffId, name: staffName });
+    setShowDeleteModal(true);
+  };
 
-    setDeleteLoading(staffId);
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setStaffToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!staffToDelete) return;
+
+    setDeleteLoading(staffToDelete.id);
     try {
-      const res = await fetch(`/api/admin/staff/delete?id=${staffId}`, {
+      const res = await fetch(`/api/admin/staff/delete?id=${staffToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        setStaff(staff.filter((member: any) => member.id !== staffId));
+        setStaff(staff.filter((member: any) => member.id !== staffToDelete.id));
+        setShowDeleteModal(false);
+        setStaffToDelete(null);
       } else {
         const data = await res.json();
         alert(data.error || 'Failed to delete staff member');
@@ -225,7 +239,7 @@ function OurStaffPage() {
                           )}
                           {can('delete_staff') && (
                             <button 
-                              onClick={() => handleDelete(member.id, member.name)}
+                              onClick={() => handleDeleteClick(member.id, member.name)}
                               disabled={deleteLoading === member.id || member.role?.toLowerCase() === 'admin'}
                               className={`p-1 rounded transition ${
                                 member.role?.toLowerCase() === 'admin'
@@ -248,6 +262,61 @@ function OurStaffPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && staffToDelete && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="bg-red-50 px-6 py-4 border-b border-red-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Staff Member</h3>
+                  <p className="text-sm text-red-600">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-6 py-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete <span className="font-semibold text-gray-900">{staffToDelete.name}</span>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                All associated data will be permanently removed from the system.
+              </p>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={handleCancelDelete}
+                disabled={deleteLoading === staffToDelete.id}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleteLoading === staffToDelete.id}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium flex items-center gap-2"
+              >
+                {deleteLoading === staffToDelete.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingStaff && (

@@ -2,26 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Settings,
-  Building,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
   IndianRupee,
   Save,
-  Bell,
   CreditCard,
-  Database,
-  Palette
+  Database
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import Toast from '@/app/components/Toast';
 
 const SettingsPage = () => {
   const { can } = usePermission();
   const [activeTab, setActiveTab] = useState('payments');
-  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +43,7 @@ const SettingsPage = () => {
       }
     } catch (error) {
       console.error('Error loading settings:', error);
-      setNotification({type: 'error', message: 'Failed to load settings'});
+      setToast({ type: 'error', message: 'Failed to load settings' });
     } finally {
       setLoading(false);
     }
@@ -70,27 +63,17 @@ const SettingsPage = () => {
       const data = await response.json();
       
       if (data.success) {
-        setNotification({type: 'success', message: 'Settings saved successfully!'});
+        setToast({ type: 'success', message: 'Settings saved successfully!' });
       } else {
-        setNotification({type: 'error', message: data.message || 'Failed to save settings'});
+        setToast({ type: 'error', message: data.message || 'Failed to save settings' });
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      setNotification({type: 'error', message: 'Failed to save settings'});
+      setToast({ type: 'error', message: 'Failed to save settings' });
     } finally {
       setSaving(false);
     }
   };
-
-  // Auto-hide notification after 3 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
 
   const tabs = [
     { id: 'payments', label: 'Payment Modes', icon: CreditCard },
@@ -99,13 +82,8 @@ const SettingsPage = () => {
 
   return (
     <div className="space-y-6">
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {notification.message}
-        </div>
-      )}
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, CreditCard, Calendar, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import Toast from '@/app/components/Toast';
 
 interface MembershipPlan {
   id: number;
@@ -19,12 +20,6 @@ interface PlanFormData {
   plan_name: string;
   duration_months: number;
   price: number;
-}
-
-interface Toast {
-  id: number;
-  message: string;
-  type: 'success' | 'error' | 'warning';
 }
 
 interface DeleteConfirm {
@@ -45,20 +40,15 @@ function MembershipPlansPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  // Toast state using shared Toast component
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm>({ show: false, plan: null });
   const [validationError, setValidationError] = useState<string>('');
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
-    }, 4000);
-  };
-
-  const removeToast = (id: number) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+  const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
   };
 
   useEffect(() => {
@@ -103,12 +93,12 @@ function MembershipPlansPage() {
       if (data.success) {
         await fetchPlans();
         resetForm();
-        showToast(editingPlan ? 'Plan updated successfully!' : 'Plan created successfully!', 'success');
+        showToastMessage(editingPlan ? 'Plan updated successfully!' : 'Plan created successfully!', 'success');
       } else {
-        showToast(data.message || 'Failed to save plan', 'error');
+        showToastMessage(data.message || 'Failed to save plan', 'error');
       }
     } catch (error) {
-      showToast('Error saving plan', 'error');
+      showToastMessage('Error saving plan', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -144,12 +134,12 @@ function MembershipPlansPage() {
 
       if (data.success) {
         await fetchPlans();
-        showToast('Plan deleted successfully!', 'success');
+        showToastMessage('Plan deleted successfully!', 'success');
       } else {
-        showToast(data.message || 'Failed to delete plan', 'error');
+        showToastMessage(data.message || 'Failed to delete plan', 'error');
       }
     } catch (error) {
-      showToast('Error deleting plan', 'error');
+      showToastMessage('Error deleting plan', 'error');
     } finally {
       setDeleteLoading(null);
     }
@@ -321,30 +311,8 @@ function MembershipPlansPage() {
           ))}
         </div>
         
-        {/* Toast Notifications */}
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {toasts.map((toast) => (
-            <div
-              key={toast.id}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-                toast.type === 'success' ? 'bg-green-500 text-white' :
-                toast.type === 'error' ? 'bg-red-500 text-white' :
-                'bg-yellow-500 text-white'
-              }`}
-            >
-              {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
-              {toast.type === 'error' && <XCircle className="w-5 h-5" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
-              <span className="font-medium">{toast.message}</span>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className="ml-2 hover:opacity-70"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
+        {/* Toast Notification */}
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm.show && (

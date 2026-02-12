@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   User, Mail, Phone, Calendar, MapPin, Briefcase, Users,
   CreditCard, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft,
-  Heart, Activity, FileText, DollarSign, TrendingUp, Pause, Play, History
+  Heart, Activity, FileText, DollarSign, TrendingUp, Pause, Play, History,
+  Edit, Save, X
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface Member {
   id: number;
@@ -109,6 +111,7 @@ const MemberProfilePage = () => {
   const params = useParams();
   const router = useRouter();
   const memberId = params.id;
+  const { can } = usePermission();
 
   const [member, setMember] = useState<Member | null>(null);
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -125,6 +128,11 @@ const MemberProfilePage = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [selectedResumeMembershipId, setSelectedResumeMembershipId] = useState<number | null>(null);
+  
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState<Partial<Member> & { medical_conditions?: string; injuries_limitations?: string; additional_notes?: string }>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (memberId) {
@@ -170,6 +178,52 @@ const MemberProfilePage = () => {
       console.error('Error fetching member data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (!member) return;
+    setEditFormData({
+      full_name: member.full_name,
+      phone_number: member.phone_number,
+      email: member.email,
+      gender: member.gender,
+      date_of_birth: member.date_of_birth,
+      occupation: member.occupation,
+      address: member.address,
+      emergency_contact_name: member.emergency_contact_name,
+      emergency_contact_phone: member.emergency_contact_phone,
+      medical_conditions: medicalInfo?.medical_conditions || '',
+      injuries_limitations: medicalInfo?.injuries_limitations || '',
+      additional_notes: medicalInfo?.additional_notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!member) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData)
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        showToast('Member updated successfully', 'success');
+        setShowEditModal(false);
+        fetchMemberData();
+      } else {
+        showToast(result.message || 'Failed to update member', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to update member', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -407,18 +461,225 @@ const MemberProfilePage = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.back()}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Member Profile</h1>
-          <p className="text-gray-600">View member details and membership history</p>
+      {/* Edit Member Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <Edit className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Edit Member</h3>
+                  <p className="text-sm text-gray-600">Update member information</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              {/* Personal Information */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <User className="w-4 h-4" /> Personal Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      value={editFormData.full_name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={editFormData.phone_number || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editFormData.email || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <select
+                      value={editFormData.gender || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={editFormData.date_of_birth || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, date_of_birth: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
+                    <input
+                      type="text"
+                      value={editFormData.occupation || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, occupation: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" /> Address
+                </h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea
+                    value={editFormData.address || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              {/* Emergency Contact */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4" /> Emergency Contact
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
+                    <input
+                      type="text"
+                      value={editFormData.emergency_contact_name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+                    <input
+                      type="tel"
+                      value={editFormData.emergency_contact_phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Medical Information */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Heart className="w-4 h-4" /> Medical Information
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Medical Conditions</label>
+                    <textarea
+                      value={editFormData.medical_conditions || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, medical_conditions: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      rows={2}
+                      placeholder="Any medical conditions..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Injuries & Limitations</label>
+                    <textarea
+                      value={editFormData.injuries_limitations || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, injuries_limitations: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      rows={2}
+                      placeholder="Any injuries or physical limitations..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                    <textarea
+                      value={editFormData.additional_notes || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, additional_notes: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      rows={2}
+                      placeholder="Any additional notes..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white font-semibold rounded-xl hover:from-orange-700 hover:to-orange-800 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Changes</>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={saving}
+                  className="px-5 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Member Profile</h1>
+            <p className="text-gray-600">View member details and membership history</p>
+          </div>
+        </div>
+        {can('edit_members') && (
+          <button
+            onClick={handleEditClick}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-md"
+          >
+            <Edit className="w-4 h-4" />
+            Edit Member
+          </button>
+        )}
       </div>
 
       {/* Member Info Card */}
