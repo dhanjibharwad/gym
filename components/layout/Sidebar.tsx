@@ -19,7 +19,8 @@ import {
   UserX,
   History,
   Settings,
-  Shield
+  Shield,
+  Receipt
 } from 'lucide-react';
 import { hasAnyPermission, isAdmin } from '@/lib/rbac';
 
@@ -108,6 +109,12 @@ const navItems = [
     label: "Settings", 
     href: "/dashboard/settings", 
     icon: Settings, 
+    permissions: ['manage_settings'] 
+  },
+  { 
+    label: "Receipt Template", 
+    href: "/dashboard/receipt-template", 
+    icon: Receipt, 
     permissions: ['manage_settings'] 
   },
   { 

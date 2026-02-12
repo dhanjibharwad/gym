@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS settings (
     id SERIAL PRIMARY KEY,
     company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     payment_modes JSONB NOT NULL DEFAULT '{"Cash": {"enabled": true, "processingFee": 0}, "UPI": {"enabled": true, "processingFee": 1.5}, "Card": {"enabled": true, "processingFee": 2.5}, "Online": {"enabled": true, "processingFee": 2.0}, "Cheque": {"enabled": true, "processingFee": 0}}'::jsonb,
+    receipt_template JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(company_id)
@@ -10,3 +11,14 @@ CREATE TABLE IF NOT EXISTS settings (
 
 CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Add receipt_template column if it doesn't exist (for existing databases)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'settings' AND column_name = 'receipt_template'
+    ) THEN
+        ALTER TABLE settings ADD COLUMN receipt_template JSONB;
+    END IF;
+END $$;
