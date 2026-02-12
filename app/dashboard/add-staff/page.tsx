@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield, ArrowLeft } from 'lucide-react';
 import Dropdown from '@/app/components/Dropdown';
 import { PageGuard } from '@/components/rbac/PageGuard';
 
@@ -13,6 +14,7 @@ interface Role {
 }
 
 function AddStaffPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -113,7 +115,14 @@ function AddStaffPage() {
       <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
               <UserPlus className="w-5 h-5 text-orange-600" />
             </div>
