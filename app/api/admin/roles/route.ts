@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
+import { isProtectedRole } from '@/lib/rbac';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check view_roles or manage_roles permission
+    const auth = await checkAnyPermission(request, ['view_roles', 'manage_roles']);
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const result = await pool.query(
-      'SELECT id, name, description FROM roles WHERE company_id = $1 ORDER BY name',
-      [session.user.companyId]
+      `SELECT r.id, r.name, r.description, r.is_protected, r.is_system_role,
+        COUNT(DISTINCT rp.permission_id) as permission_count,
+        COUNT(DISTINCT u.id) as user_count
+       FROM roles r
+       LEFT JOIN role_permissions rp ON r.id = rp.role_id
+       LEFT JOIN users u ON u.role_id = r.id
+       WHERE r.company_id = $1
+       GROUP BY r.id, r.name, r.description, r.is_protected, r.is_system_role
+       ORDER BY r.name`,
+      [auth.session!.user.companyId]
     );
 
     return NextResponse.json({ roles: result.rows });
@@ -23,9 +33,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check manage_roles permission
+    const auth = await checkPermission(request, 'manage_roles');
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { name, description } = await request.json();
@@ -34,10 +45,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Role name is required' }, { status: 400 });
     }
 
+    const trimmedName = name.trim();
+
+    // Prevent creating roles with protected names
+    if (isProtectedRole(trimmedName)) {
+      return NextResponse.json({ 
+        error: `Cannot create role with name '${trimmedName}' - this is a protected system role` 
+      }, { status: 403 });
+    }
+
     // Check if role already exists
     const existing = await pool.query(
-      'SELECT id FROM roles WHERE company_id = $1 AND name = $2',
-      [session.user.companyId, name.trim()]
+      'SELECT id FROM roles WHERE company_id = $1 AND LOWER(name) = LOWER($2)',
+      [auth.session!.user.companyId, trimmedName]
     );
 
     if (existing.rows.length > 0) {
@@ -45,8 +65,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await pool.query(
-      'INSERT INTO roles (company_id, name, description) VALUES ($1, $2, $3) RETURNING *',
-      [session.user.companyId, name.trim(), description?.trim() || '']
+      'INSERT INTO roles (company_id, name, description, is_protected, is_system_role) VALUES ($1, $2, $3, false, false) RETURNING *',
+      [auth.session!.user.companyId, trimmedName, description?.trim() || '']
     );
 
     return NextResponse.json({ 
@@ -61,9 +81,10 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check manage_roles permission
+    const auth = await checkPermission(request, 'manage_roles');
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { id, name, description } = await request.json();
@@ -74,24 +95,36 @@ export async function PUT(request: NextRequest) {
 
     // Check if role exists and belongs to company
     const existing = await pool.query(
-      'SELECT id, name FROM roles WHERE id = $1 AND company_id = $2',
-      [id, session.user.companyId]
+      'SELECT id, name, is_protected FROM roles WHERE id = $1 AND company_id = $2',
+      [id, auth.session!.user.companyId]
     );
 
     if (existing.rows.length === 0) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Prevent renaming system roles
-    const currentName = existing.rows[0].name.toLowerCase();
-    if ((currentName === 'admin' || currentName === 'reception') && name.trim().toLowerCase() !== currentName) {
-      return NextResponse.json({ error: 'Cannot rename system roles (admin/reception)' }, { status: 403 });
+    const role = existing.rows[0];
+
+    // Prevent modifying protected roles
+    if (role.is_protected || isProtectedRole(role.name)) {
+      return NextResponse.json({ 
+        error: `Cannot modify protected role '${role.name}'` 
+      }, { status: 403 });
+    }
+
+    const trimmedName = name.trim();
+
+    // Prevent renaming to a protected role name
+    if (isProtectedRole(trimmedName) && trimmedName.toLowerCase() !== role.name.toLowerCase()) {
+      return NextResponse.json({ 
+        error: `Cannot rename role to '${trimmedName}' - this is a protected system role name` 
+      }, { status: 403 });
     }
 
     // Check if name is taken by another role
     const duplicate = await pool.query(
-      'SELECT id FROM roles WHERE company_id = $1 AND name = $2 AND id != $3',
-      [session.user.companyId, name.trim(), id]
+      'SELECT id FROM roles WHERE company_id = $1 AND LOWER(name) = LOWER($2) AND id != $3',
+      [auth.session!.user.companyId, trimmedName, id]
     );
 
     if (duplicate.rows.length > 0) {
@@ -100,7 +133,7 @@ export async function PUT(request: NextRequest) {
 
     const result = await pool.query(
       'UPDATE roles SET name = $1, description = $2 WHERE id = $3 AND company_id = $4 RETURNING *',
-      [name.trim(), description?.trim() || '', id, session.user.companyId]
+      [trimmedName, description?.trim() || '', id, auth.session!.user.companyId]
     );
 
     return NextResponse.json({ 
@@ -115,9 +148,10 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check manage_roles permission
+    const auth = await checkPermission(request, 'manage_roles');
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { searchParams } = new URL(request.url);
@@ -129,43 +163,42 @@ export async function DELETE(request: NextRequest) {
 
     // Check if role exists and belongs to company
     const existing = await pool.query(
-      'SELECT id, name FROM roles WHERE id = $1 AND company_id = $2',
-      [id, session.user.companyId]
+      'SELECT id, name, is_protected FROM roles WHERE id = $1 AND company_id = $2',
+      [id, auth.session!.user.companyId]
     );
 
     if (existing.rows.length === 0) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Prevent deletion of admin and reception roles
-    const roleName = existing.rows[0].name.toLowerCase();
-    if (roleName === 'admin' || roleName === 'reception') {
-      return NextResponse.json({ error: 'Cannot delete system roles (admin/reception)' }, { status: 403 });
-    }
+    const role = existing.rows[0];
 
-    // Check if role has assigned permissions
-    const permissions = await pool.query(
-      'SELECT COUNT(*) as count FROM role_permissions WHERE role_id = $1',
-      [id]
-    );
-
-    if (parseInt(permissions.rows[0].count) > 0) {
-      return NextResponse.json({ error: 'Cannot delete role with assigned permissions' }, { status: 409 });
+    // Prevent deletion of protected roles
+    if (role.is_protected || isProtectedRole(role.name)) {
+      return NextResponse.json({ 
+        error: `Cannot delete protected role '${role.name}'` 
+      }, { status: 403 });
     }
 
     // Check if any users have this role
     const users = await pool.query(
-      'SELECT COUNT(*) as count FROM users WHERE company_id = $1 AND role = $2',
-      [session.user.companyId, existing.rows[0].name]
+      'SELECT COUNT(*) as count FROM users WHERE role_id = $1',
+      [id]
     );
 
     if (parseInt(users.rows[0].count) > 0) {
-      return NextResponse.json({ error: 'Cannot delete role assigned to users' }, { status: 409 });
+      return NextResponse.json({ 
+        error: 'Cannot delete role assigned to users. Please reassign users first.' 
+      }, { status: 409 });
     }
 
+    // Delete role permissions first
+    await pool.query('DELETE FROM role_permissions WHERE role_id = $1', [id]);
+
+    // Delete the role
     await pool.query(
       'DELETE FROM roles WHERE id = $1 AND company_id = $2',
-      [id, session.user.companyId]
+      [id, auth.session!.user.companyId]
     );
 
     return NextResponse.json({ message: 'Role deleted successfully' });

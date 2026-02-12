@@ -17,6 +17,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 // Type definitions
 interface FormData {
@@ -1555,4 +1556,13 @@ const AddMemberPage = () => {
   );
 };
 
-export default AddMemberPage;
+// Wrap with PageGuard to check permissions
+function AddMemberPageWithGuard() {
+  return (
+    <PageGuard permission="add_members">
+      <AddMemberPage />
+    </PageGuard>
+  );
+}
+
+export default AddMemberPageWithGuard;

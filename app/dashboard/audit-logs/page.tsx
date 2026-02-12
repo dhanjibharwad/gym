@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Clock, User, Activity } from 'lucide-react';
 import Toast from '@/app/components/Toast';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface AuditLog {
   id: number;
@@ -14,7 +15,7 @@ interface AuditLog {
   created_at: string;
 }
 
-export default function AuditLogsPage() {
+function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,3 +145,14 @@ export default function AuditLogsPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function AuditLogsPageWithGuard() {
+  return (
+    <PageGuard permission="view_audit_logs">
+      <AuditLogsPage />
+    </PageGuard>
+  );
+}
+
+export default AuditLogsPageWithGuard;

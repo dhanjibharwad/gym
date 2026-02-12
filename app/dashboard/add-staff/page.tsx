@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield } from 'lucide-react';
 import Dropdown from '@/app/components/Dropdown';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface Role {
   id: number;
   name: string;
   description: string;
+  is_protected?: boolean;
 }
 
-export default function AddStaffPage() {
+function AddStaffPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,7 +33,11 @@ export default function AddStaffPage() {
       const response = await fetch('/api/admin/roles');
       const data = await response.json();
       if (response.ok) {
-        setRoles(data.roles);
+        // Filter out admin role - staff cannot be assigned admin role
+        const nonAdminRoles = data.roles.filter((role: Role) => 
+          role.name.toLowerCase() !== 'admin' && !role.is_protected
+        );
+        setRoles(nonAdminRoles);
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
@@ -263,3 +269,14 @@ export default function AddStaffPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function AddStaffPageWithGuard() {
+  return (
+    <PageGuard permission="add_staff">
+      <AddStaffPage />
+    </PageGuard>
+  );
+}
+
+export default AddStaffPageWithGuard;

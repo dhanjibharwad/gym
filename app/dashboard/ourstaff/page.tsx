@@ -1,13 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, Shield, Trash2, User, Plus } from 'lucide-react';
+import { Users, Calendar, Shield, Trash2, User, Plus, Edit } from 'lucide-react';
 import Link from 'next/link';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
-export default function OurStaffPage() {
-  const [staff, setStaff] = useState([]);
+function OurStaffPage() {
+  const { can } = usePermission();
+  const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', role_id: '' });
+  const [roles, setRoles] = useState([]);
+  const [updating, setUpdating] = useState(false);
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -21,6 +28,18 @@ export default function OurStaffPage() {
       console.error('Failed to fetch staff:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch('/api/admin/roles');
+      const data = await res.json();
+      if (res.ok && data.roles) {
+        setRoles(data.roles.filter((r: any) => !r.is_protected && r.name.toLowerCase() !== 'admin'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
     }
   };
 
@@ -51,7 +70,52 @@ export default function OurStaffPage() {
 
   useEffect(() => {
     fetchStaff();
+    fetchRoles();
   }, []);
+
+  const handleEdit = (member: any) => {
+    setEditingStaff(member);
+    setEditForm({
+      name: member.name,
+      email: member.email,
+      role_id: member.role_id || ''
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingStaff(null);
+    setEditForm({ name: '', email: '', role_id: '' });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingStaff) return;
+    
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${editingStaff.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+
+      if (res.ok) {
+        setStaff(staff.map((s: any) => 
+          s.id === editingStaff.id 
+            ? { ...s, name: editForm.name, email: editForm.email, role_id: editForm.role_id }
+            : s
+        ));
+        handleCancelEdit();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update staff member');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update staff member');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -67,13 +131,15 @@ export default function OurStaffPage() {
               <p className="text-gray-600">Manage reception staff members</p>
             </div>
           </div>
-          <Link
-            href="/dashboard/add-staff"
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Staff
-          </Link>
+          {can('add_staff') && (
+            <Link
+              href="/dashboard/add-staff"
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Staff
+            </Link>
+          )}
         </div>
 
         {/* Staff Table */}
@@ -123,7 +189,7 @@ export default function OurStaffPage() {
                             <div className="text-sm font-medium text-gray-900">{member.name}</div>
                             <div className="text-sm text-gray-500 flex items-center gap-1">
                               <Shield className="w-3 h-3" />
-                              {member.role === 'admin' ? 'Administrator' : 'Reception Staff'}
+                              {member.role || 'Staff'}
                             </div>
                           </div>
                         </div>
@@ -148,19 +214,30 @@ export default function OurStaffPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
-                          <button 
-                            onClick={() => handleDelete(member.id, member.name)}
-                            disabled={deleteLoading === member.id || member.role === 'admin'}
-                            className={`p-1 rounded transition ${
-                              member.role === 'admin' 
-                                ? 'text-gray-300 cursor-not-allowed' 
-                                : deleteLoading === member.id
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-gray-400 hover:text-red-600'
-                            }`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {can('edit_staff') && member.role?.toLowerCase() !== 'admin' && (
+                            <button 
+                              onClick={() => handleEdit(member)}
+                              className="p-1 rounded transition text-gray-400 hover:text-blue-600"
+                              title="Edit staff"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {can('delete_staff') && (
+                            <button 
+                              onClick={() => handleDelete(member.id, member.name)}
+                              disabled={deleteLoading === member.id || member.role?.toLowerCase() === 'admin'}
+                              className={`p-1 rounded transition ${
+                                member.role?.toLowerCase() === 'admin'
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : deleteLoading === member.id
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-red-600'
+                              }`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -171,6 +248,83 @@ export default function OurStaffPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingStaff && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Staff Member</h3>
+              <p className="text-sm text-gray-500">Update staff details</p>
+            </div>
+            
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={editForm.role_id}
+                  onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">Select Role</option>
+                  {roles.map((role: any) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={updating}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
+              >
+                {updating ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function OurStaffPageWithGuard() {
+  return (
+    <PageGuard permissions={['view_staff', 'add_staff', 'delete_staff', 'edit_staff']}>
+      <OurStaffPage />
+    </PageGuard>
+  );
+}
+
+export default OurStaffPageWithGuard;

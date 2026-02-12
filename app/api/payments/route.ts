@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { checkPermission } from '@/lib/api-permissions';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check view_payments permission
+    const { authorized, response } = await checkPermission(request, 'view_payments');
+    if (!authorized) return response;
+
     const companyId = request.headers.get('x-company-id');
     
     if (!companyId) {

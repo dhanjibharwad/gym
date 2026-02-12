@@ -1,24 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import pool from '@/lib/db';
-
-// Role-based permissions configuration
-const ROLE_PERMISSIONS = {
-  admin: ['view_revenue', 'add_members', 'manage_payments', 'view_members', 'manage_staff'],
-  Admin: ['view_revenue', 'add_members', 'manage_payments', 'view_members', 'manage_staff'],
-  reception: ['add_members', 'manage_payments', 'view_members'],
-  Reception: ['add_members', 'manage_payments', 'view_members']
-};
-
-function getRolePermissions(role: string): string[] {
-  // This will be replaced by database lookup in the updated system
-  // For now, return admin permissions for custom roles
-  const permissions = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
-  if (permissions) {
-    return permissions;
-  }
-  return ['view_dashboard', 'view_members', 'add_members', 'manage_payments', 'view_staff'];
-}
+import { ALL_PERMISSION_NAMES } from '@/lib/permissions';
+import { isAdmin } from '@/lib/rbac';
 
 export async function GET() {
   try {
@@ -31,46 +15,56 @@ export async function GET() {
       );
     }
 
-    // Get user permissions from database
+    const userIsAdmin = isAdmin(session.user.role);
     let userPermissions: string[] = [];
     let companyName = '';
+    let roleName = session.user.role;
+
     try {
-      const result = await pool.query(`
-        SELECT DISTINCT p.name 
-        FROM role_permissions rp
-        JOIN permissions p ON rp.permission_id = p.id
-        JOIN users u ON u.role_id = rp.role_id
-        WHERE u.id = $1
-      `, [session.user.id]);
-      
-      userPermissions = result.rows.map(row => row.name);
-      
-      // Get company name
+      // Get company name and role info
       const companyResult = await pool.query(`
-        SELECT c.name 
+        SELECT c.name, r.name as role_name
         FROM users u
         JOIN companies c ON u.company_id = c.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = $1
       `, [session.user.id]);
       
       if (companyResult.rows.length > 0) {
         companyName = companyResult.rows[0].name;
+        if (companyResult.rows[0].role_name) {
+          roleName = companyResult.rows[0].role_name;
+        }
       }
-      
-      // If no permissions found, use default based on role
-      if (userPermissions.length === 0) {
-        userPermissions = getRolePermissions(session.user.role);
+
+      // Admin gets ALL permissions implicitly
+      if (userIsAdmin) {
+        userPermissions = [...ALL_PERMISSION_NAMES];
+      } else {
+        // Staff roles get permissions from role_permissions table
+        const result = await pool.query(`
+          SELECT DISTINCT p.name 
+          FROM role_permissions rp
+          JOIN permissions p ON rp.permission_id = p.id
+          WHERE rp.role_id = (
+            SELECT role_id FROM users WHERE id = $1
+          )
+        `, [session.user.id]);
+        
+        userPermissions = result.rows.map(row => row.name);
       }
     } catch (error) {
       console.error('Error fetching user permissions:', error);
-      userPermissions = getRolePermissions(session.user.role);
+      // Fallback: admin gets all, staff gets view_dashboard only
+      userPermissions = userIsAdmin ? [...ALL_PERMISSION_NAMES] : ['view_dashboard'];
     }
 
     const user = {
       id: session.user.id,
       name: session.user.name,
-      role: session.user.role,
+      role: roleName,
       permissions: userPermissions,
+      isAdmin: userIsAdmin,
       companyName
     };
 
@@ -79,7 +73,8 @@ export async function GET() {
       user
     });
 
-  } catch {
+  } catch (error) {
+    console.error('Auth me error:', error);
     return NextResponse.json(
       { success: false, error: 'Authentication failed' },
       { status: 500 }

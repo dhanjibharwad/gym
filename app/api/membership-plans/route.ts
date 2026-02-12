@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    const companyId = session?.user?.companyId;
+    // Check view_plans or manage_plans permission
+    const auth = await checkAnyPermission(request, ['view_plans', 'manage_plans']);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    const companyId = auth.session!.user.companyId;
     
     if (!companyId) {
       return NextResponse.json(
@@ -53,8 +59,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Check manage_plans permission
+    const auth = await checkPermission(request, 'manage_plans');
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { plan_name, duration_months, price } = await request.json();
     
     if (!plan_name || !duration_months || !price) {
@@ -64,9 +76,8 @@ export async function POST(request: Request) {
       );
     }
     
-    const session = await getSession();
-    const companyId = session?.user?.companyId || 1;
-    const userRole = session?.user?.role || 'user not logged in';
+    const companyId = auth.session!.user.companyId;
+    const userRole = auth.session!.user.role;
     
     const client = await pool.connect();
     
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
       
       // Log the action
       try {
-        const userName = session?.user?.name || 'Unknown User';
+        const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
           ['CREATE', 'membership_plan', result.rows[0].id, `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`, userRole, companyId]
@@ -111,8 +122,14 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
+    // Check manage_plans permission
+    const auth = await checkPermission(request, 'manage_plans');
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { id, plan_name, duration_months, price } = await request.json();
     
     if (!id || !plan_name || !duration_months || !price) {
@@ -122,17 +139,8 @@ export async function PUT(request: Request) {
       );
     }
     
-    const session = await getSession();
-    const companyId = session?.user?.companyId;
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const userRole = session?.user?.role || 'user not logged in';
+    const companyId = auth.session!.user.companyId;
+    const userRole = auth.session!.user.role;
     
     const client = await pool.connect();
     
@@ -155,7 +163,7 @@ export async function PUT(request: Request) {
       // Log the action
       try {
         const old = oldPlan.rows[0];
-        const userName = session?.user?.name || 'Unknown User';
+        const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
           ['UPDATE', 'membership_plan', id, `Updated plan by (${userName}): ${old.plan_name} → ${plan_name}, ${old.duration_months}m → ${duration_months}m, ₹${old.price} → ₹${price}`, userRole, companyId]
@@ -188,8 +196,14 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    // Check manage_plans permission
+    const auth = await checkPermission(request, 'manage_plans');
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -200,17 +214,8 @@ export async function DELETE(request: Request) {
       );
     }
     
-    const session = await getSession();
-    const companyId = session?.user?.companyId;
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const userRole = session?.user?.role || 'user not logged in';
+    const companyId = auth.session!.user.companyId;
+    const userRole = auth.session!.user.role;
     
     const client = await pool.connect();
     
@@ -246,7 +251,7 @@ export async function DELETE(request: Request) {
       // Log the action
       try {
         const plan = planDetails.rows[0];
-        const userName = session?.user?.name || 'Unknown User';
+        const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
           ['DELETE', 'membership_plan', id, `Deleted plan by (${userName}): ${plan.plan_name} (${plan.duration_months} months, ₹${plan.price})`, userRole, companyId]

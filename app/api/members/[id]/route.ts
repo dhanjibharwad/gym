@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { checkPermission } from '@/lib/api-permissions';
 
 export async function GET(
   request: NextRequest,
@@ -129,6 +130,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check edit_members permission
+    const { authorized, response } = await checkPermission(request, 'edit_members');
+    if (!authorized) return response;
+
     const { id: memberId } = await params;
     const body = await request.json();
     const { phone_number, email } = body;

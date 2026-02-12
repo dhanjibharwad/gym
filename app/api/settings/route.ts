@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { checkPermission } from '@/lib/api-permissions';
 
 export async function GET() {
   try {
@@ -37,6 +38,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check manage_settings permission
+    const { authorized, response } = await checkPermission(request, 'manage_settings');
+    if (!authorized) return response;
+
     const session = await getSession();
     if (!session?.user?.companyId) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });

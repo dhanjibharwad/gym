@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Users, Edit, Trash2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Plus, Users, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, Shield } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface Role {
   id: number;
   name: string;
   description: string;
+  is_protected: boolean;
+  is_system_role: boolean;
+  permission_count: number;
+  user_count: number;
 }
 
 interface Toast {
@@ -15,7 +21,8 @@ interface Toast {
   type: 'success' | 'error' | 'warning';
 }
 
-export default function RolesPage() {
+function RolesPage() {
+  const { can } = usePermission();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -131,13 +138,15 @@ export default function RolesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Role Management</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Create Role
-        </button>
+        {can('manage_roles') && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Create Role
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -204,47 +213,64 @@ export default function RolesPage() {
           ) : (
             <div className="grid gap-4">
               {roles.map((role) => {
-                const isSystemRole = role.name.toLowerCase() === 'admin' || role.name.toLowerCase() === 'reception';
+                const isProtected = role.is_protected || role.name.toLowerCase() === 'admin';
                 return (
                   <div key={role.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-gray-900">{role.name}</h3>
-                        {isSystemRole && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">System</span>
+                        {isProtected && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Protected</span>
+                        )}
+                        {role.is_system_role && (
+                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">System</span>
                         )}
                       </div>
                       {role.description && (
                         <p className="text-gray-600 text-sm mt-1">{role.description}</p>
                       )}
+                      <div className="flex gap-3 mt-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          {role.permission_count || 0} permissions
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {role.user_count || 0} users
+                        </span>
+                      </div>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(role)}
-                        disabled={isSystemRole}
-                        className={`p-1 rounded transition ${
-                          isSystemRole 
-                            ? 'text-gray-300 cursor-not-allowed' 
-                            : 'text-gray-400 hover:text-orange-600 cursor-pointer'
-                        }`}
-                        title={isSystemRole ? 'Cannot edit system role' : 'Edit role'}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(role)}
-                        disabled={deleteLoading === role.id || isSystemRole}
-                        className={`p-1 rounded transition ${
-                          isSystemRole 
-                            ? 'text-gray-300 cursor-not-allowed' 
-                            : deleteLoading === role.id
-                            ? 'text-gray-400 cursor-not-allowed opacity-50'
-                            : 'text-gray-400 hover:text-red-600 cursor-pointer'
-                        }`}
-                        title={isSystemRole ? 'Cannot delete system role' : 'Delete role'}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {can('manage_roles') && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(role)}
+                            disabled={isProtected}
+                            className={`p-1 rounded transition ${
+                              isProtected 
+                                ? 'text-gray-300 cursor-not-allowed' 
+                                : 'text-gray-400 hover:text-orange-600 cursor-pointer'
+                            }`}
+                            title={isProtected ? 'Cannot edit protected role' : 'Edit role'}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(role)}
+                            disabled={deleteLoading === role.id || isProtected}
+                            className={`p-1 rounded transition ${
+                              isProtected 
+                                ? 'text-gray-300 cursor-not-allowed' 
+                                : deleteLoading === role.id
+                                ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                : 'text-gray-400 hover:text-red-600 cursor-pointer'
+                            }`}
+                            title={isProtected ? 'Cannot delete protected role' : 'Delete role'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -281,3 +307,14 @@ export default function RolesPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function RolesPageWithGuard() {
+  return (
+    <PageGuard permissions={['view_roles', 'manage_roles']}>
+      <RolesPage />
+    </PageGuard>
+  );
+}
+
+export default RolesPageWithGuard;

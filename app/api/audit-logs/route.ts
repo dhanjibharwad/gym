@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { checkPermission } from '@/lib/api-permissions';
 
 export async function POST(request: Request) {
   try {
@@ -37,16 +38,13 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const companyId = request.headers.get('x-company-id');
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Check view_audit_logs permission
+    const { authorized, response, session } = await checkPermission(request, 'view_audit_logs');
+    if (!authorized) return response;
+
+    const companyId = session!.user.companyId;
     
     const client = await pool.connect();
     

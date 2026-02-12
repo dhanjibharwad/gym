@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession, hashPassword } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
+import { checkPermission } from '@/lib/api-permissions';
 import nodemailer from 'nodemailer';
 
 // Generate a random password
@@ -15,13 +16,10 @@ function generatePassword(length: number = 12): string {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is admin
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 403 }
-      );
+    // Check add_staff permission
+    const auth = await checkPermission(request, 'add_staff');
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { name, email, roleId } = await request.json();
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Check if user already exists in the same company
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1 AND company_id = $2',
-      [normalizedEmail, session.user.companyId]
+      [normalizedEmail, auth.session!.user.companyId]
     );
 
     if (existingUser.rows.length > 0) {
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Validate role exists in company
     const roleResult = await pool.query(
       'SELECT id, name FROM roles WHERE company_id = $1 AND id = $2',
-      [session.user.companyId, roleId]
+      [auth.session!.user.companyId, roleId]
     );
 
     if (roleResult.rows.length === 0) {
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO users (company_id, role_id, name, email, password, is_verified) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING id, email, name`,
-      [session.user.companyId, roleId, name.trim(), normalizedEmail, hashedPassword, true]
+      [auth.session!.user.companyId, roleId, name.trim(), normalizedEmail, hashedPassword, true]
     );
 
     const newUser = result.rows[0];

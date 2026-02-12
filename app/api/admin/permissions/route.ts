@@ -1,28 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
-
-// Define available modules and their permissions
-const MODULES = {
-  dashboard: { name: 'Dashboard', permissions: ['view_dashboard'] },
-  members: { name: 'Members', permissions: ['view_members', 'add_members', 'edit_members', 'delete_members'] },
-  payments: { name: 'Payments', permissions: ['view_payments', 'manage_payments', 'view_revenue'] },
-  staff: { name: 'Staff Management', permissions: ['view_staff', 'add_staff', 'edit_staff', 'delete_staff'] },
-  reports: { name: 'Reports', permissions: ['view_reports', 'export_reports'] },
-  settings: { name: 'Settings', permissions: ['manage_settings', 'manage_roles'] }
-};
+import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
+import { MODULES, ALL_PERMISSIONS } from '@/lib/permissions';
+import { isAdmin } from '@/lib/rbac';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check view_roles or manage_roles permission
+    const auth = await checkAnyPermission(request, ['view_roles', 'manage_roles']);
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { searchParams } = new URL(request.url);
     const roleId = searchParams.get('roleId');
 
     if (roleId) {
+      // Get role info to check if it's admin
+      const roleResult = await pool.query(
+        'SELECT name FROM roles WHERE id = $1 AND company_id = $2',
+        [roleId, auth.session!.user.companyId]
+      );
+
+      // If admin role, return all permissions
+      if (roleResult.rows.length > 0 && isAdmin(roleResult.rows[0].name)) {
+        const allPermissions: Record<string, string[]> = {};
+        Object.entries(MODULES).forEach(([key, module]) => {
+          allPermissions[key] = module.permissions.map(p => p.name);
+        });
+        
+        return NextResponse.json({ 
+          modules: MODULES, 
+          rolePermissions: allPermissions,
+          isAdmin: true 
+        });
+      }
+
       // Get permissions for specific role
       const result = await pool.query(`
         SELECT p.name as permission_name, p.module 
@@ -37,7 +50,11 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {});
 
-      return NextResponse.json({ modules: MODULES, rolePermissions });
+      return NextResponse.json({ 
+        modules: MODULES, 
+        rolePermissions,
+        isAdmin: false 
+      });
     }
 
     // Return all modules
@@ -50,15 +67,33 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.user.role.toLowerCase() !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // Check manage_roles permission
+    const auth = await checkPermission(request, 'manage_roles');
+    if (!auth.authorized) {
+      return auth.response;
     }
 
     const { roleId, permissions } = await request.json();
 
     if (!roleId || !permissions) {
       return NextResponse.json({ error: 'Role ID and permissions are required' }, { status: 400 });
+    }
+
+    // Check if role is admin - admin always has all permissions
+    const roleResult = await pool.query(
+      'SELECT name FROM roles WHERE id = $1 AND company_id = $2',
+      [roleId, auth.session!.user.companyId]
+    );
+
+    if (roleResult.rows.length === 0) {
+      return NextResponse.json({ error: 'Role not found' }, { status: 404 });
+    }
+
+    // Cannot modify admin role permissions - admin has all permissions implicitly
+    if (isAdmin(roleResult.rows[0].name)) {
+      return NextResponse.json({ 
+        error: 'Cannot modify admin role permissions. Admin has full access to all modules.' 
+      }, { status: 403 });
     }
 
     const client = await pool.connect();
@@ -72,7 +107,7 @@ export async function POST(request: NextRequest) {
             INSERT INTO permissions (name, module, description) 
             VALUES ($1, $2, $3) 
             ON CONFLICT (name) DO NOTHING
-          `, [perm, module, `${perm.replace('_', ' ')} permission`]);
+          `, [perm, module, `${perm.replace(/_/g, ' ')} permission`]);
         }
       }
 

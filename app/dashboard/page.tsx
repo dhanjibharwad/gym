@@ -15,14 +15,18 @@ import {
   IndianRupee,
   Target,
   UserCog,
-  History
+  History,
+  Filter,
+  X
 } from 'lucide-react';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface User {
   id: number;
   name: string;
-  role: 'admin' | 'reception';
+  role: string;
   permissions: string[];
+  isAdmin: boolean;
 }
 
 interface Member {
@@ -62,6 +66,7 @@ interface ExpiringMember {
 
 const Dashboard = () => {
   const router = useRouter();
+  const { can, isAdmin } = usePermission();
   const [currentTime, setCurrentTime] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [dashboardData, setDashboardData] = useState({
@@ -77,6 +82,13 @@ const Dashboard = () => {
     expiringMembers: [] as ExpiringMember[]
   });
   const [loading, setLoading] = useState(true);
+  
+  // Date filter states
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleString());
@@ -97,9 +109,132 @@ const Dashboard = () => {
     }
   };
 
-  const hasPermission = (permission: string) => {
-    if (!user) return false;
-    return user.role.toLowerCase() === 'admin' || user.permissions.includes(permission);
+  const calculateDashboardData = (members: Member[], payments: Payment[], filterStartDate?: string, filterEndDate?: string) => {
+    const hasDateFilter = filterStartDate && filterEndDate;
+    
+    // Filter members by date range if filter is applied
+    const filteredMembers = hasDateFilter 
+      ? members.filter((m: Member) => {
+          const memberDate = new Date(m.created_at).toISOString().split('T')[0];
+          return memberDate >= filterStartDate! && memberDate <= filterEndDate!;
+        })
+      : members;
+    
+    // Filter payments by date range if filter is applied
+    const filteredPayments = hasDateFilter
+      ? payments.filter((p: Payment) => {
+          const paymentDate = new Date(p.created_at).toISOString().split('T')[0];
+          return paymentDate >= filterStartDate! && paymentDate <= filterEndDate!;
+        })
+      : payments;
+    
+    // Calculate stats
+    const totalMembers = members.length;
+    const activeMembers = members.filter((m: Member) => m.membership_status === 'active').length;
+    
+    // New members today (or in date range)
+    const today = new Date().toISOString().split('T')[0];
+    const newMembersToday = hasDateFilter 
+      ? filteredMembers.length
+      : members.filter((m: Member) => 
+          new Date(m.created_at).toISOString().split('T')[0] === today
+        ).length;
+    
+    // Expiring this week
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const expiringThisWeek = members.filter((m: Member) => {
+      if (!m.end_date) return false;
+      const endDate = new Date(m.end_date);
+      return endDate <= nextWeek && endDate >= new Date();
+    }).length;
+    
+    // Revenue calculations
+    const todayRevenue = hasDateFilter
+      ? 0
+      : payments
+          .filter((p: Payment) => new Date(p.created_at).toISOString().split('T')[0] === today)
+          .reduce((sum: number, p: Payment) => {
+            const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
+            return sum + amount;
+          }, 0);
+      
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyRevenue = hasDateFilter
+      ? 0
+      : payments
+          .filter((p: Payment) => {
+            const paymentDate = new Date(p.created_at);
+            return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+          })
+          .reduce((sum: number, p: Payment) => {
+            const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
+            return sum + amount;
+          }, 0);
+    
+    const totalRevenue = filteredPayments
+      .reduce((sum: number, p: Payment) => {
+        const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
+        return sum + amount;
+      }, 0);
+    
+    const pendingPayments = payments.filter((p: Payment) => 
+      p.payment_status === 'pending' || p.payment_status === 'partial'
+    ).length;
+    
+    // Recent members (filtered by date if filter applied)
+    const recentMembers: RecentMember[] = filteredMembers
+      .sort((a: Member, b: Member) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 4)
+      .map((m: Member) => ({
+        id: m.id,
+        name: m.full_name,
+        plan: m.plan_name,
+        joinDate: new Date(m.created_at).toLocaleDateString('en-GB').replace(/\//g, '-'),
+        status: m.membership_status === 'active' ? 'Active' : 'Inactive',
+        profilePhoto: m.profile_photo_url
+      }));
+    
+    // Expiring members
+    const expiringMembers: ExpiringMember[] = members
+      .filter((m: Member) => {
+        if (!m.end_date) return false;
+        const endDate = new Date(m.end_date);
+        const today = new Date();
+        const diffTime = endDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7 && diffDays >= 0;
+      })
+      .slice(0, 3)
+      .map((m: Member) => {
+        const endDate = new Date(m.end_date);
+        const today = new Date();
+        const diffTime = endDate.getTime() - today.getTime();
+        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return {
+          id: m.id,
+          name: m.full_name,
+          plan: m.plan_name,
+          expiryDate: new Date(m.end_date).toLocaleDateString('en-GB').replace(/\//g, '-'),
+          daysLeft,
+          profilePhoto: m.profile_photo_url
+        };
+      });
+    
+    setDashboardData({
+      totalMembers,
+      activeMembers,
+      newMembersToday,
+      expiringThisWeek,
+      todayRevenue,
+      monthlyRevenue,
+      totalRevenue,
+      pendingPayments,
+      recentMembers,
+      expiringMembers
+    });
   };
 
   const fetchDashboardData = async () => {
@@ -116,113 +251,30 @@ const Dashboard = () => {
         const members: Member[] = membersData.members;
         const payments: Payment[] = paymentsData.payments;
         
-        // Calculate stats
-        const totalMembers = members.length;
-        const activeMembers = members.filter((m: Member) => m.membership_status === 'active').length;
+        setAllMembers(members);
+        setAllPayments(payments);
         
-        // New members today
-        const today = new Date().toISOString().split('T')[0];
-        const newMembersToday = members.filter((m: Member) => 
-          new Date(m.created_at).toISOString().split('T')[0] === today
-        ).length;
-        
-        // Expiring this week
-        const nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        const expiringThisWeek = members.filter((m: Member) => {
-          if (!m.end_date) return false;
-          const endDate = new Date(m.end_date);
-          return endDate <= nextWeek && endDate >= new Date();
-        }).length;
-        
-        // Revenue calculations
-        const todayRevenue = payments
-          .filter((p: Payment) => new Date(p.created_at).toISOString().split('T')[0] === today)
-          .reduce((sum: number, p: Payment) => {
-            const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
-            return sum + amount;
-          }, 0);
-          
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        
-        const monthlyRevenue = payments
-          .filter((p: Payment) => {
-            const paymentDate = new Date(p.created_at);
-            return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-          })
-          .reduce((sum: number, p: Payment) => {
-            const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
-            return sum + amount;
-          }, 0);
-        
-        const totalRevenue = payments
-          .reduce((sum: number, p: Payment) => {
-            const amount = typeof p.paid_amount === 'number' ? p.paid_amount : parseFloat(String(p.paid_amount)) || 0;
-            return sum + amount;
-          }, 0);
-        
-        const pendingPayments = payments.filter((p: Payment) => 
-          p.payment_status === 'pending' || p.payment_status === 'partial'
-        ).length;
-        
-        // Recent members
-        const recentMembers: RecentMember[] = members
-          .sort((a: Member, b: Member) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 4)
-          .map((m: Member) => ({
-            id: m.id,
-            name: m.full_name,
-            plan: m.plan_name,
-            joinDate: new Date(m.created_at).toLocaleDateString('en-IN'),
-            status: m.membership_status === 'active' ? 'Active' : 'Inactive',
-            profilePhoto: m.profile_photo_url
-          }));
-        
-        // Expiring members
-        const expiringMembers: ExpiringMember[] = members
-          .filter((m: Member) => {
-            if (!m.end_date) return false;
-            const endDate = new Date(m.end_date);
-            const today = new Date();
-            const diffTime = endDate.getTime() - today.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays <= 7 && diffDays >= 0;
-          })
-          .slice(0, 3)
-          .map((m: Member) => {
-            const endDate = new Date(m.end_date);
-            const today = new Date();
-            const diffTime = endDate.getTime() - today.getTime();
-            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return {
-              id: m.id,
-              name: m.full_name,
-              plan: m.plan_name,
-              expiryDate: new Date(m.end_date).toLocaleDateString('en-IN'),
-              daysLeft,
-              profilePhoto: m.profile_photo_url
-            };
-          });
-        
-        setDashboardData({
-          totalMembers,
-          activeMembers,
-          newMembersToday,
-          expiringThisWeek,
-          todayRevenue,
-          monthlyRevenue,
-          totalRevenue,
-          pendingPayments,
-          recentMembers,
-          expiringMembers
-        });
+        calculateDashboardData(members, payments);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyDateFilter = () => {
+    if (startDate && endDate) {
+      calculateDashboardData(allMembers, allPayments, startDate, endDate);
+      setShowDateFilter(false);
+    }
+  };
+
+  const clearDateFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    calculateDashboardData(allMembers, allPayments);
+    setShowDateFilter(false);
   };
 
   const quickActions = [
@@ -265,9 +317,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-8 text-white">
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold">
@@ -279,8 +331,76 @@ const Dashboard = () => {
               Welcome back, {user.name}! Here's what's happening at your gym today.
             </p>
           </div>
-          <div className="mt-4 sm:mt-0 text-sm text-gray-400">
-            {currentTime && `Last updated: ${currentTime}`}
+          <div className="mt-4 sm:mt-0 flex items-center gap-4">
+            {/* Date Filter */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDateFilter(!showDateFilter)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  startDate && endDate 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                {startDate && endDate ? `${startDate} to ${endDate}` : 'Filter by Date'}
+              </button>
+              
+              {showDateFilter && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-900">Date Range</h4>
+                    <button
+                      onClick={() => setShowDateFilter(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={applyDateFilter}
+                        disabled={!startDate || !endDate}
+                        className="flex-1 px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Apply
+                      </button>
+                      {(startDate || endDate) && (
+                        <button
+                          onClick={clearDateFilter}
+                          className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="text-sm text-gray-400">
+              {currentTime && `Last updated: ${currentTime}`}
+            </div>
           </div>
         </div>
       </div>
@@ -322,7 +442,7 @@ const Dashboard = () => {
         </div>
 
         {/* Today's Revenue - Only show if has permission */}
-        {hasPermission('view_revenue') && (
+        {can('view_revenue') && (
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
@@ -403,7 +523,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {hasPermission('view_revenue') && (
+        {can('view_revenue') && (
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-md">
@@ -423,7 +543,7 @@ const Dashboard = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions
-            .filter(action => hasPermission(action.permission))
+            .filter(action => can(action.permission))
             .map((action) => {
               const Icon = action.icon;
               return (

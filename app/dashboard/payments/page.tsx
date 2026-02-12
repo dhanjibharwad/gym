@@ -22,6 +22,8 @@ import {
   Save
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface Payment {
   id: number;
@@ -63,6 +65,7 @@ interface PaymentTransaction {
 }
 
 const PaymentsPage = () => {
+  const { can, isAdmin } = usePermission();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
   const [memberTransactions, setMemberTransactions] = useState<PaymentTransaction[]>([]);
@@ -437,19 +440,21 @@ const PaymentsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <IndianRupee  className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                <dd className="text-lg font-medium text-gray-900">₹{Math.round(totalRevenue).toLocaleString()}</dd>
-              </dl>
+        {can('view_revenue') && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <IndianRupee  className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                  <dd className="text-lg font-medium text-gray-900">₹{Math.round(totalRevenue).toLocaleString()}</dd>
+                </dl>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
@@ -601,14 +606,16 @@ const PaymentsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => handleAddPayment(payment)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer"
-                          title="Add Payment"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Payment
-                        </button>
+                        {can('manage_payments') && (
+                          <button 
+                            onClick={() => handleAddPayment(payment)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer"
+                            title="Add Payment"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Payment
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleViewTimeline(payment)}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition-colors cursor-pointer"
@@ -928,4 +935,11 @@ const PaymentsPage = () => {
   );
 };
 
-export default PaymentsPage;
+// Wrap with PageGuard to check permissions
+export default function PaymentsPageWithGuard() {
+  return (
+    <PageGuard permissions={['view_payments', 'manage_payments']}>
+      <PaymentsPage />
+    </PageGuard>
+  );
+}

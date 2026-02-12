@@ -15,6 +15,8 @@ import {
   X,
   Eye
 } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface Member {
   id: number;
@@ -29,6 +31,7 @@ interface Member {
 
 const MembersPage = () => {
   const router = useRouter();
+  const { can, isAdmin } = usePermission();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -334,13 +337,15 @@ const MembersPage = () => {
                           >
                             View
                           </button>
-                          <button
-                            onClick={() => handleEditMember(member)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="Edit contact info"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          {can('edit_members') && (
+                            <button
+                              onClick={() => handleEditMember(member)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Edit contact info"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
@@ -448,4 +453,11 @@ const MembersPage = () => {
   );
 };
 
-export default MembersPage;
+// Wrap with PageGuard to check permissions
+export default function MembersPageWithGuard() {
+  return (
+    <PageGuard permission="view_members">
+      <MembersPage />
+    </PageGuard>
+  );
+}

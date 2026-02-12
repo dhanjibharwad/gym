@@ -1,22 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { checkAnyPermission } from '@/lib/api-permissions';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // Check permission: view_staff or add_staff or delete_staff or edit_staff or manage_roles
+    const auth = await checkAnyPermission(request, ['view_staff', 'add_staff', 'delete_staff', 'edit_staff', 'manage_roles']);
+    if (!auth.authorized) {
+      return auth.response;
     }
 
-    const companyId = session.user.companyId;
+    const companyId = auth.session!.user.companyId;
 
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, r.name as role, u.is_verified, u.created_at 
+      `SELECT u.id, u.name, u.email, r.name as role, r.id as role_id, u.is_verified, u.created_at 
        FROM users u
        LEFT JOIN roles r ON u.role_id = r.id
        WHERE u.company_id = $1

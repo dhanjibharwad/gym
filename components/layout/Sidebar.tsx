@@ -18,25 +18,104 @@ import {
   BadgeCheck,
   UserX,
   History,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
+import { hasAnyPermission, isAdmin } from '@/lib/rbac';
 
+// Navigation items with required permissions
+// Admin has implicit access to all, staff need specific permissions
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "reception"], permissions: ['view_dashboard'] },
-  { label: "Add Staff", href: "/dashboard/add-staff", icon: UserCog, roles: ["admin"], permissions: ["add_staff"] },
-  { label: "Our Staff", href: "/dashboard/ourstaff", icon: User, roles: ["admin"], permissions: ["view_staff"] },
-  { label: "Roles", href: "/dashboard/roles", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
-  { label: "Permissions", href: "/dashboard/permissions", icon: Crown, roles: ["admin"], permissions: ["manage_roles"] },
-   { label: "Membership Plans", href: "/dashboard/membership-plans", icon: Crown, roles: ["admin"], permissions: ["manage_settings"] },
-  { label: "Members", href: "/dashboard/members", icon: Users, roles: ["admin", "reception"], permissions: ["view_members"] },
-  { label: "Add Members", href: "/dashboard/add-members", icon: UserPlus, roles: ["admin", "reception"], permissions: ["add_members"] },
-  { label: "Payments", href: "/dashboard/payments", icon: CreditCard, roles: ["admin", "reception"], permissions: ["manage_payments"] },
-  { label: "Audit Logs", href: "/dashboard/audit-logs", icon: History, roles: ["admin"], permissions: ["view_reports"] },
-  { label: "Payments History", href: "/dashboard/history", icon: Clock, roles: ["admin", "reception"], permissions: ["view_payments"] },
-  { label: "Full Payments", href: "/dashboard/fullpayment", icon: BadgeCheck, roles: ["admin", "reception"], permissions: ["view_payments"] },
-  { label: "Expired Membership", href: "/dashboard/expired", icon: UserX, roles: ["admin", "reception"], permissions: ["view_members"] },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings, roles: ["admin"], permissions: ["manage_settings"] },
-  { label: "Profile", href: "/dashboard/profile", icon: User, roles: ["admin", "reception"], permissions: ['view_profile'] }
+  { 
+    label: "Dashboard", 
+    href: "/dashboard", 
+    icon: LayoutDashboard, 
+    permissions: ['view_dashboard'] 
+  },
+  { 
+    label: "Members", 
+    href: "/dashboard/members", 
+    icon: Users, 
+    permissions: ['view_members'] 
+  },
+  { 
+    label: "Add Members", 
+    href: "/dashboard/add-members", 
+    icon: UserPlus, 
+    permissions: ['add_members'] 
+  },
+  { 
+    label: "Payments", 
+    href: "/dashboard/payments", 
+    icon: CreditCard, 
+    permissions: ['manage_payments', 'view_payments'] 
+  },
+  { 
+    label: "Payments History", 
+    href: "/dashboard/history", 
+    icon: Clock, 
+    permissions: ['view_payments'] 
+  },
+  { 
+    label: "Full Payments", 
+    href: "/dashboard/fullpayment", 
+    icon: BadgeCheck, 
+    permissions: ['view_payments'] 
+  },
+  { 
+    label: "Expired Membership", 
+    href: "/dashboard/expired", 
+    icon: UserX, 
+    permissions: ['view_members'] 
+  },
+  { 
+    label: "Membership Plans", 
+    href: "/dashboard/membership-plans", 
+    icon: Crown, 
+    permissions: ['view_plans', 'manage_plans'] 
+  },
+  { 
+    label: "Our Staff", 
+    href: "/dashboard/ourstaff", 
+    icon: UserCog, 
+    permissions: ['view_staff', 'add_staff', 'delete_staff'] 
+  },
+  // { 
+  //   label: "Add Staff", 
+  //   href: "/dashboard/add-staff", 
+  //   icon: UserPlus, 
+  //   permissions: ['add_staff'] 
+  // },
+  { 
+    label: "Roles", 
+    href: "/dashboard/roles", 
+    icon: Shield, 
+    permissions: ['view_roles', 'manage_roles'] 
+  },
+  { 
+    label: "Permissions", 
+    href: "/dashboard/permissions", 
+    icon: Crown, 
+    permissions: ['manage_roles'] 
+  },
+  { 
+    label: "Audit Logs", 
+    href: "/dashboard/audit-logs", 
+    icon: History, 
+    permissions: ['view_audit_logs'] 
+  },
+  { 
+    label: "Settings", 
+    href: "/dashboard/settings", 
+    icon: Settings, 
+    permissions: ['manage_settings'] 
+  },
+  { 
+    label: "Profile", 
+    href: "/dashboard/profile", 
+    icon: User, 
+    permissions: [] // Everyone can see profile
+  }
 ];
 
 interface SidebarProps {
@@ -119,16 +198,16 @@ export default function Sidebar({ userRole = "admin", userPermissions = [] }: Si
                   // Show dashboard and profile to everyone
                   if (item.href === '/dashboard' || item.href === '/dashboard/profile') return true;
                   
-                  // Admin users see all other sidebar items
-                  if (userRole.toLowerCase() === 'admin') return true;
+                  // Admin users see all sidebar items
+                  if (isAdmin(userRole)) return true;
                   
-                  // Check if user has required permissions
+                  // Check if user has any of the required permissions
                   if (item.permissions.length > 0) {
-                    return item.permissions.some(permission => userPermissions.includes(permission));
+                    return hasAnyPermission(userPermissions, item.permissions, userRole);
                   }
                   
-                  // Fallback to role-based filtering for backward compatibility
-                  return item.roles.includes(userRole.toLowerCase());
+                  // If no permissions required, show the item
+                  return true;
                 })
                 .map((item) => {
                 const Icon = item.icon;

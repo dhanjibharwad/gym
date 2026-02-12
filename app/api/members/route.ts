@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { checkAnyPermission } from '@/lib/api-permissions';
 
 export async function GET(request: NextRequest) {
   let client;
   
   try {
-    const companyId = request.headers.get('x-company-id');
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+    // Check view_members or add_members permission
+    const auth = await checkAnyPermission(request, ['view_members', 'add_members', 'edit_members']);
+    if (!auth.authorized) {
+      return auth.response;
     }
+    
+    const companyId = auth.session!.user.companyId;
     
     client = await pool.connect();
     

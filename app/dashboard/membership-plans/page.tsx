@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, CreditCard, Calendar, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 interface MembershipPlan {
   id: number;
@@ -30,7 +32,8 @@ interface DeleteConfirm {
   plan: MembershipPlan | null;
 }
 
-export default function MembershipPlansPage() {
+function MembershipPlansPage() {
+  const { can } = usePermission();
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -188,13 +191,15 @@ export default function MembershipPlansPage() {
               <p className="text-gray-600">Manage gym membership plans and pricing</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Add Plan
-          </button>
+          {can('manage_plans') && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Plan
+            </button>
+          )}
         </div>
 
         {/* Form Modal */}
@@ -278,21 +283,23 @@ export default function MembershipPlansPage() {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">{plan.plan_name}</h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(plan)}
-                      className="text-gray-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(plan)}
-                      disabled={deleteLoading === plan.id}
-                      className="text-gray-400 hover:text-red-600 p-1 rounded transition disabled:opacity-50 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {can('manage_plans') && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(plan)}
+                        className="text-gray-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(plan)}
+                        disabled={deleteLoading === plan.id}
+                        className="text-gray-400 hover:text-red-600 p-1 rounded transition disabled:opacity-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="text-center mb-4">
@@ -384,3 +391,14 @@ export default function MembershipPlansPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function MembershipPlansPageWithGuard() {
+  return (
+    <PageGuard permissions={['view_plans', 'manage_plans']}>
+      <MembershipPlansPage />
+    </PageGuard>
+  );
+}
+
+export default MembershipPlansPageWithGuard;

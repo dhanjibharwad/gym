@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface Role {
   id: number;
@@ -9,16 +10,24 @@ interface Role {
   description: string;
 }
 
+interface Permission {
+  name: string;
+  description: string;
+  module: string;
+  category: string;
+}
+
 interface Module {
   name: string;
-  permissions: string[];
+  description: string;
+  permissions: Permission[];
 }
 
 interface Modules {
   [key: string]: Module;
 }
 
-export default function PermissionsPage() {
+function PermissionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
   const [modules, setModules] = useState<Modules>({});
@@ -26,6 +35,8 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [isAdminRole, setIsAdminRole] = useState(false);
+  const [selectedRoleName, setSelectedRoleName] = useState('');
 
   useEffect(() => {
     fetchRoles();
@@ -34,9 +45,13 @@ export default function PermissionsPage() {
 
   useEffect(() => {
     if (selectedRole) {
+      const role = roles.find(r => r.id === selectedRole);
+      if (role) {
+        setSelectedRoleName(role.name);
+      }
       fetchRolePermissions(selectedRole);
     }
-  }, [selectedRole]);
+  }, [selectedRole, roles]);
 
   const fetchRoles = async () => {
     try {
@@ -70,6 +85,7 @@ export default function PermissionsPage() {
       const data = await response.json();
       if (response.ok) {
         setRolePermissions(data.rolePermissions || {});
+        setIsAdminRole(data.isAdmin || false);
       }
     } catch (error) {
       console.error('Error fetching role permissions:', error);
@@ -173,15 +189,20 @@ export default function PermissionsPage() {
           {selectedRole ? (
             <>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold">Module Permissions</h2>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
+                <div>
+                  <h2 className="text-lg font-semibold">Module Permissions</h2>
+                  <p className="text-sm text-gray-500">{selectedRoleName}</p>
+                </div>
+                {!isAdminRole && (
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                )}
               </div>
 
               {message && (
@@ -194,28 +215,45 @@ export default function PermissionsPage() {
                 </div>
               )}
 
-              <div className="space-y-6">
-                {Object.entries(modules).map(([moduleKey, module]) => (
-                  <div key={moduleKey} className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">{module.name}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {module.permissions.map((permission) => (
-                        <label key={permission} className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={rolePermissions[moduleKey]?.includes(permission) || false}
-                            onChange={(e) => handlePermissionChange(moduleKey, permission, e.target.checked)}
-                            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                          />
-                          <span className="text-sm text-gray-700 capitalize">
-                            {permission.replace(/_/g, ' ')}
-                          </span>
-                        </label>
-                      ))}
+              {isAdminRole ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                  <Shield className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Admin Role</h3>
+                  <p className="text-blue-700">
+                    The Admin role has <strong>full access</strong> to all modules and permissions automatically. 
+                    You cannot modify admin permissions.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(modules).map(([moduleKey, module]) => (
+                    <div key={moduleKey} className="border border-gray-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">{module.name}</h3>
+                      <p className="text-sm text-gray-500 mb-3">{module.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {module.permissions.map((permission) => (
+                          <label key={permission.name} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                            <input
+                              type="checkbox"
+                              checked={rolePermissions[moduleKey]?.includes(permission.name) || false}
+                              onChange={(e) => handlePermissionChange(moduleKey, permission.name, e.target.checked)}
+                              className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                            />
+                            <div>
+                              <span className="text-sm text-gray-700 block">
+                                {permission.name.replace(/_/g, ' ')}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {permission.description}
+                              </span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-12 text-gray-500">
@@ -228,3 +266,14 @@ export default function PermissionsPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function PermissionsPageWithGuard() {
+  return (
+    <PageGuard permission="manage_roles">
+      <PermissionsPage />
+    </PageGuard>
+  );
+}
+
+export default PermissionsPageWithGuard;

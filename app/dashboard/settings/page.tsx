@@ -15,8 +15,11 @@ import {
   Database,
   Palette
 } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
+import { usePermission } from '@/components/rbac/PermissionGate';
 
 const SettingsPage = () => {
+  const { can } = usePermission();
   const [activeTab, setActiveTab] = useState('payments');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [saving, setSaving] = useState(false);
@@ -154,21 +157,27 @@ const SettingsPage = () => {
                           <CreditCard className="w-5 h-5 text-gray-600" />
                           <h4 className="text-sm font-medium text-gray-900">{mode}</h4>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={config.enabled}
-                            onChange={(e) => setSettings({
-                              ...settings,
-                              paymentModes: {
-                                ...settings.paymentModes,
-                                [mode]: { ...config, enabled: e.target.checked }
-                              }
-                            })}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
-                        </label>
+                        {can('manage_settings') ? (
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={config.enabled}
+                              onChange={(e) => setSettings({
+                                ...settings,
+                                paymentModes: {
+                                  ...settings.paymentModes,
+                                  [mode]: { ...config, enabled: e.target.checked }
+                                }
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                          </label>
+                        ) : (
+                          <span className={`text-sm font-medium ${config.enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                            {config.enabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                        )}
                       </div>
                       
                       {config.enabled && (
@@ -176,25 +185,31 @@ const SettingsPage = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Processing Fee (%)
                           </label>
-                          <div className="relative">
-                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                              type="number"
-                              value={config.processingFee}
-                              onChange={(e) => setSettings({
-                                ...settings,
-                                paymentModes: {
-                                  ...settings.paymentModes,
-                                  [mode]: { ...config, processingFee: parseFloat(e.target.value) || 0 }
-                                }
-                              })}
-                              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-                              placeholder="0.00"
-                              min="0"
-                              max="10"
-                              step="0.1"
-                            />
-                          </div>
+                          {can('manage_settings') ? (
+                            <div className="relative">
+                              <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <input
+                                type="number"
+                                value={config.processingFee}
+                                onChange={(e) => setSettings({
+                                  ...settings,
+                                  paymentModes: {
+                                    ...settings.paymentModes,
+                                    [mode]: { ...config, processingFee: parseFloat(e.target.value) || 0 }
+                                  }
+                                })}
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                placeholder="0.00"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-900 font-medium">
+                              {config.processingFee}%
+                            </div>
+                          )}
                           <p className="text-xs text-gray-500 mt-1">
                             Fee will be added to the payment amount
                           </p>
@@ -221,26 +236,37 @@ const SettingsPage = () => {
           )}
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {saving ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              {saving ? 'Saving...' : 'Save Settings'}
-            </button>
+        {can('manage_settings') && (
+          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+            <div className="flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {saving ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
         </div>
       )}
     </div>
   );
 };
 
-export default SettingsPage;
+// Wrap with PageGuard to check permissions
+function SettingsPageWithGuard() {
+  return (
+    <PageGuard permission="manage_settings">
+      <SettingsPage />
+    </PageGuard>
+  );
+}
+
+export default SettingsPageWithGuard;

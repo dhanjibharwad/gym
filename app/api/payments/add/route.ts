@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { checkPermission } from '@/lib/api-permissions';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check manage_payments permission
+    const { authorized, response } = await checkPermission(request, 'manage_payments');
+    if (!authorized) return response;
+
     const body = await request.json();
     const { member_id, membership_id, amount, payment_mode, payment_date, reference_number } = body;
 
