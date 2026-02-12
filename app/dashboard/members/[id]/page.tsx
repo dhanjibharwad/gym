@@ -258,16 +258,30 @@ const MemberProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-black"></div>
+          <p className="text-sm text-gray-500 font-medium">Loading member profile...</p>
+        </div>
       </div>
     );
   }
 
   if (!member) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Member not found</p>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-lg font-medium">Member not found</p>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -727,29 +741,30 @@ const MemberProfilePage = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-black hover:border-black hover:text-white transition-all duration-200"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back</span>
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Member Profile</h1>
-            <p className="text-gray-600">View member details and membership history</p>
+            <p className="text-sm text-gray-500">View member details and membership history</p>
           </div>
         </div>
         {can('edit_members') && (
           <button
             onClick={handleEditClick}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-md"
+            className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm"
           >
-            <Edit className="w-4 h-4" />
-            Edit Member
+            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">Edit Member</span>
           </button>
         )}
       </div>
 
       {/* Member Info Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-700 to-gray-600 px-6 py-8">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-black px-6 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               {member.profile_photo_url ? (
@@ -760,110 +775,126 @@ const MemberProfilePage = () => {
                 />
               ) : (
                 <div className="w-24 h-24 rounded-full border-4 border-white bg-white flex items-center justify-center">
-                  <span className="text-3xl font-bold text-orange-600">
+                  <span className="text-3xl font-bold text-black">
                     {member.full_name.charAt(0)}
                   </span>
                 </div>
               )}
               <div className="text-white">
                 <h2 className="text-3xl font-bold">{member.full_name}</h2>
-                <p className="text-orange-100 mt-1">Member ID: #{member.id}</p>
+                <p className="text-gray-300 mt-1 text-sm">Member ID: #{member.id}</p>
               </div>
             </div>
             <div className="text-right text-white">
-              <p className="text-xs text-orange-100">Joined</p>
-              <p className="text-sm font-medium">{formatDate(member.created_at)}</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">Joined</p>
+              <p className="text-sm font-semibold">{formatDate(member.created_at)}</p>
             </div>
           </div>
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="flex items-start gap-3">
-            <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+              <Phone className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+            </div>
             <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium text-gray-900">{member.phone_number}</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</p>
+              <p className="font-semibold text-gray-900">{member.phone_number}</p>
             </div>
           </div>
 
           {member.email && (
-            <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
+            <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+                <Mail className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium text-gray-900">{member.email}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</p>
+                <p className="font-semibold text-gray-900">{member.email}</p>
               </div>
             </div>
           )}
 
-          <div className="flex items-start gap-3">
-            <User className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+              <User className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+            </div>
             <div>
-              <p className="text-sm text-gray-500">Gender</p>
-              <p className="font-medium text-gray-900">{member.gender || 'N/A'}</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</p>
+              <p className="font-semibold text-gray-900">{member.gender || 'N/A'}</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
+          <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+              <Calendar className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+            </div>
             <div>
-              <p className="text-sm text-gray-500">Date of Birth</p>
-              <p className="font-medium text-gray-900">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</p>
+              <p className="font-semibold text-gray-900">
                 {member.date_of_birth ? formatDate(member.date_of_birth) : 'N/A'}
               </p>
             </div>
           </div>
 
           {member.occupation && (
-            <div className="flex items-start gap-3">
-              <Briefcase className="w-5 h-5 text-gray-400 mt-0.5" />
+            <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+                <Briefcase className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Occupation</p>
-                <p className="font-medium text-gray-900">{member.occupation}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Occupation</p>
+                <p className="font-semibold text-gray-900">{member.occupation}</p>
               </div>
             </div>
           )}
 
           {member.address && (
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+            <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+                <MapPin className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Address</p>
-                <p className="font-medium text-gray-900">{member.address}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Address</p>
+                <p className="font-semibold text-gray-900">{member.address}</p>
               </div>
             </div>
           )}
 
           {member.emergency_contact_name && (
-            <div className="flex items-start gap-3">
-              <Users className="w-5 h-5 text-gray-400 mt-0.5" />
+            <div className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black transition-colors">
+                <Users className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Emergency Contact</p>
-                <p className="font-medium text-gray-900">{member.emergency_contact_name}</p>
-                <p className="text-sm text-gray-600">{member.emergency_contact_phone}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Emergency Contact</p>
+                <p className="font-semibold text-gray-900">{member.emergency_contact_name}</p>
+                <p className="text-sm text-gray-500">{member.emergency_contact_phone}</p>
               </div>
             </div>
           )}
         </div>
 
         {medicalInfo && (
-          <div className="px-6 pb-6 border-t border-gray-200 pt-6">
+          <div className="px-6 pb-6 border-t border-gray-100 pt-6">
             <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-red-500" />
-              <h3 className="text-base font-semibold text-gray-900">Medical Information</h3>
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Heart className="w-4 h-4 text-gray-600" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Medical Information</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Medical Conditions</p>
-                <p className="text-gray-900 mt-1">{medicalInfo.medical_conditions || 'None'}</p>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Medical Conditions</p>
+                <p className="text-gray-900 font-medium">{medicalInfo.medical_conditions || 'None'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">Injuries & Limitations</p>
-                <p className="text-gray-900 mt-1">{medicalInfo.injuries_limitations || 'None'}</p>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Injuries & Limitations</p>
+                <p className="text-gray-900 font-medium">{medicalInfo.injuries_limitations || 'None'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-700">Additional Notes</p>
-                <p className="text-gray-900 mt-1">{medicalInfo.additional_notes || 'None'}</p>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Additional Notes</p>
+                <p className="text-gray-900 font-medium">{medicalInfo.additional_notes || 'None'}</p>
               </div>
             </div>
           </div>

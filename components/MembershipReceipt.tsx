@@ -303,7 +303,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 </div>
                 <span style={{ fontSize: '10pt' }}>Rs. :</span>
                 <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{membership.plan_price}</span>
+                  <span style={{ fontSize: '10pt' }}>{payment?.total_amount || membership.plan_price}</span>
                 </div>
                 <span style={{ fontSize: '10pt' }}>(Cash / G.Pay / CC.)</span>
                 <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
@@ -311,9 +311,18 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 </div>
               </div>
               
+              {/* Paid Amount Row */}
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '10pt' }}>(ii) Paid Amount :</span>
+                <span style={{ fontSize: '10pt' }}>Rs. :</span>
+                <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '10pt' }}>{payment?.paid_amount || '0'}</span>
+                </div>
+              </div>
+              
               {/* Balance Payment Row */}
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <span style={{ fontSize: '10pt' }}>(ii) Balance Payment : Date</span>
+                <span style={{ fontSize: '10pt' }}>(iii) Balance Payment : Date</span>
                 <div style={{ width: '100px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>{payment?.payment_status === 'partial' ? 'As per agreement' : 'N/A'}</span>
                 </div>
