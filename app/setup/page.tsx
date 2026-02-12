@@ -190,8 +190,8 @@ export default function SetupPage() {
           {/* Right Side - Form */}
           <div className="w-full">
             <div className="text-center lg:text-left mb-6 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight text-center">Setup New Company</h1>
-              <p className="text-gray-600 text-base sm:text-lg text-center">Create your company and admin account</p>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 tracking-tight text-center">Setup New Gym</h1>
+              <p className="text-gray-600 text-base sm:text-lg text-center">Create your Gym and admin account</p>
             </div>
 
             <div className="p-4 sm:p-6 lg:p-8">
@@ -207,7 +207,7 @@ export default function SetupPage() {
 
             <div>
               <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
-                Company Name
+                Gym Name
               </label>
               <input
                 id="companyName"
