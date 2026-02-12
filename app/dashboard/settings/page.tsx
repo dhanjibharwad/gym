@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   IndianRupee,
   Save,
-  CreditCard,
-  Database
+  CreditCard
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -76,8 +75,7 @@ const SettingsPage = () => {
   };
 
   const tabs = [
-    { id: 'payments', label: 'Payment Modes', icon: CreditCard },
-    { id: 'backup', label: 'Backup', icon: Database }
+    { id: 'payments', label: 'Payment Modes', icon: CreditCard }
   ];
 
   return (
@@ -200,18 +198,7 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {activeTab === 'backup' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Data Backup</h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    Automatic backups are performed daily. Manual backup options will be available soon.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
 
         {can('manage_settings') && (
