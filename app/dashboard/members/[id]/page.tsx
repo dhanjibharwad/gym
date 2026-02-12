@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   User, Mail, Phone, Calendar, MapPin, Briefcase, Users,
   CreditCard, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft,
   Heart, Activity, FileText, DollarSign, TrendingUp, Pause, Play, History,
-  Edit, Save, X
+  Edit, Save, X, Printer
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import MembershipReceipt from '@/components/MembershipReceipt';
 
 interface Member {
   id: number;
@@ -133,6 +134,11 @@ const MemberProfilePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<Member> & { medical_conditions?: string; injuries_limitations?: string; additional_notes?: string }>({});
   const [saving, setSaving] = useState(false);
+
+  // Receipt modal state
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [selectedReceiptMembership, setSelectedReceiptMembership] = useState<Membership | null>(null);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (memberId) {
@@ -275,6 +281,65 @@ const MemberProfilePage = () => {
   
   const getTransactionsForMembership = (membershipId: number) => {
     return transactions.filter(t => t.membership_id === membershipId);
+  };
+
+  const handlePrintReceipt = (membership: Membership) => {
+    setSelectedReceiptMembership(membership);
+    setShowReceiptModal(true);
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow && receiptRef.current) {
+      const printContent = receiptRef.current.outerHTML;
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Membership Receipt - ${member?.full_name}</title>
+            <meta charset="utf-8">
+            <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              @page {
+                size: A4;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .receipt-container {
+                width: 210mm !important;
+                min-height: 297mm !important;
+                max-width: 210mm !important;
+                margin: 0 auto !important;
+                padding: 10mm !important;
+                background: white !important;
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
   const handleHoldMembership = (membershipId: number) => {
@@ -844,6 +909,12 @@ const MemberProfilePage = () => {
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePrintReceipt(membership)}
+                      className="px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors shadow-md flex items-center gap-1 cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" /> Print Receipt
+                    </button>
                     {membership.status === 'active' && (
                       <button
                         onClick={() => handleHoldMembership(membership.id)}
@@ -1188,6 +1259,53 @@ const MemberProfilePage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Modal */}
+      {showReceiptModal && selectedReceiptMembership && member && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 max-h-[95vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <Printer className="w-5 h-5 text-gray-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Membership Receipt</h3>
+                  <p className="text-sm text-gray-600">Preview and print member receipt</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-md"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Receipt
+                </button>
+                <button
+                  onClick={() => { setShowReceiptModal(false); setSelectedReceiptMembership(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            {/* Receipt Content */}
+            <div className="p-6 bg-gray-100">
+              <div ref={receiptRef} className="bg-white shadow-lg">
+                <MembershipReceipt
+                  member={member}
+                  membership={selectedReceiptMembership}
+                  payment={getPaymentsForMembership(selectedReceiptMembership.id)[0] || null}
+                  receiptNumber={`REC-${selectedReceiptMembership.id}-${Date.now()}`}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
