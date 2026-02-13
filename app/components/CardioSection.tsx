@@ -55,13 +55,13 @@ const CardioSection = () => {
           >
             <div className="relative group">
               {/* Multi-layered Glow Effect */}
-              <div className="absolute -inset-6 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-700" />
-              <div className="absolute -inset-3 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded-2xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-500" />
+              {/* <div className="absolute -inset-6 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl opacity-60 group-hover:opacity-100 transition-all duration-700" /> */}
+              {/* <div className="absolute -inset-3 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded-2xl blur-xl opacity-40 group-hover:opacity-70 transition-all duration-500" /> */}
               
               {/* Main Image Container */}
               <div className="relative rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl backdrop-blur-sm">
                 <img
-                  src='/images/gym-interior.jpg'
+                  src='/images/eagle1.png'
                   alt="Cardio Zone"
                   className="w-full h-[500px] object-cover transform group-hover:scale-105 transition-transform duration-700"
                 />
@@ -70,8 +70,8 @@ const CardioSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 
                 {/* Dynamic Energy Lines */}
-                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400/80 via-white/60 to-transparent animate-pulse" />
-                <div className="absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400/60 via-pink-400/40 to-transparent animate-pulse" style={{ animationDelay: "0.3s" }} />
+                {/* <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400/80 via-white/60 to-transparent animate-pulse" /> */}
+                {/* <div className="absolute top-1/3 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400/60 via-pink-400/40 to-transparent animate-pulse" style={{ animationDelay: "0.3s" }} /> */}
                 <div className="absolute top-2/3 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-400/40 via-transparent to-transparent animate-pulse" style={{ animationDelay: "0.6s" }} />
               </div>
 
