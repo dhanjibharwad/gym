@@ -1,59 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { checkPermission } from '@/lib/api-permissions';
+import { unstable_cache, revalidateTag } from 'next/cache';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: memberId } = await params;
-    const companyId = request.headers.get('x-company-id');
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Company ID required' },
-        { status: 400 }
-      );
-    }
-    
+// Cached function for fetching member details
+const getCachedMemberDetails = unstable_cache(
+  async (memberId: string, companyId: string) => {
     const client = await pool.connect();
     
     try {
       // Get member details with company verification
       const memberResult = await client.query(
-        'SELECT * FROM members WHERE id = $1 AND company_id = $2',
+        `SELECT id, full_name, phone_number, email, gender, date_of_birth, 
+                EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth))::int as age,
+                occupation, address, emergency_contact_name, emergency_contact_phone,
+                profile_photo_url, created_at
+         FROM members 
+         WHERE id = $1 AND company_id = $2`,
         [memberId, companyId]
       );
       
       if (memberResult.rows.length === 0) {
-        return NextResponse.json(
-          { success: false, message: 'Member not found' },
-          { status: 404 }
-        );
+        return null;
       }
       
-      // Get memberships with plan details
-      const membershipsResult = await client.query(
-        `SELECT ms.*, mp.plan_name, mp.duration_months, mp.price as plan_price,
-         u.name as created_by_name
-         FROM memberships ms
-         LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
-         LEFT JOIN users u ON ms.created_by = u.id
-         WHERE ms.member_id = $1
-         ORDER BY ms.start_date DESC`,
-        [memberId]
-      );
-      
-      // Get hold history for each membership
-      const holdHistoryResult = await client.query(
-        `SELECT mh.*, ms.member_id
-         FROM membership_holds mh
-         JOIN memberships ms ON mh.membership_id = ms.id
-         WHERE ms.member_id = $1
-         ORDER BY mh.created_at DESC`,
-        [memberId]
-      );
+      // Run all other queries in parallel for better performance
+      const [
+        membershipsResult,
+        holdHistoryResult,
+        paymentsResult,
+        transactionsResult,
+        medicalResult,
+        paymentSummaryResult
+      ] = await Promise.all([
+        // Get memberships with plan details
+        client.query(
+          `SELECT ms.*, mp.plan_name, mp.duration_months, mp.price as plan_price,
+           u.name as created_by_name
+           FROM memberships ms
+           LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
+           LEFT JOIN users u ON ms.created_by = u.id
+           WHERE ms.member_id = $1
+           ORDER BY ms.start_date DESC`,
+          [memberId]
+        ),
+        // Get hold history for each membership
+        client.query(
+          `SELECT mh.*, ms.member_id
+           FROM membership_holds mh
+           JOIN memberships ms ON mh.membership_id = ms.id
+           WHERE ms.member_id = $1
+           ORDER BY mh.created_at DESC`,
+          [memberId]
+        ),
+        // Get payments
+        client.query(
+          `SELECT p.id, p.membership_id, p.total_amount, p.paid_amount, 
+                  p.payment_mode, p.payment_status, p.next_due_date, p.created_at
+           FROM payments p
+           JOIN memberships ms ON p.membership_id = ms.id
+           WHERE ms.member_id = $1
+           ORDER BY p.created_at DESC`,
+          [memberId]
+        ),
+        // Get payment transactions
+        client.query(
+          `SELECT pt.id, pt.payment_id, pt.member_id, pt.membership_id,
+                  pt.transaction_type, pt.amount, pt.payment_mode, pt.payment_status,
+                  pt.transaction_date, pt.description, pt.receipt_number, 
+                  p.reference_number
+           FROM payment_transactions pt
+           LEFT JOIN payments p ON pt.payment_id = p.id
+           WHERE pt.member_id = $1
+           ORDER BY pt.transaction_date DESC
+           LIMIT 100`,
+          [memberId]
+        ),
+        // Get medical info
+        client.query(
+          `SELECT id, member_id, medical_conditions, injuries_limitations, 
+                  additional_notes, created_at, updated_at
+           FROM medical_info WHERE member_id = $1`,
+          [memberId]
+        ),
+        // Get payment summary
+        client.query(
+          `SELECT id, member_id, total_paid, total_pending, 
+                  last_payment_date, last_payment_amount, payment_count
+           FROM member_payment_summary WHERE member_id = $1`,
+          [memberId]
+        )
+      ]);
       
       // Group hold history by membership_id
       const holdHistoryMap = new Map();
@@ -70,51 +107,55 @@ export async function GET(
         hold_history: holdHistoryMap.get(membership.id) || []
       }));
       
-      // Get payments
-      const paymentsResult = await client.query(
-        `SELECT p.*
-         FROM payments p
-         JOIN memberships ms ON p.membership_id = ms.id
-         WHERE ms.member_id = $1
-         ORDER BY p.created_at DESC`,
-        [memberId]
-      );
-      
-      // Get payment transactions
-      const transactionsResult = await client.query(
-        `SELECT pt.*, p.reference_number
-         FROM payment_transactions pt
-         LEFT JOIN payments p ON pt.membership_id = p.membership_id
-         WHERE pt.member_id = $1
-         ORDER BY pt.transaction_date DESC`,
-        [memberId]
-      );
-      
-      // Get medical info
-      const medicalResult = await client.query(
-        `SELECT * FROM medical_info WHERE member_id = $1`,
-        [memberId]
-      );
-      
-      // Get payment summary
-      const paymentSummaryResult = await client.query(
-        `SELECT * FROM member_payment_summary WHERE member_id = $1`,
-        [memberId]
-      );
-      
-      return NextResponse.json({
-        success: true,
+      return {
         member: memberResult.rows[0],
         memberships: membershipsWithHistory,
         payments: paymentsResult.rows,
         transactions: transactionsResult.rows,
         medicalInfo: medicalResult.rows[0] || null,
         paymentSummary: paymentSummaryResult.rows[0] || null
-      });
+      };
       
     } finally {
       client.release();
     }
+  },
+  ['member-details'],
+  {
+    revalidate: 60, // Cache for 60 seconds
+    tags: ['member']
+  }
+);
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: memberId } = await params;
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
+    
+    // Use cached function for better performance
+    const data = await getCachedMemberDetails(memberId, companyId);
+    
+    if (!data) {
+      return NextResponse.json(
+        { success: false, message: 'Member not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({
+      success: true,
+      ...data
+    });
     
   } catch (error) {
     console.error('Get member error:', error);
@@ -238,6 +279,10 @@ export async function PATCH(
       }
 
       await client.query('COMMIT');
+      
+      // Revalidate cache
+      revalidateTag('member');
+      revalidateTag('members-list');
 
       return NextResponse.json({
         success: true,
@@ -349,6 +394,10 @@ export async function DELETE(
       );
 
       await client.query('COMMIT');
+      
+      // Revalidate cache
+      revalidateTag('member');
+      revalidateTag('members-list');
 
       return NextResponse.json({
         success: true,

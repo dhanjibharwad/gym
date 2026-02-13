@@ -2,6 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
+import { unstable_cache, revalidateTag } from 'next/cache';
+
+// Cached function for fetching membership plans
+const getCachedPlans = unstable_cache(
+  async (companyId: number) => {
+    const client = await pool.connect();
+    
+    try {
+      const result = await client.query(`
+        SELECT 
+          id,
+          plan_name,
+          duration_months,
+          price,
+          base_duration_months,
+          base_price,
+          created_at
+        FROM membership_plans
+        WHERE company_id = $1
+        ORDER BY duration_months ASC
+      `, [companyId]);
+      
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  },
+  ['membership-plans'],
+  {
+    revalidate: 60, // Cache for 60 seconds
+    tags: ['membership-plans']
+  }
+);
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,31 +53,13 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const client = await pool.connect();
+    // Use cached function for better performance
+    const plans = await getCachedPlans(companyId);
     
-    try {
-      const result = await client.query(`
-        SELECT 
-          id,
-          plan_name,
-          duration_months,
-          price,
-          base_duration_months,
-          base_price,
-          created_at
-        FROM membership_plans
-        WHERE company_id = $1
-        ORDER BY duration_months ASC
-      `, [companyId]);
-      
-      return NextResponse.json({
-        success: true,
-        plans: result.rows
-      });
-      
-    } finally {
-      client.release();
-    }
+    return NextResponse.json({
+      success: true,
+      plans
+    });
     
   } catch (error) {
     console.error('Database error:', error);
@@ -97,6 +112,9 @@ export async function POST(request: NextRequest) {
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
       }
+      
+      // Revalidate cache
+      revalidateTag('membership-plans');
       
       return NextResponse.json({
         success: true,
@@ -171,6 +189,9 @@ export async function PUT(request: NextRequest) {
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
       }
+      
+      // Revalidate cache
+      revalidateTag('membership-plans');
       
       return NextResponse.json({
         success: true,
@@ -259,6 +280,9 @@ export async function DELETE(request: NextRequest) {
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
       }
+      
+      // Revalidate cache
+      revalidateTag('membership-plans');
       
       return NextResponse.json({
         success: true,

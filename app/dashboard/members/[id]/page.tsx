@@ -524,7 +524,11 @@ const MemberProfilePage = () => {
                 disabled={processing}
                 className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
               >
-                {processing ? 'Processing...' : (
+                {processing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing...
+                  </>
+                ) : (
                   <><Play className="w-5 h-5" /> Resume Membership</>
                 )}
               </button>
@@ -586,9 +590,13 @@ const MemberProfilePage = () => {
               <button
                 onClick={submitHold}
                 disabled={processing}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {processing ? 'Processing...' : 'Hold Membership'}
+                {processing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing...
+                  </>
+                ) : 'Hold Membership'}
               </button>
               <button
                 onClick={() => { setShowHoldModal(false); setHoldReason(''); setHoldDuration({ value: '', unit: 'days' }); }}
@@ -782,7 +790,13 @@ const MemberProfilePage = () => {
                   disabled={saving}
                   className="flex-1 px-5 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white font-semibold rounded-xl hover:from-orange-700 hover:to-orange-800 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
-                  {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Changes</>}
+                  {saving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving...
+                    </>
+                  ) : (
+                    <><Save className="w-4 h-4" /> Save Changes</>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -825,7 +839,13 @@ const MemberProfilePage = () => {
                 disabled={deleting}
                 className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
-                {deleting ? 'Deleting...' : <><Trash2 className="w-4 h-4" /> Delete Member</>}
+                {deleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Deleting...
+                  </>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Delete Member</>
+                )}
               </button>
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -840,7 +860,7 @@ const MemberProfilePage = () => {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
@@ -858,7 +878,8 @@ const MemberProfilePage = () => {
           {can('edit_members') && (
             <button
               onClick={handleEditClick}
-              className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm cursor-pointer"
+              disabled={loading}
+              className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">Edit Member</span>
@@ -867,7 +888,8 @@ const MemberProfilePage = () => {
           {can('delete_members') && (
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="group flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm cursor-pointer"
+              disabled={loading}
+              className="group flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">Delete</span>
@@ -1066,7 +1088,15 @@ const MemberProfilePage = () => {
                         disabled={processing}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1 cursor-pointer"
                       >
-                        <Pause className="w-4 h-4" /> Hold
+                        {processing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing
+                          </>
+                        ) : (
+                          <>
+                            <Pause className="w-4 h-4" /> Hold
+                          </>
+                        )}
                       </button>
                     )}
                     {membership.status === 'on_hold' && (
@@ -1075,7 +1105,15 @@ const MemberProfilePage = () => {
                         disabled={processing}
                         className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1"
                       >
-                        <Play className="w-4 h-4" /> Resume
+                        {processing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4" /> Resume
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -1426,10 +1464,20 @@ const MemberProfilePage = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handlePrint}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-md"
+                  disabled={processing}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Printer className="w-4 h-4" />
-                  Print Receipt
+                  {processing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="w-4 h-4" />
+                      Print Receipt
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => { setShowReceiptModal(false); setSelectedReceiptMembership(null); }}

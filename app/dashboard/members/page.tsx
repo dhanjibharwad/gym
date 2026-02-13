@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
@@ -13,7 +13,10 @@ import {
   Edit,
   Save,
   X,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -30,20 +33,50 @@ interface Member {
   created_at: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 const MembersPage = () => {
   const router = useRouter();
   const { can, isAdmin } = usePermission();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [editingMember, setEditingMember] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ phone_number: '', email: '' });
   const [updating, setUpdating] = useState(false);
+  
+  // Pagination state
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch members when page or debounced search changes
   useEffect(() => {
     fetchMembers();
-  }, []);
+  }, [pagination.page, debouncedSearch]);
 
   const handleEditMember = (member: Member) => {
     setEditingMember(member.id);
@@ -95,20 +128,24 @@ const MembersPage = () => {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      console.log('Fetching members...');
-      const response = await fetch('/api/members', {
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+        ...(debouncedSearch && { search: debouncedSearch })
+      });
+      
+      const response = await fetch(`/api/members?${params}`, {
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include'
       });
-      console.log('Response status:', response.status);
+      
       const result = await response.json();
-      console.log('API result:', result);
       
       if (result.success) {
         setMembers(result.members);
-        console.log('Members set:', result.members.length);
+        setPagination(result.pagination);
       } else {
         console.error('API returned error:', result.message);
       }
@@ -119,13 +156,44 @@ const MembersPage = () => {
     }
   };
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.phone_number.includes(searchTerm) ||
-                         (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
     
-    return matchesSearch;
-  });
+    if (pagination.totalPages <= maxVisible) {
+      for (let i = 1; i <= pagination.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (pagination.page <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(pagination.totalPages);
+      } else if (pagination.page >= pagination.totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = pagination.totalPages - 3; i <= pagination.totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = pagination.page - 1; i <= pagination.page + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(pagination.totalPages);
+      }
+    }
+    return pages;
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -151,7 +219,7 @@ const MembersPage = () => {
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
           <span className="text-sm text-gray-500">
-            Total Members: <span className="font-semibold text-gray-900">{members.length}</span>
+            Total Members: <span className="font-semibold text-gray-900">{pagination.total.toLocaleString()}</span>
           </span>
           
           {/* View Toggle */}
@@ -184,15 +252,33 @@ const MembersPage = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, phone, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
-          />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, phone, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+            />
+            {loading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 animate-spin" />
+            )}
+          </div>
+          
+          {/* Items per page selector */}
+          <select
+            value={pagination.limit}
+            onChange={(e) => {
+              setPagination(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }));
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
         </div>
       </div>
 
@@ -221,7 +307,7 @@ const MembersPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMembers.map((member, index) => (
+                {members.map((member: Member, index: number) => (
                   <tr key={`${member.id}-${index}`} className="hover:bg-gray-50">
                     {/* Member Info */}
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -358,19 +444,19 @@ const MembersPage = () => {
             </table>
           </div>
 
-          {filteredMembers.length === 0 && (
+          {members.length === 0 && !loading && (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No members found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
+                {debouncedSearch ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
               </p>
             </div>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMembers.map((member, index) => (
+          {members.map((member: Member, index: number) => (
             <div key={`${member.id}-${index}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Card Header */}
               <div className="relative p-6 pb-4">
@@ -441,15 +527,69 @@ const MembersPage = () => {
             </div>
           ))}
 
-          {filteredMembers.length === 0 && (
+          {members.length === 0 && !loading && (
             <div className="col-span-full text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No members found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
+                {debouncedSearch ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> to{' '}
+              <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of{' '}
+              <span className="font-medium">{pagination.total}</span> members
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!pagination.hasPrevPage || loading}
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((page, idx) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="px-3 py-2 text-gray-500">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page as number)}
+                      disabled={loading}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        pagination.page === page
+                          ? 'bg-orange-600 text-white'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      } disabled:opacity-50`}
+                    >
+                      {page}
+                    </button>
+                  )
+                ))}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!pagination.hasNextPage || loading}
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

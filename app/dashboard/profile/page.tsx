@@ -30,6 +30,8 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -108,6 +110,7 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
+    setSavingProfile(true);
     try {
       const response = await fetch('/api/auth/profile', {
         method: 'PUT',
@@ -121,6 +124,8 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error updating profile');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -135,6 +140,7 @@ const ProfilePage = () => {
       return;
     }
 
+    setChangingPassword(true);
     try {
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
@@ -157,6 +163,8 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error changing password:', error);
       alert('Error changing password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -199,10 +207,19 @@ const ProfilePage = () => {
             <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
             <button
               onClick={() => setEditing(!editing)}
-              className="flex items-center gap-2 px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              disabled={savingProfile}
+              className="flex items-center gap-2 px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
             >
-              {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-              {editing ? 'Cancel' : 'Edit'}
+              {savingProfile ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div> Processing...
+                </>
+              ) : (
+                <>
+                  {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                  {editing ? 'Cancel' : 'Edit'}
+                </>
+              )}
             </button>
           </div>
 
@@ -217,7 +234,8 @@ const ProfilePage = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                  disabled={savingProfile}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -237,7 +255,8 @@ const ProfilePage = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                  disabled={savingProfile}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -257,7 +276,8 @@ const ProfilePage = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                  disabled={savingProfile}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -309,10 +329,19 @@ const ProfilePage = () => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={handleSaveProfile}
-                className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors"
+                disabled={savingProfile}
+                className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50"
               >
-                <Save className="w-4 h-4" />
-                Save Changes
+                {savingProfile ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save Changes
+                  </>
+                )}
               </button>
             </div>
           )}
@@ -329,9 +358,14 @@ const ProfilePage = () => {
             </div>
             <button
               onClick={() => setShowPasswordForm(!showPasswordForm)}
-              className="px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              disabled={changingPassword}
+              className="px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
             >
-              Change Password
+              {changingPassword ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div> Processing...
+                </>
+              ) : 'Change Password'}
             </button>
           </div>
 
@@ -348,12 +382,14 @@ const ProfilePage = () => {
                       type={showPasswords.current ? 'text' : 'password'}
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                      disabled={changingPassword}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      disabled={changingPassword}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     >
                       {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -370,12 +406,14 @@ const ProfilePage = () => {
                       type={showPasswords.new ? 'text' : 'password'}
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                      disabled={changingPassword}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      disabled={changingPassword}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     >
                       {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -392,12 +430,14 @@ const ProfilePage = () => {
                       type={showPasswords.confirm ? 'text' : 'password'}
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                      disabled={changingPassword}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      disabled={changingPassword}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     >
                       {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -407,17 +447,22 @@ const ProfilePage = () => {
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={handleChangePassword}
-                    disabled={!passwordData.currentPassword || !passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}
-                    className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={!passwordData.currentPassword || !passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword || changingPassword}
+                    className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                   >
-                    Update Password
+                    {changingPassword ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Updating...
+                      </>
+                    ) : 'Update Password'}
                   </button>
                   <button
                     onClick={() => {
                       setShowPasswordForm(false);
                       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
                     }}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    disabled={changingPassword}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

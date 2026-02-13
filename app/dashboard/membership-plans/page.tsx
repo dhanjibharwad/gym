@@ -154,14 +154,10 @@ function MembershipPlansPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-gray-200 h-48 rounded-lg"></div>
-            ))}
-          </div>
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading membership plans...</p>
         </div>
       </div>
     );
@@ -249,14 +245,19 @@ function MembershipPlansPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 cursor-pointer"
+                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {submitting ? 'Saving...' : (editingPlan ? 'Update' : 'Create')}
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Processing...
+                      </>
+                    ) : (editingPlan ? 'Update' : 'Create')}
                   </button>
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition cursor-pointer"
+                    disabled={submitting}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition cursor-pointer disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -277,16 +278,25 @@ function MembershipPlansPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(plan)}
-                        className="text-gray-400 hover:text-orange-600 p-1 rounded transition cursor-pointer"
+                        disabled={submitting}
+                        className="text-gray-400 hover:text-orange-600 p-1 rounded transition disabled:opacity-50 cursor-pointer"
                       >
-                        <Edit className="w-4 h-4" />
+                        {submitting && editingPlan?.id === plan.id ? (
+                          <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Edit className="w-4 h-4" />
+                        )}
                       </button>
                       <button
                         onClick={() => handleDelete(plan)}
                         disabled={deleteLoading === plan.id}
                         className="text-gray-400 hover:text-red-600 p-1 rounded transition disabled:opacity-50 cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deleteLoading === plan.id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   )}
@@ -333,9 +343,14 @@ function MembershipPlansPage() {
               <div className="flex gap-3">
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition"
+                  disabled={deleteLoading !== null}
+                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Delete
+                  {deleteLoading !== null ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Deleting...
+                    </>
+                  ) : 'Delete'}
                 </button>
                 <button
                   onClick={() => setDeleteConfirm({ show: false, plan: null })}
