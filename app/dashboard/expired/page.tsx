@@ -31,24 +31,28 @@ export default function ExpiredMembersPage() {
   const fetchExpiredMembers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/members');
+      const response = await fetch('/api/payments');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       
-      if (data.success && Array.isArray(data.members)) {
+      if (data.success && Array.isArray(data.payments)) {
         const currentDate = new Date();
-        const expiredMembers = data.members.filter((member: any) => {
-          const endDate = new Date(member.end_date);
-          return endDate < currentDate || member.membership_status === 'expired';
+        currentDate.setHours(0, 0, 0, 0);
+        
+        const expiredMembers = data.payments.filter((payment: any) => {
+          if (!payment.end_date) return false;
+          const endDate = new Date(payment.end_date);
+          endDate.setHours(0, 0, 0, 0);
+          return endDate < currentDate;
         });
         setMembers(expiredMembers);
       } else {
         setMembers([]);
       }
     } catch (error) {
-      console.error('Error fetching members:', error);
+      console.error('Error fetching payments:', error);
       setMembers([]);
     } finally {
       setLoading(false);

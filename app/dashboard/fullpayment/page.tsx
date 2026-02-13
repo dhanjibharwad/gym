@@ -33,16 +33,16 @@ function FullPaymentPage() {
   const fetchFullPaymentMembers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/members');
+      const response = await fetch('/api/payments');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       
-      if (data.success && Array.isArray(data.members)) {
-        // Filter members with full payment status
-        const fullPaymentMembers = data.members.filter((member: any) => 
-          member.payment_status === 'full' && member.membership_status === 'active'
+      if (data.success && Array.isArray(data.payments)) {
+        // Filter payments with full payment status
+        const fullPaymentMembers = data.payments.filter((payment: any) => 
+          payment.payment_status === 'full'
         );
         setMembers(fullPaymentMembers);
       } else {
@@ -50,7 +50,7 @@ function FullPaymentPage() {
         setMembers([]);
       }
     } catch (error) {
-      console.error('Error fetching members:', error);
+      console.error('Error fetching payments:', error);
       setMembers([]);
     } finally {
       setLoading(false);
