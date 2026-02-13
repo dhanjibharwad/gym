@@ -228,17 +228,19 @@ function ReceiptTemplatePage() {
               <p className="text-sm text-gray-500 mt-1">Customize your membership receipt format</p>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={handlePrintPreview}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Printer className="w-4 h-4" />
-                Print Preview
-              </button>
+              {activeTab === 'preview' && (
+                <button
+                  onClick={handlePrintPreview}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Preview
+                </button>
+              )}
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {saving ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -252,7 +254,7 @@ function ReceiptTemplatePage() {
         </div>
       </div>
 
-      <div className="max-w-full mx-auto  py-8">
+      <div className="max-w-full mx-auto py-8">
         {/* Tabs */}
         <div className="bg-white rounded-xl border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
@@ -267,7 +269,7 @@ function ReceiptTemplatePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
                       activeTab === tab.id
                         ? 'border-black text-black'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
