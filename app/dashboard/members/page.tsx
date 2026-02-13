@@ -200,15 +200,6 @@ const MembersPage = () => {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -307,7 +298,16 @@ const MembersPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {members.map((member: Member, index: number) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12">
+                      <div className="flex items-center justify-center">
+                        <GymLoader size="md" />
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  members.map((member: Member, index: number) => (
                   <tr key={`${member.id}-${index}`} className="hover:bg-gray-50">
                     {/* Member Info */}
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -439,7 +439,8 @@ const MembersPage = () => {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>
@@ -455,7 +456,13 @@ const MembersPage = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <GymLoader size="md" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {members.map((member: Member, index: number) => (
             <div key={`${member.id}-${index}`} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Card Header */}
@@ -534,6 +541,8 @@ const MembersPage = () => {
               <p className="mt-1 text-sm text-gray-500">
                 {debouncedSearch ? 'Try adjusting your search.' : 'Get started by adding a new member.'}
               </p>
+            </div>
+          )}
             </div>
           )}
         </div>
