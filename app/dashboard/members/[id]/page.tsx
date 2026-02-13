@@ -211,7 +211,12 @@ const MemberProfilePage = () => {
 
   const fetchReceiptTemplate = async () => {
     try {
-      const response = await fetch('/api/settings/receipt-template');
+      const response = await fetch('/api/settings/receipt-template', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       const data = await response.json();
       if (data.success && data.template) {
         setReceiptTemplate(data.template);

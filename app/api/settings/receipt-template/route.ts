@@ -17,10 +17,23 @@ export async function GET() {
 
     const template = result.rows[0]?.receipt_template || null;
 
-    return NextResponse.json({
-      success: true,
-      template
-    });
+    // Return with no-cache headers to prevent cross-company caching
+    return new NextResponse(
+      JSON.stringify({
+        success: true,
+        template,
+        companyId: session.user.companyId // Include for debugging
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Error fetching receipt template:', error);
     return NextResponse.json({

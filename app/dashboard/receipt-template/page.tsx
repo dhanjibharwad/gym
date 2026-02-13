@@ -102,7 +102,12 @@ function ReceiptTemplatePage() {
   const loadTemplate = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/settings/receipt-template');
+      const response = await fetch('/api/settings/receipt-template', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      });
       const data = await response.json();
       if (data.success && data.template) {
         setTemplate({ ...defaultTemplate, ...data.template });
@@ -199,16 +204,8 @@ function ReceiptTemplatePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-black"></div>
-          <p className="text-sm text-gray-500 font-medium">Loading template...</p>
-        </div>
-      </div>
-    );
-  }
+  // Note: PageGuard already shows GymLoader while checking permissions
+  // We don't need a separate loader here to avoid double loading screens
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
