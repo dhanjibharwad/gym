@@ -19,6 +19,7 @@ interface Member {
   emergency_contact_phone: string;
   profile_photo_url: string;
   created_at: string;
+  medical_conditions?: string;
 }
 
 interface Membership {
@@ -35,6 +36,7 @@ interface Membership {
   duration_months: number;
   plan_price: number;
   created_by_name: string;
+  notes?: string;
 }
 
 interface Payment {
@@ -43,6 +45,22 @@ interface Payment {
   paid_amount: number;
   payment_mode: string;
   payment_status: string;
+  next_due_date?: string;
+}
+
+interface ReceiptTemplate {
+  gymName: string;
+  gymAddress: string;
+  gymPhone: string;
+  gymEmail: string;
+  gymWebsite: string;
+  formTitle: string;
+  headerColor: string;
+  logoUrl: string;
+  rulesAndRegulations: string[];
+  showPhotoPlaceholder: boolean;
+  showSignatureSection: boolean;
+  footerText: string;
 }
 
 interface MembershipReceiptProps {
@@ -53,6 +71,7 @@ interface MembershipReceiptProps {
   gymAddress?: string;
   gymPhone?: string;
   receiptNumber?: string;
+  template?: ReceiptTemplate | null;
 }
 
 // Default rules and regulations - can be customized by admin
@@ -85,11 +104,27 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
     member, 
     membership, 
     payment, 
-    gymName = "THE EAGLE FITNESS GYM",
-    gymAddress = "FF-7, Sunrise Complex, B/h. Hanumanji Temple, Vrundavan Crossing, Waghodia Road, Vadodara-390 025.",
-    gymPhone = "M. 9737415234 / 7567762022",
-    receiptNumber
+    gymName: propGymName,
+    gymAddress: propGymAddress,
+    gymPhone: propGymPhone,
+    receiptNumber,
+    template
   }, ref) => {
+    // Use template values if provided, otherwise fall back to props or defaults
+    const gymName = template?.gymName || propGymName || "THE EAGLE FITNESS GYM";
+    const gymAddress = template?.gymAddress || propGymAddress || "FF-7, Sunrise Complex, B/h. Hanumanji Temple, Vrundavan Crossing, Waghodia Road, Vadodara-390 025.";
+    const gymPhone = template?.gymPhone || propGymPhone || "M. 9737415234 / 7567762022";
+    const gymEmail = template?.gymEmail || "";
+    const gymWebsite = template?.gymWebsite || "";
+    const formTitle = template?.formTitle || "ADMISSION FORM";
+    const headerColor = template?.headerColor || "#1e3a8a";
+    const logoUrl = template?.logoUrl || "";
+    const showPhotoPlaceholder = template?.showPhotoPlaceholder !== false;
+    const showSignatureSection = template?.showSignatureSection !== false;
+    const footerText = template?.footerText || "I agreed to follows above mentioned Instructions and Rules.";
+    const rulesAndRegulations = (template?.rulesAndRegulations && template.rulesAndRegulations.length > 0)
+      ? template.rulesAndRegulations 
+      : defaultRulesAndRegulations;
     
     const formatDate = (dateString: string) => {
       if (!dateString) return 'N/A';
@@ -153,48 +188,69 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
 
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+          background: headerColor,
           color: 'white',
           padding: '15px',
           borderRadius: '8px 8px 0 0',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt="Logo" 
+                  style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '4px' }} 
+                />
+              ) : (
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg width="45" height="45" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+              )}
+              <div>
+                <p style={{ fontSize: '9pt', color: 'rgba(255,255,255,0.7)', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Member Copy</p>
+                <h1 style={{ fontSize: '20pt', fontWeight: 'bold', margin: '0' }}>{gymName}</h1>
+                <p style={{ fontSize: '10pt', color: 'rgba(255,255,255,0.7)', margin: '2px 0 0 0' }}>{formTitle}</p>
+              </div>
+            </div>
+            {showPhotoPlaceholder && (
               <div style={{
-                width: '60px',
-                height: '60px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: '50%',
+                width: '80px',
+                height: '100px',
+                border: '2px solid rgba(255,255,255,0.5)',
+                borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                overflow: 'hidden',
               }}>
-                <svg width="35" height="35" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
+                {member.profile_photo_url ? (
+                  <img 
+                    src={member.profile_photo_url} 
+                    alt={member.full_name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                ) : (
+                  <span style={{ fontSize: '8pt', color: 'rgba(255,255,255,0.7)' }}>Photo</span>
+                )}
               </div>
-              <div>
-                <p style={{ fontSize: '9pt', color: '#bfdbfe', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Member Copy</p>
-                <h1 style={{ fontSize: '20pt', fontWeight: 'bold', margin: '0' }}>{gymName}</h1>
-                <p style={{ fontSize: '10pt', color: '#bfdbfe', margin: '2px 0 0 0' }}>ADMISSION FORM</p>
-              </div>
-            </div>
-            <div style={{
-              width: '80px',
-              height: '100px',
-              border: '2px solid rgba(255,255,255,0.5)',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-            }}>
-              <span style={{ fontSize: '8pt', color: '#bfdbfe' }}>Photo</span>
-            </div>
+            )}
           </div>
-          <div style={{ marginTop: '10px', fontSize: '9pt', color: '#bfdbfe' }}>
+          <div style={{ marginTop: '10px', fontSize: '9pt', color: 'rgba(255,255,255,0.7)' }}>
             <p style={{ margin: '2px 0' }}>{gymAddress}</p>
-            <p style={{ margin: '2px 0' }}>{gymPhone}</p>
+            {gymPhone && <p style={{ margin: '2px 0' }}>{gymPhone}</p>}
+            {gymEmail && <p style={{ margin: '2px 0' }}>{gymEmail}</p>}
+            {gymWebsite && <p style={{ margin: '2px 0' }}>{gymWebsite}</p>}
           </div>
         </div>
 
@@ -243,7 +299,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
                 <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>Disease if any :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
-                  <span style={{ fontSize: '10pt' }}>None</span>
+                  <span style={{ fontSize: '10pt' }}>{member.medical_conditions || 'None'}</span>
                 </div>
               </div>
             </div>
@@ -258,15 +314,25 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                     width: '14px',
                     height: '14px',
                     border: '1px solid #4b5563',
-                    backgroundColor: member.gender === 'Male' ? '#1e3a8a' : 'transparent',
-                  }}></div>
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '10pt',
+                    fontWeight: 'bold',
+                    color: '#1e3a8a'
+                  }}>{member.gender === 'Male' ? '✓' : ''}</div>
                   <span style={{ fontSize: '10pt', marginLeft: '8px' }}>Female</span>
                   <div style={{
                     width: '14px',
                     height: '14px',
                     border: '1px solid #4b5563',
-                    backgroundColor: member.gender === 'Female' ? '#1e3a8a' : 'transparent',
-                  }}></div>
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '10pt',
+                    fontWeight: 'bold',
+                    color: '#1e3a8a'
+                  }}>{member.gender === 'Female' ? '✓' : ''}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
@@ -316,7 +382,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 <span style={{ fontSize: '10pt' }}>(ii) Paid Amount :</span>
                 <span style={{ fontSize: '10pt' }}>Rs. :</span>
                 <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{payment?.paid_amount || '0'}</span>
+                  <span style={{ fontSize: '10pt' }}>{payment ? Number(payment.paid_amount).toFixed(0) : '0'}</span>
                 </div>
               </div>
               
@@ -324,11 +390,21 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ fontSize: '10pt' }}>(iii) Balance Payment : Date</span>
                 <div style={{ width: '100px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{payment?.payment_status === 'partial' ? 'As per agreement' : 'N/A'}</span>
+                  <span style={{ fontSize: '10pt' }}>
+                    {payment?.payment_status === 'partial' 
+                      ? (payment?.next_due_date ? formatDate(payment.next_due_date) : 'As per agreement')
+                      : 'N/A'
+                    }
+                  </span>
                 </div>
                 <span style={{ fontSize: '10pt' }}>Rs. :</span>
                 <div style={{ width: '60px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{payment && payment.total_amount > payment.paid_amount ? payment.total_amount - payment.paid_amount : '0'}</span>
+                  <span style={{ fontSize: '10pt' }}>
+                    {payment 
+                      ? Math.max(0, Number(payment.total_amount) - Number(payment.paid_amount)).toFixed(0) 
+                      : '0'
+                    }
+                  </span>
                 </div>
               </div>
             </div>
@@ -394,19 +470,59 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               <span style={{ fontSize: '10pt', fontWeight: '600' }}>NB : Type of Membership :</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '10pt' }}>New</span>
-                <div style={{ width: '12px', height: '12px', border: '1px solid #4b5563' }}></div>
+                <div style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  border: '1px solid #4b5563',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  color: '#1e3a8a'
+                }}>{membership.membership_types?.includes('New') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '10pt' }}>Renewal</span>
-                <div style={{ width: '12px', height: '12px', border: '1px solid #4b5563' }}></div>
+                <div style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  border: '1px solid #4b5563',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  color: '#1e3a8a'
+                }}>{membership.membership_types?.includes('Renewal') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '10pt' }}>P.T.</span>
-                <div style={{ width: '12px', height: '12px', border: '1px solid #4b5563' }}></div>
+                <div style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  border: '1px solid #4b5563',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  color: '#1e3a8a'
+                }}>{membership.membership_types?.includes('Personal Training') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '10pt' }}>Diet</span>
-                <div style={{ width: '12px', height: '12px', border: '1px solid #4b5563' }}></div>
+                <div style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  border: '1px solid #4b5563',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10pt',
+                  fontWeight: 'bold',
+                  color: '#1e3a8a'
+                }}>{membership.membership_types?.includes('Diet') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '10px' }}>
                 <span style={{ fontSize: '10pt' }}>Old Sr. No.</span>
@@ -417,7 +533,9 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Note */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
               <span style={{ fontSize: '10pt', fontWeight: '600' }}>Note :</span>
-              <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px', minHeight: '30px' }}></div>
+              <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px', minHeight: '30px' }}>
+                <span style={{ fontSize: '10pt' }}>{membership.notes || ''}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -447,7 +565,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             color: '#1f2937',
             lineHeight: '1.5',
           }}>
-            {defaultRulesAndRegulations.map((rule, index) => (
+            {rulesAndRegulations.map((rule, index) => (
               <li key={index} style={{ marginBottom: '4px' }}>
                 {rule}
               </li>
@@ -455,37 +573,39 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
           </ol>
 
           {/* Agreement Section */}
-          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #d1d5db' }}>
-            <p style={{ fontSize: '8pt', color: '#374151', margin: '0 0 8px 0' }}>
-              <strong>NB:</strong> So I hereby read & agreed with the above rules/regulations, instructions and reserves rights of the {gymName} and enrolled my admission for aforesaid training period.
-            </p>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '120px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Date</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Seal & Signature of the Gym Authority</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Signature of Member</p>
+          {showSignatureSection && (
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #d1d5db' }}>
+              <p style={{ fontSize: '8pt', color: '#374151', margin: '0 0 8px 0' }}>
+                <strong>NB:</strong> So I hereby read & agreed with the above rules/regulations, instructions and reserves rights of the {gymName} and enrolled my admission for aforesaid training period.
+              </p>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ width: '120px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
+                  <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Date</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
+                  <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Seal & Signature of the Gym Authority</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
+                  <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Signature of Member</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
         <div style={{
-          backgroundColor: '#1e3a8a',
+          backgroundColor: headerColor,
           color: 'white',
           textAlign: 'center',
           padding: '8px',
           borderRadius: '0 0 8px 8px',
         }}>
-          <p style={{ fontSize: '8pt', margin: '0' }}>I agreed to follows above mentioned Instructions and Rules.</p>
+          <p style={{ fontSize: '8pt', margin: '0' }}>{footerText}</p>
         </div>
 
         {/* Receipt Number */}

@@ -108,6 +108,21 @@ interface PaymentSummary {
   payment_count: number;
 }
 
+interface ReceiptTemplate {
+  gymName: string;
+  gymAddress: string;
+  gymPhone: string;
+  gymEmail: string;
+  gymWebsite: string;
+  formTitle: string;
+  headerColor: string;
+  logoUrl: string;
+  rulesAndRegulations: string[];
+  showPhotoPlaceholder: boolean;
+  showSignatureSection: boolean;
+  footerText: string;
+}
+
 const MemberProfilePage = () => {
   const params = useParams();
   const router = useRouter();
@@ -138,11 +153,13 @@ const MemberProfilePage = () => {
   // Receipt modal state
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedReceiptMembership, setSelectedReceiptMembership] = useState<Membership | null>(null);
+  const [receiptTemplate, setReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (memberId) {
       fetchMemberData();
+      fetchReceiptTemplate();
     }
   }, [memberId]);
 
@@ -184,6 +201,18 @@ const MemberProfilePage = () => {
       console.error('Error fetching member data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReceiptTemplate = async () => {
+    try {
+      const response = await fetch('/api/settings/receipt-template');
+      const data = await response.json();
+      if (data.success && data.template) {
+        setReceiptTemplate(data.template);
+      }
+    } catch (error) {
+      console.error('Error fetching receipt template:', error);
     }
   };
 
@@ -1330,10 +1359,14 @@ const MemberProfilePage = () => {
             <div className="p-6 bg-gray-100">
               <div ref={receiptRef} className="bg-white shadow-lg">
                 <MembershipReceipt
-                  member={member}
+                  member={{
+                    ...member,
+                    medical_conditions: medicalInfo?.medical_conditions || 'None'
+                  }}
                   membership={selectedReceiptMembership}
                   payment={getPaymentsForMembership(selectedReceiptMembership.id)[0] || null}
                   receiptNumber={`REC-${selectedReceiptMembership.id}-${Date.now()}`}
+                  template={receiptTemplate}
                 />
               </div>
             </div>
