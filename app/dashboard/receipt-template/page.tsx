@@ -213,8 +213,8 @@ function ReceiptTemplatePage() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="bg-white border-b border-gray-200 rounded-xl">
+        <div className="max-w-full mx-auto px-6 py-6 ">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <button
@@ -252,7 +252,7 @@ function ReceiptTemplatePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-full mx-auto  py-8">
         {/* Tabs */}
         <div className="bg-white rounded-xl border border-gray-200 mb-6">
           <div className="border-b border-gray-200">
