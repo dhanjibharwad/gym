@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CheckCircle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface Member {
   id: number;
@@ -19,7 +20,7 @@ interface Member {
   membership_status: string;
 }
 
-export default function FullPaymentPage() {
+function FullPaymentPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -206,3 +207,14 @@ export default function FullPaymentPage() {
     </div>
   );
 }
+
+// Wrap with PageGuard to check permissions
+function FullPaymentPageWithGuard() {
+  return (
+    <PageGuard permission="view_payments">
+      <FullPaymentPage />
+    </PageGuard>
+  );
+}
+
+export default FullPaymentPageWithGuard;
