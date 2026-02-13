@@ -46,10 +46,11 @@ interface CustomField {
   options?: string[];
 }
 
+// Empty default template for new companies - they must fill in their own details
 const defaultTemplate: ReceiptTemplate = {
-  gymName: "THE EAGLE FITNESS GYM",
-  gymAddress: "FF-7, Sunrise Complex, B/h. Hanumanji Temple, Vrundavan Crossing, Waghodia Road, Vadodara-390 025.",
-  gymPhone: "M. 9737415234 / 7567762022",
+  gymName: "",
+  gymAddress: "",
+  gymPhone: "",
   gymEmail: "",
   gymWebsite: "",
   formTitle: "ADMISSION FORM",
