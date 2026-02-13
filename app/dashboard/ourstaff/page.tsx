@@ -5,6 +5,7 @@ import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X } f
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import GymLoader from '@/components/GymLoader';
 
 function OurStaffPage() {
   const { can } = usePermission();
@@ -171,8 +172,7 @@ function OurStaffPage() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading staff...</p>
+                <GymLoader size="md" />
               </div>
             ) : staff.length === 0 ? (
               <div className="p-8 text-center">

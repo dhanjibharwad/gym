@@ -9,6 +9,7 @@ import {
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
+import GymLoader from '@/components/GymLoader';
 
 const SettingsPage = () => {
   const { can } = usePermission();
@@ -92,7 +93,7 @@ const SettingsPage = () => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          <GymLoader size="md" />
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

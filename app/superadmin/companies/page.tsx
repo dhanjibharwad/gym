@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { verifyAuth } from '@/lib/auth-utils';
 import { Building2, Mail, User, Phone, Calendar, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react';
+import GymLoader from '@/components/GymLoader';
 
 interface Company {
   id: number;
@@ -101,10 +102,7 @@ export default function SuperAdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading companies...</p>
-        </div>
+        <GymLoader size="lg" />
       </div>
     );
   }

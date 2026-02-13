@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { UserProvider } from "@/components/rbac/PermissionGate";
+import GymLoader from "@/components/GymLoader";
 
 interface User {
   id: number;
@@ -49,7 +50,7 @@ export default function DashboardLayout({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <GymLoader size="lg" />
       </div>
     );
   }

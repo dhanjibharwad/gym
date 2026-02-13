@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePermission } from './PermissionGate';
+import GymLoader from '@/components/GymLoader';
 
 interface PageGuardProps {
   /** Single permission required to view this page */
@@ -80,7 +81,7 @@ export function PageGuard({
       <>
         {loadingComponent || (
           <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+            <GymLoader size="lg" />
           </div>
         )}
       </>

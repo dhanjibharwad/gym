@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
+import GymLoader from '@/components/GymLoader';
 
 interface Role {
   id: number;
@@ -142,7 +143,7 @@ function PermissionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <GymLoader size="md" />
       </div>
     );
   }

@@ -24,6 +24,7 @@ import {
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import GymLoader from '@/components/GymLoader';
 
 interface Payment {
   id: number;
@@ -400,7 +401,7 @@ const PaymentsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <GymLoader size="md" />
       </div>
     );
   }

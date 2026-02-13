@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import Toast from '@/app/components/Toast';
+import GymLoader from '@/components/GymLoader';
 
 interface ReceiptTemplate {
   gymName: string;

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
+import GymLoader from '@/components/GymLoader';
 
 interface Member {
   id: number;
@@ -74,15 +75,8 @@ function FullPaymentPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <GymLoader size="lg" />
       </div>
     );
   }

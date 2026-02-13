@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import GymLoader from '@/components/GymLoader';
 
 interface User {
   id: number;
@@ -311,7 +312,7 @@ const Dashboard = () => {
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <GymLoader size="md" />
       </div>
     );
   }

@@ -11,6 +11,7 @@ import {
 import Toast from '@/app/components/Toast';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import MembershipReceipt from '@/components/MembershipReceipt';
+import GymLoader from '@/components/GymLoader';
 
 interface Member {
   id: number;
@@ -318,10 +319,7 @@ const MemberProfilePage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-black"></div>
-          <p className="text-sm text-gray-500 font-medium">Loading member profile...</p>
-        </div>
+        <GymLoader size="lg" />
       </div>
     );
   }
