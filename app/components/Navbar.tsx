@@ -36,7 +36,7 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center group">
               <div className="relative">
-                <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500 group-hover:from-orange-400 group-hover:via-orange-300 group-hover:to-orange-400 transition-all duration-300 tracking-tight">
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500 group-hover:from-orange-400 group-hover:via-orange-300 group-hover:to-orange-400 transition-all duration-300 tracking-tight">
                   OUR GYM
                 </span>
                 <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-400 group-hover:w-full transition-all duration-300"></div>
@@ -45,13 +45,13 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Menu Items - Center */}
-          <div className="hidden lg:flex items-center justify-center flex-1 px-8">
-            <div className="flex items-center space-x-8">
+          <div className="hidden xl:flex items-center justify-center flex-1 px-4 lg:px-8">
+            <div className="flex items-center space-x-4 lg:space-x-8">
               {menuItems.map((item, index) => (
                 <Link
                   key={index}
                   href={item.href}
-                  className="relative text-gray-300 hover:text-orange-500 transition-all duration-300 text-sm font-semibold tracking-wider group"
+                  className="relative text-gray-300 hover:text-orange-500 transition-all duration-300 text-xs lg:text-sm font-semibold tracking-wider group whitespace-nowrap"
                 >
                   {item.label}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300"></span>
@@ -61,11 +61,11 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Buttons - Right Side */}
-          <div className="hidden lg:flex items-center space-x-3">
+          <div className="hidden xl:flex items-center space-x-2 lg:space-x-3">
             {/* Login Button */}
             <Link
               href="/auth/login"
-              className="relative px-6 py-2.5 text-white border-2 border-orange-500/50 rounded-lg hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold text-sm overflow-hidden group"
+              className="relative px-4 lg:px-6 py-2 lg:py-2.5 text-white border-2 border-orange-500/50 rounded-lg hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-300 font-semibold text-xs lg:text-sm overflow-hidden group whitespace-nowrap"
             >
               <span className="relative z-10">UNIVERSAL LOGIN</span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/10 to-orange-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
@@ -74,14 +74,14 @@ const Navbar: React.FC<NavbarProps> = ({
             {/* Start Now Button */}
             <Link
               href="/setup"
-              className="relative px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 font-semibold text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 transform"
+              className="relative px-4 lg:px-6 py-2 lg:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 font-semibold text-xs lg:text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 transform whitespace-nowrap"
             >
               START HERE
             </Link>
           </div>
 
           {/* Mobile menu button */}
-          <div className="lg:hidden">
+          <div className="xl:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-white hover:text-orange-500 focus:outline-none p-2 rounded-lg hover:bg-orange-500/10 transition-all duration-300"
@@ -108,7 +108,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-gradient-to-b from-gray-900 to-black border-t border-orange-500/20">
+        <div className="xl:hidden bg-gradient-to-b from-gray-900 to-black border-t border-orange-500/20 max-h-[calc(100vh-5rem)] overflow-y-auto">
           <div className="px-4 pt-2 pb-4 space-y-1">
             {menuItems.map((item, index) => (
               <Link
