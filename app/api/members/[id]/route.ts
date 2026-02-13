@@ -260,3 +260,113 @@ export async function PATCH(
     );
   }
 }
+
+/**
+ * DELETE /api/members/[id]
+ * Deletes a member and all associated data. Requires 'delete_members' permission.
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Check delete_members permission
+    const { authorized, response } = await checkPermission(request, 'delete_members');
+    if (!authorized) return response;
+
+    const { id: memberId } = await params;
+    const companyId = request.headers.get('x-company-id');
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Company ID required' },
+        { status: 400 }
+      );
+    }
+
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      // Verify member exists and belongs to the company
+      const memberCheck = await client.query(
+        'SELECT id FROM members WHERE id = $1 AND company_id = $2',
+        [memberId, companyId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return NextResponse.json(
+          { success: false, message: 'Member not found' },
+          { status: 404 }
+        );
+      }
+
+      // Delete related data in order (respecting foreign key constraints)
+      
+      // 1. Delete payment transactions
+      await client.query(
+        `DELETE FROM payment_transactions 
+         WHERE member_id = $1`,
+        [memberId]
+      );
+
+      // 2. Delete payments (via memberships)
+      await client.query(
+        `DELETE FROM payments 
+         WHERE membership_id IN (
+           SELECT id FROM memberships WHERE member_id = $1
+         )`,
+        [memberId]
+      );
+
+      // 3. Delete membership holds
+      await client.query(
+        `DELETE FROM membership_holds 
+         WHERE membership_id IN (
+           SELECT id FROM memberships WHERE member_id = $1
+         )`,
+        [memberId]
+      );
+
+      // 4. Delete memberships
+      await client.query(
+        'DELETE FROM memberships WHERE member_id = $1',
+        [memberId]
+      );
+
+      // 5. Delete medical info
+      await client.query(
+        'DELETE FROM medical_info WHERE member_id = $1',
+        [memberId]
+      );
+
+      // 6. Finally delete the member
+      await client.query(
+        'DELETE FROM members WHERE id = $1 AND company_id = $2',
+        [memberId, companyId]
+      );
+
+      await client.query('COMMIT');
+
+      return NextResponse.json({
+        success: true,
+        message: 'Member deleted successfully'
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('Delete member error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete member' },
+      { status: 500 }
+    );
+  }
+}

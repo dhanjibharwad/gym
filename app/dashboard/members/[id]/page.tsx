@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, Calendar, MapPin, Briefcase, Users,
   CreditCard, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft,
   Heart, Activity, FileText, DollarSign, TrendingUp, Pause, Play, History,
-  Edit, Save, X, Printer
+  Edit, Save, X, Printer, Trash2
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -156,6 +156,10 @@ const MemberProfilePage = () => {
   const [receiptTemplate, setReceiptTemplate] = useState<ReceiptTemplate | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (memberId) {
       fetchMemberData();
@@ -259,6 +263,32 @@ const MemberProfilePage = () => {
       showToast('Failed to update member', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!member) return;
+    
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        showToast('Member deleted successfully', 'success');
+        setShowDeleteModal(false);
+        // Redirect to members list
+        router.push('/dashboard/members');
+      } else {
+        showToast(result.message || 'Failed to delete member', 'error');
+        setDeleting(false);
+      }
+    } catch (error) {
+      showToast('Failed to delete member', 'error');
+      setDeleting(false);
     }
   };
 
@@ -765,6 +795,47 @@ const MemberProfilePage = () => {
         </div>
       )}
 
+      {/* Delete Member Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Member</h3>
+                <p className="text-sm text-gray-600">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-800">
+                Are you sure you want to delete <strong>{member?.full_name}</strong>? 
+                This will permanently remove the member and all their membership history.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteMember}
+                disabled={deleting}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              >
+                {deleting ? 'Deleting...' : <><Trash2 className="w-4 h-4" /> Delete Member</>}
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -780,15 +851,26 @@ const MemberProfilePage = () => {
             <p className="text-sm text-gray-500">View member details and membership history</p>
           </div>
         </div>
-        {can('edit_members') && (
-          <button
-            onClick={handleEditClick}
-            className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm"
-          >
-            <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">Edit Member</span>
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {can('edit_members') && (
+            <button
+              onClick={handleEditClick}
+              className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm cursor-pointer"
+            >
+              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">Edit Member</span>
+            </button>
+          )}
+          {can('delete_members') && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="group flex items-center gap-2 px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-400 transition-all duration-200 shadow-sm cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">Delete</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Member Info Card */}
