@@ -303,8 +303,8 @@ const HistoryPage = () => {
                   <option value="all">All Types</option>
                   <option value="membership_fee">Membership Fee</option>
                   <option value="additional_payment">Additional Payment</option>
-                  <option value="renewal">Renewal</option>
-                  <option value="refund">Refund</option>
+                  {/* <option value="renewal">Renewal</option>
+                  <option value="refund">Refund</option> */}
                 </select>
               </div>
 
@@ -320,6 +320,7 @@ const HistoryPage = () => {
                   <option value="UPI">UPI</option>
                   <option value="Card">Card</option>
                   <option value="Online">Online Transfer</option>
+                  <option value="Cheque">Cheque</option>
                 </select>
               </div>
             </div>
