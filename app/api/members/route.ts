@@ -5,6 +5,7 @@ import { unstable_cache } from 'next/cache';
 
 interface MemberQueryResult {
   id: number;
+  member_number: number;
   full_name: string;
   phone_number: string;
   email: string;
@@ -55,6 +56,8 @@ const getCachedMembers = unstable_cache(
       const membersQuery = `
         SELECT 
           id,
+          member_number,
+          LPAD(member_number::text, 4, '0') as formatted_member_id,
           full_name,
           phone_number,
           email,

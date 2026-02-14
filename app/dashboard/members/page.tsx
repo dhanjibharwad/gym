@@ -24,6 +24,8 @@ import GymLoader from '@/components/GymLoader';
 
 interface Member {
   id: number;
+  member_number: number;
+  formatted_member_id: string;
   full_name: string;
   phone_number: string;
   email: string;
@@ -332,7 +334,7 @@ const MembersPage = () => {
                             {member.full_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ID: #{member.id}
+                            SR.NO: {member.formatted_member_id}
                           </div>
                         </div>
                       </div>
@@ -488,7 +490,7 @@ const MembersPage = () => {
                       <h3 className="text-lg font-semibold text-gray-900 truncate">
                         {member.full_name}
                       </h3>
-                      <p className="text-sm text-gray-500">ID: #{member.id}</p>
+                      <p className="text-sm text-gray-500">SR.NO: {member.formatted_member_id}</p>
                     </div>
                   </div>
                 </div>

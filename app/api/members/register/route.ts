@@ -65,14 +65,22 @@ export async function POST(request: NextRequest) {
           throw new Error('Member not found or unauthorized');
         }
       } else {
+        // Get next member number for this company
+        const memberNumberResult = await client.query(
+          'SELECT COALESCE(MAX(member_number), 0) + 1 as next_number FROM members WHERE company_id = $1',
+          [session?.user?.companyId]
+        );
+        const memberNumber = memberNumberResult.rows[0].next_number;
+        
         // Insert new member
         const memberResult = await client.query(
           `INSERT INTO members (
-            company_id, full_name, phone_number, email, gender, occupation,
+            company_id, member_number, full_name, phone_number, email, gender, occupation,
             date_of_birth, age, address, emergency_contact_name, emergency_contact_phone
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, member_number`,
           [
             session?.user?.companyId,
+            memberNumber,
             data.fullName,
             data.phoneNumber,
             data.email,
@@ -210,10 +218,17 @@ export async function POST(request: NextRequest) {
       
       await client.query('COMMIT');
       
+      // Get member number for response
+      const memberNumberQuery = await client.query(
+        'SELECT LPAD(member_number::text, 4, \'0\') as formatted_id FROM members WHERE id = $1',
+        [memberId]
+      );
+      const displayMemberId = memberNumberQuery.rows[0]?.formatted_id || String(memberId).padStart(4, '0');
+      
       return NextResponse.json({
         success: true,
         message: memberType === 'existing' ? 'Membership renewed successfully' : 'Member registered successfully',
-        memberId: memberId
+        memberId: displayMemberId
       });
       
     } catch (error) {
