@@ -843,7 +843,7 @@ const MemberProfilePage = () => {
               <button
                 onClick={handleDeleteMember}
                 disabled={deleting}
-                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {deleting ? (
                   <>
@@ -1109,7 +1109,7 @@ const MemberProfilePage = () => {
                       <button
                         onClick={() => handleResumeMembership(membership.id)}
                         disabled={processing}
-                        className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1"
+                        className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1 cursor-pointer"
                       >
                         {processing ? (
                           <>

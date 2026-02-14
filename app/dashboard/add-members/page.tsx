@@ -491,15 +491,6 @@ const AddMemberPage = () => {
         return;
       }
       
-      // Validate end date doesn't exceed plan duration
-      if (name === 'planEndDate' && value && formData.selectedPlan && formData.planStartDate) {
-        const maxEndDate = calculateEndDate(formData.planStartDate, formData.selectedPlan);
-        if (new Date(value) > new Date(maxEndDate)) {
-          setErrors(prev => ({ ...prev, planEndDate: 'End date cannot exceed the plan duration' }));
-          return;
-        }
-      }
-      
       // Default update for other fields
       setFormData(prev => ({ ...prev, [name]: processedValue }));
     }
@@ -1336,7 +1327,6 @@ const AddMemberPage = () => {
                     value={formData.planEndDate}
                     onChange={handleInputChange}
                     min={formData.planStartDate}
-                    max={formData.selectedPlan && formData.planStartDate ? calculateEndDate(formData.planStartDate, formData.selectedPlan) : undefined}
                     data-error={!!errors.planEndDate}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
                       errors.planEndDate ? 'border-red-500' : 'border-slate-300'
