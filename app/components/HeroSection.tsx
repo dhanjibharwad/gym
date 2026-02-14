@@ -1,11 +1,16 @@
 'use client'
 
-import { useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ChevronRight, Play } from "lucide-react";
 import heroImage from "@/assets/hero-gym.jpg";
 
 const HeroSection = () => {
   const heroRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <section
@@ -32,8 +37,8 @@ const HeroSection = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px]" />
 
       {/* Particles */}
-      <div className="absolute inset-0 z-10 opacity-30" suppressHydrationWarning>
-        {typeof window !== 'undefined' && [...Array(20)].map((_, i) => (
+      <div className="absolute inset-0 z-10 opacity-30">
+        {mounted && [...Array(20)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-primary rounded-full animate-float"
