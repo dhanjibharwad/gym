@@ -282,7 +282,7 @@ export async function PATCH(
       
       // Revalidate cache
       revalidateTag('member');
-      revalidateTag('members-list');
+      revalidateTag('members');
 
       return NextResponse.json({
         success: true,
@@ -397,7 +397,7 @@ export async function DELETE(
       
       // Revalidate cache
       revalidateTag('member');
-      revalidateTag('members-list');
+      revalidateTag('members');
 
       return NextResponse.json({
         success: true,

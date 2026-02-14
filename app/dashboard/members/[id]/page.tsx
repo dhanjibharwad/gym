@@ -286,8 +286,9 @@ const MemberProfilePage = () => {
       if (result.success) {
         showToast('Member deleted successfully', 'success');
         setShowDeleteModal(false);
-        // Redirect to members list
-        router.push('/dashboard/members');
+        setTimeout(() => {
+          window.location.href = '/dashboard/members';
+        }, 500);
       } else {
         showToast(result.message || 'Failed to delete member', 'error');
         setDeleting(false);

@@ -80,6 +80,18 @@ const MembersPage = () => {
     fetchMembers();
   }, [pagination.page, debouncedSearch]);
 
+  // Refetch members when page becomes visible (e.g., after navigation back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchMembers();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [pagination.page, debouncedSearch]);
+
   const handleEditMember = (member: Member) => {
     setEditingMember(member.id);
     setEditForm({
@@ -133,14 +145,16 @@ const MembersPage = () => {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
-        ...(debouncedSearch && { search: debouncedSearch })
+        ...(debouncedSearch && { search: debouncedSearch }),
+        _t: Date.now().toString()
       });
       
       const response = await fetch(`/api/members?${params}`, {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
+        cache: 'no-store'
       });
       
       const result = await response.json();
