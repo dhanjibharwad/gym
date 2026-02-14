@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, CreditCard, Calendar, AlertTriangle } from 'lucide-
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
+import GymLoader from '@/components/GymLoader';
 
 interface MembershipPlan {
   id: number;
@@ -155,10 +156,7 @@ function MembershipPlansPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center h-64">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading membership plans...</p>
-        </div>
+        <GymLoader size="md" />
       </div>
     );
   }

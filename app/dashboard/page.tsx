@@ -214,7 +214,7 @@ const Dashboard = () => {
         name: m.full_name,
         plan: m.plan_name,
         joinDate: new Date(m.created_at).toLocaleDateString('en-GB').replace(/\//g, '-'),
-        status: m.membership_status === 'active' ? 'Active' : 'Inactive',
+        status: m.membership_status?.toLowerCase() === 'active' ? 'Active' : m.membership_status?.toLowerCase() === 'expired' ? 'Expired' : m.membership_status?.toLowerCase() === 'suspended' ? 'Suspended' : 'Inactive',
         profilePhoto: m.profile_photo_url
       }));
     
@@ -627,35 +627,22 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="space-y-4">
               {dashboardData.recentMembers.length > 0 ? dashboardData.recentMembers.map((member, index) => (
-                <div key={`recent-${member.id}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {member.profilePhoto ? (
-                      <img
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                        src={member.profilePhoto}
-                        alt={member.name}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gradient-to-r from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {member.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-gray-900">{member.name}</p>
-                      <p className="text-sm text-gray-600">{member.plan} • {member.joinDate}</p>
+                <div key={`recent-${member.id}-${index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  {member.profilePhoto ? (
+                    <img
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                      src={member.profilePhoto}
+                      alt={member.name}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-r from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {member.name.charAt(0)}
                     </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900">{member.name}</p>
+                    <p className="text-sm text-gray-600">{member.plan} • {member.joinDate}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    member.status === 'Active' 
-                      ? 'bg-green-100 text-green-700' 
-                      : member.status === 'Expired'
-                      ? 'bg-red-100 text-red-700'
-                      : member.status === 'Suspended'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {member.status}
-                  </span>
                 </div>
               )) : (
                 <div className="text-center py-4 text-gray-500">
