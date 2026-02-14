@@ -15,6 +15,8 @@ import GymLoader from '@/components/GymLoader';
 
 interface Member {
   id: number;
+  member_number: number;
+  formatted_member_id: string;
   full_name: string;
   phone_number: string;
   email: string;
@@ -919,7 +921,7 @@ const MemberProfilePage = () => {
               )}
               <div className="text-white">
                 <h2 className="text-3xl font-bold">{member.full_name}</h2>
-                <p className="text-gray-300 mt-1 text-sm">Member ID: #{member.id}</p>
+                <p className="text-gray-300 mt-1 text-sm">SR.NO: {member.formatted_member_id}</p>
               </div>
             </div>
             <div className="text-right text-white">

@@ -11,7 +11,8 @@ const getCachedMemberDetails = unstable_cache(
     try {
       // Get member details with company verification
       const memberResult = await client.query(
-        `SELECT id, full_name, phone_number, email, gender, date_of_birth, 
+        `SELECT id, member_number, LPAD(member_number::text, 4, '0') as formatted_member_id,
+                full_name, phone_number, email, gender, date_of_birth, 
                 EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth))::int as age,
                 occupation, address, emergency_contact_name, emergency_contact_phone,
                 profile_photo_url, created_at
