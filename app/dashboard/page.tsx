@@ -72,7 +72,6 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [dashboardData, setDashboardData] = useState({
     totalMembers: 0,
-    activeMembers: 0,
     newMembersToday: 0,
     expiringThisWeek: 0,
     todayRevenue: 0,
@@ -131,7 +130,6 @@ const Dashboard = () => {
     
     // Calculate stats
     const totalMembers = members.length;
-    const activeMembers = members.filter((m: Member) => m.membership_status === 'active').length;
     
     // New members today (or in date range)
     const today = new Date().toISOString().split('T')[0];
@@ -226,7 +224,6 @@ const Dashboard = () => {
     
     setDashboardData({
       totalMembers,
-      activeMembers,
       newMembersToday,
       expiringThisWeek,
       todayRevenue,
@@ -407,7 +404,7 @@ const Dashboard = () => {
       </div>
 
       {/* Primary Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Members */}
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
           <div className="flex items-center justify-between">
@@ -416,28 +413,11 @@ const Dashboard = () => {
               <p className="text-3xl font-bold text-gray-900">{dashboardData.totalMembers.toLocaleString()}</p>
               <p className="text-xs text-gray-500 flex items-center mt-2">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                {dashboardData.totalMembers > 0 ? `${((dashboardData.activeMembers / dashboardData.totalMembers) * 100).toFixed(1)}% active` : 'No data'}
+                All registered members
               </p>
             </div>
             <div className="w-14 h-14 bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl flex items-center justify-center shadow-lg">
               <Users className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Active Members */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Members</p>
-              <p className="text-3xl font-bold text-gray-900">{dashboardData.activeMembers.toLocaleString()}</p>
-              <p className="text-xs text-green-600 flex items-center mt-2">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                {dashboardData.totalMembers > 0 ? `${((dashboardData.activeMembers / dashboardData.totalMembers) * 100).toFixed(1)}% active rate` : '0% active rate'}
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center shadow-lg">
-              <Activity className="w-7 h-7 text-white" />
             </div>
           </div>
         </div>
