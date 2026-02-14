@@ -1,16 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { ChevronRight, Play } from "lucide-react";
 import heroImage from "@/assets/hero-gym.jpg";
 
 const HeroSection = () => {
-  const [isVisible, setIsVisible] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
 
   return (
     <section
@@ -37,8 +32,8 @@ const HeroSection = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px]" />
 
       {/* Particles */}
-      <div className="absolute inset-0 z-10 opacity-30">
-        {isVisible && [...Array(20)].map((_, i) => (
+      <div className="absolute inset-0 z-10 opacity-30" suppressHydrationWarning>
+        {typeof window !== 'undefined' && [...Array(20)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-primary rounded-full animate-float"
@@ -54,28 +49,19 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-20 container mx-auto px-6 text-center">
-        <div
-          className={`transition-all duration-1000 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-            }`}
-        >
+        <div className="animate-fade-in-up">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 leading-tight">
             <span className="block text-white/90">Build Your</span>
             <span className="block gradient-text mt-2">Ultimate Physique</span>
           </h1>
 
-          <p
-            className={`text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-          >
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             Transform your body and mind at the most advanced fitness facility.
             World-class equipment, expert trainers, and a community that pushes you beyond limits.
           </p>
 
           {/* CTA Buttons */}
-          {/* <div
-            className={`flex flex-col sm:flex-row gap-4 justify-center items-center transition-all duration-1000 delay-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-          >
+          {/* <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button className="group min-w-[200px] px-8 py-4 rounded-xl bg-gradient-to-r from-yellow-400 to-blue-500 text-black font-semibold flex items-center justify-center gap-2 hover:scale-105 transition">
               Join Now
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
