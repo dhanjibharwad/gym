@@ -17,7 +17,8 @@ import {
   UserCog,
   History,
   Filter,
-  X
+  X,
+  Cake
 } from 'lucide-react';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import GymLoader from '@/components/GymLoader';
@@ -38,6 +39,7 @@ interface Member {
   end_date: string;
   plan_name: string;
   profile_photo_url?: string;
+  date_of_birth?: string;
 }
 
 interface Payment {
@@ -65,6 +67,15 @@ interface ExpiringMember {
   profilePhoto?: string;
 }
 
+interface UpcomingBirthday {
+  id: number;
+  name: string;
+  birthdayDate: string;
+  age: number;
+  daysUntil: number;
+  profilePhoto?: string;
+}
+
 const Dashboard = () => {
   const router = useRouter();
   const { can, isAdmin } = usePermission();
@@ -79,7 +90,8 @@ const Dashboard = () => {
     totalRevenue: 0,
     pendingPayments: 0,
     recentMembers: [] as RecentMember[],
-    expiringMembers: [] as ExpiringMember[]
+    expiringMembers: [] as ExpiringMember[],
+    upcomingBirthdays: [] as UpcomingBirthday[]
   });
   const [loading, setLoading] = useState(true);
   
@@ -89,12 +101,22 @@ const Dashboard = () => {
   const [endDate, setEndDate] = useState('');
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [allPayments, setAllPayments] = useState<Payment[]>([]);
+  
+  // Birthday filter state
+  const [birthdayFilter, setBirthdayFilter] = useState<7 | 15 | 30>(30);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleString());
     fetchUserData();
     fetchDashboardData();
   }, []);
+
+  // Recalculate when birthday filter changes
+  useEffect(() => {
+    if (allMembers.length > 0) {
+      calculateDashboardData(allMembers, allPayments);
+    }
+  }, [birthdayFilter]);
 
   const fetchUserData = async () => {
     try {
@@ -222,6 +244,40 @@ const Dashboard = () => {
         };
       });
     
+    // Upcoming birthdays (next 30 days)
+    const upcomingBirthdays: UpcomingBirthday[] = members
+      .filter((m: Member) => m.date_of_birth)
+      .map((m: Member) => {
+        const today = new Date();
+        const birthDate = new Date(m.date_of_birth!);
+        const currentYear = today.getFullYear();
+        
+        // Set birthday to current year
+        let nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+        
+        // If birthday already passed this year, set to next year
+        if (nextBirthday < today) {
+          nextBirthday = new Date(currentYear + 1, birthDate.getMonth(), birthDate.getDate());
+        }
+        
+        const diffTime = nextBirthday.getTime() - today.getTime();
+        const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Calculate age they will turn
+        const age = nextBirthday.getFullYear() - birthDate.getFullYear();
+        
+        return {
+          id: m.id,
+          name: m.full_name,
+          birthdayDate: nextBirthday.toLocaleDateString('en-GB').replace(/\//g, '-'),
+          age,
+          daysUntil,
+          profilePhoto: m.profile_photo_url
+        };
+      })
+      .filter((b: UpcomingBirthday) => b.daysUntil <= birthdayFilter)
+      .sort((a: UpcomingBirthday, b: UpcomingBirthday) => a.daysUntil - b.daysUntil);
+    
     setDashboardData({
       totalMembers,
       newMembersToday,
@@ -231,7 +287,8 @@ const Dashboard = () => {
       totalRevenue,
       pendingPayments,
       recentMembers,
-      expiringMembers
+      expiringMembers,
+      upcomingBirthdays
     });
   };
 
@@ -329,7 +386,10 @@ const Dashboard = () => {
               Welcome back, {user.name}! Here's what's happening at your gym today.
             </p>
           </div>
-          <div className="mt-4 sm:mt-0 flex items-center gap-4">
+          <div className="mt-4 sm:mt-0">
+            <div className="text-sm text-gray-400 mb-2">
+              {currentTime && `Last updated: ${currentTime}`}
+            </div>
             {/* Date Filter */}
             <div className="relative">
               <button
@@ -395,10 +455,6 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-            
-            <div className="text-sm text-gray-400">
-              {currentTime && `Last updated: ${currentTime}`}
-            </div>
           </div>
         </div>
       </div>
@@ -406,7 +462,10 @@ const Dashboard = () => {
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Members */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
+        <div 
+          onClick={() => router.push('/dashboard/members')}
+          className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Members</p>
@@ -424,7 +483,10 @@ const Dashboard = () => {
 
         {/* Today's Revenue - Only show if has permission */}
         {can('view_revenue') && (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
+          <div 
+            onClick={() => router.push('/dashboard/payments')}
+            className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
@@ -480,7 +542,10 @@ const Dashboard = () => {
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition-all">
+        <div 
+          onClick={() => router.push('/dashboard/members')}
+          className="bg-white rounded-xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition-all cursor-pointer"
+        >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl flex items-center justify-center shadow-md">
               <UserPlus className="w-6 h-6 text-white" />
@@ -492,7 +557,10 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition-all">
+        <div 
+          onClick={() => router.push('/dashboard/payments')}
+          className="bg-white rounded-xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition-all cursor-pointer"
+        >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center shadow-md">
               <CreditCard className="w-6 h-6 text-white" />
@@ -543,7 +611,7 @@ const Dashboard = () => {
       </div>
 
       {/* Tables Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Members */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-xl">
@@ -551,8 +619,7 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-gray-900">Recent Members</h3>
               <button 
                 onClick={() => router.push('/dashboard/members')}
-                className="text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors cursor-pointer"
-              >
+                className="text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors cursor-pointer">
                 View All
               </button>
             </div>
@@ -648,6 +715,68 @@ const Dashboard = () => {
               )) : (
                 <div className="text-center py-4 text-gray-500">
                   <p>No expiring memberships</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Birthdays */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cake className="w-5 h-5 text-pink-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Upcoming Birthdays</h3>
+              </div>
+              <select
+                value={birthdayFilter}
+                onChange={(e) => setBirthdayFilter(Number(e.target.value) as 7 | 15 | 30)}
+                className="text-xs px-2 py-1 border border-pink-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-500 cursor-pointer"
+              >
+                <option value={7}>7 Days</option>
+                <option value={15}>15 Days</option>
+                <option value={30}>1 Month</option>
+              </select>
+            </div>
+          </div>
+          <div className="p-6 max-h-96 overflow-y-auto">
+            <div className="space-y-4">
+              {dashboardData.upcomingBirthdays.length > 0 ? dashboardData.upcomingBirthdays.map((birthday, index) => (
+                <div key={`birthday-${birthday.id}-${index}`} className="flex items-center justify-between p-3 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border border-pink-200">
+                  <div className="flex items-center gap-3">
+                    {birthday.profilePhoto ? (
+                      <img
+                        className="w-10 h-10 rounded-full object-cover border-2 border-pink-300"
+                        src={birthday.profilePhoto}
+                        alt={birthday.name}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {birthday.name.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-gray-900">{birthday.name}</p>
+                      <p className="text-sm text-gray-600">Turning {birthday.age} • {birthday.birthdayDate}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      birthday.daysUntil === 0 
+                        ? 'bg-pink-500 text-white animate-pulse' 
+                        : birthday.daysUntil <= 3
+                        ? 'bg-pink-100 text-pink-700'
+                        : 'bg-purple-100 text-purple-700'
+                    }`}>
+                      {birthday.daysUntil === 0 ? '🎉 Today!' : `${birthday.daysUntil} day${birthday.daysUntil !== 1 ? 's' : ''}`}
+                    </span>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-center py-4 text-gray-500">
+                  <Cake className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No upcoming birthdays</p>
                 </div>
               )}
             </div>
