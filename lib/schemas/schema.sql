@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS memberships (
     id SERIAL PRIMARY KEY,
     member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
     plan_id INTEGER REFERENCES membership_plans(id),
+    date_of_admission DATE,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL CHECK (end_date > start_date),
     trainer_assigned VARCHAR(255),

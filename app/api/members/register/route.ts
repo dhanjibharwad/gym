@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       emergencyContactName: formData.get('emergencyContactName') as string || null,
       emergencyContactPhone: formData.get('emergencyContactPhone') as string || null,
       selectedPlan: formData.get('selectedPlan') as string,
+      dateOfAdmission: formData.get('dateOfAdmission') as string || null,
       planStartDate: formData.get('planStartDate') as string,
       planEndDate: formData.get('planEndDate') as string,
       trainerAssigned: formData.get('trainerAssigned') as string || null,
@@ -159,12 +160,13 @@ export async function POST(request: NextRequest) {
       // Insert membership
       const membershipResult = await client.query(
         `INSERT INTO memberships (
-          member_id, plan_id, start_date, end_date, trainer_assigned,
+          member_id, plan_id, date_of_admission, start_date, end_date, trainer_assigned,
           batch_time, membership_types, reference_of_admission, notes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
         [
           memberId,
           planId,
+          data.dateOfAdmission,
           data.planStartDate,
           endDate,
           data.trainerAssigned,

@@ -43,6 +43,7 @@ interface FormData {
   
   // Membership Details
   selectedPlan: string;
+  dateOfAdmission: string;
   planStartDate: string;
   planEndDate: string;
   trainerAssigned: string;
@@ -135,6 +136,7 @@ const AddMemberPage = () => {
     emergencyContactPhone: '',
     profilePhoto: null,
     selectedPlan: '',
+    dateOfAdmission: today,
     planStartDate: today,
     planEndDate: '',
     trainerAssigned: '',
@@ -214,6 +216,7 @@ const AddMemberPage = () => {
       emergencyContactPhone: '',
       profilePhoto: null,
       selectedPlan: '',
+      dateOfAdmission: today,
       planStartDate: today,
       planEndDate: '',
       trainerAssigned: '',
@@ -1275,6 +1278,23 @@ const AddMemberPage = () => {
                     {errors.selectedPlan}
                   </p>
                 )}
+              </div>
+
+              {/* Date of Admission */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Date of Admission
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="date"
+                    name="dateOfAdmission"
+                    value={formData.dateOfAdmission}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                  />
+                </div>
               </div>
 
               {/* Plan Start Date */}

@@ -33,6 +33,7 @@ interface Member {
 
 interface Membership {
   id: number;
+  date_of_admission: string;
   start_date: string;
   end_date: string;
   status: string;
@@ -1145,6 +1146,12 @@ const MemberProfilePage = () => {
                 )}
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {membership.date_of_admission && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Date of Admission</p>
+                      <p className="font-semibold text-gray-900">{formatDate(membership.date_of_admission)}</p>
+                    </div>
+                  )}
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Start Date</p>
                     <p className="font-semibold text-gray-900">{formatDate(membership.start_date)}</p>
@@ -1342,6 +1349,12 @@ const MemberProfilePage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {membership.date_of_admission && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Date of Admission</p>
+                      <p className="font-semibold text-gray-700">{formatDate(membership.date_of_admission)}</p>
+                    </div>
+                  )}
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Start Date</p>
                     <p className="font-semibold text-gray-700">{formatDate(membership.start_date)}</p>
