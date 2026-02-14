@@ -165,7 +165,7 @@ export default function Sidebar({ userRole = "admin", userPermissions = [] }: Si
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className={`absolute top-3 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 hover:shadow-lg transition-all duration-200 z-20 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-opacity-50 ${
+        className={`absolute top-3 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 hover:shadow-lg transition-all duration-200 z-20 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-opacity-50 cursor-pointer ${
           isCollapsed ? 'left-1/2 transform -translate-x-1/2' : 'right-2'
         }`}
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
