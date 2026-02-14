@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { revalidateTag } from 'next/cache';
 
 export async function GET() {
   try {
@@ -45,6 +46,10 @@ export async function GET() {
       }
       
       await client.query('COMMIT');
+      
+      if (membershipsToResume.length > 0) {
+        revalidateTag('member');
+      }
       
       return NextResponse.json({
         success: true,

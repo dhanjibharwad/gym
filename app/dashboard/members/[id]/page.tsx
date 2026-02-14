@@ -193,7 +193,9 @@ const MemberProfilePage = () => {
   const fetchMemberData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/members/${memberId}`);
+      const response = await fetch(`/api/members/${memberId}?_t=${Date.now()}`, {
+        cache: 'no-store'
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -446,7 +448,7 @@ const MemberProfilePage = () => {
       const result = await response.json();
       if (result.success) {
         showToast(result.message, 'success');
-        fetchMemberData();
+        await fetchMemberData();
       } else {
         showToast(result.message, 'error');
       }
@@ -470,6 +472,7 @@ const MemberProfilePage = () => {
     }
     
     setProcessing(true);
+    setShowHoldModal(false);
     try {
       const response = await fetch(`/api/members/${memberId}/memberships/${selectedMembershipId}/hold`, {
         method: 'POST',
@@ -485,10 +488,9 @@ const MemberProfilePage = () => {
       const result = await response.json();
       if (result.success) {
         showToast(result.message, 'success');
-        setShowHoldModal(false);
         setHoldReason('');
         setHoldDuration({ value: '', unit: 'days' });
-        fetchMemberData();
+        await fetchMemberData();
       } else {
         showToast(result.message, 'error');
       }

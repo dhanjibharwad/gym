@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { revalidateTag } from 'next/cache';
 
 export async function POST(
   request: NextRequest,
@@ -96,6 +97,8 @@ export async function POST(
         
         await client.query('COMMIT');
         
+        revalidateTag('member');
+        
         return NextResponse.json({
           success: true,
           message: `Membership put on hold for ${hold_duration} ${hold_unit}`
@@ -138,6 +141,8 @@ export async function POST(
         );
         
         await client.query('COMMIT');
+        
+        revalidateTag('member');
         
         return NextResponse.json({
           success: true,
