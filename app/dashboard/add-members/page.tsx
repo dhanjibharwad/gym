@@ -34,6 +34,9 @@ interface FormData {
   dateOfBirth: string;
   age: number;
   address: string;
+  houseNo: string;
+  area: string;
+  city: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
   profilePhoto: File | null;
@@ -125,6 +128,9 @@ const AddMemberPage = () => {
     dateOfBirth: '',
     age: 0,
     address: '',
+    houseNo: '',
+    area: '',
+    city: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
     profilePhoto: null,
@@ -201,6 +207,9 @@ const AddMemberPage = () => {
       dateOfBirth: '',
       age: 0,
       address: '',
+      houseNo: '',
+      area: '',
+      city: '',
       emergencyContactName: '',
       emergencyContactPhone: '',
       profilePhoto: null,
@@ -1056,16 +1065,62 @@ const AddMemberPage = () => {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Address
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Enter complete address"
-                  />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      value={formData.houseNo}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData(prev => {
+                          const newData = { ...prev, houseNo: value };
+                          newData.address = [newData.houseNo, newData.area, newData.city].filter(Boolean).join(', ');
+                          return newData;
+                        });
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                      placeholder="House No"
+                    />
+                    <input
+                      type="text"
+                      value={formData.area}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData(prev => {
+                          const newData = { ...prev, area: value };
+                          newData.address = [newData.houseNo, newData.area, newData.city].filter(Boolean).join(', ');
+                          return newData;
+                        });
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                      placeholder="Area"
+                    />
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData(prev => {
+                          const newData = { ...prev, city: value };
+                          newData.address = [newData.houseNo, newData.area, newData.city].filter(Boolean).join(', ');
+                          return newData;
+                        });
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all"
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      readOnly
+                      rows={2}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none transition-all resize-none"
+                      placeholder="Complete address (auto-filled)"
+                    />
+                  </div>
                 </div>
               </div>
 
