@@ -21,6 +21,7 @@ import {
   Cake
 } from 'lucide-react';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import { useUser } from '@/lib/hooks/useUser';
 import GymLoader from '@/components/GymLoader';
 
 interface User {
@@ -79,8 +80,8 @@ interface UpcomingBirthday {
 const Dashboard = () => {
   const router = useRouter();
   const { can, isAdmin } = usePermission();
+  const { user } = useUser();
   const [currentTime, setCurrentTime] = useState('');
-  const [user, setUser] = useState<User | null>(null);
   const [dashboardData, setDashboardData] = useState({
     totalMembers: 0,
     newMembersToday: 0,
@@ -107,7 +108,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleString());
-    fetchUserData();
     fetchDashboardData();
   }, []);
 
@@ -117,19 +117,6 @@ const Dashboard = () => {
       calculateDashboardData(allMembers, allPayments);
     }
   }, [birthdayFilter]);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const data = await response.json();
-      if (data.success) {
-        setUser(data.user);
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      router.push('/auth/login');
-    }
-  };
 
   const calculateDashboardData = (members: Member[], payments: Payment[], filterStartDate?: string, filterEndDate?: string) => {
     const hasDateFilter = filterStartDate && filterEndDate;
@@ -295,8 +282,8 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [membersRes, paymentsRes] = await Promise.all([
-        fetch('/api/members'),
-        fetch('/api/payments')
+        fetch('/api/members?limit=1000', { cache: 'no-store' }),
+        fetch('/api/payments?limit=1000', { cache: 'no-store' })
       ]);
       
       const membersData = await membersRes.json();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -67,7 +67,7 @@ const navItems = [
     label: "Expired Membership", 
     href: "/dashboard/expired", 
     icon: UserX, 
-    permissions: ['view_members'] 
+    permissions: ['view_payments'] 
   },
   { 
     label: "Membership Plans", 
@@ -130,7 +130,7 @@ interface SidebarProps {
   userPermissions?: string[];
 }
 
-export default function Sidebar({ userRole = "admin", userPermissions = [] }: SidebarProps) {
+const Sidebar = memo(function Sidebar({ userRole = "admin", userPermissions = [] }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
@@ -276,4 +276,6 @@ export default function Sidebar({ userRole = "admin", userPermissions = [] }: Si
       </div>
     </aside>
   );
-}
+});
+
+export default Sidebar;

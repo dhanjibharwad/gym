@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AlertTriangle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
+import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface Member {
   id: number;
@@ -19,7 +20,7 @@ interface Member {
   membership_status: string;
 }
 
-export default function ExpiredMembersPage() {
+function ExpiredMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -216,5 +217,13 @@ export default function ExpiredMembersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ExpiredMembersPageWithGuard() {
+  return (
+    <PageGuard permission="view_payments">
+      <ExpiredMembersPage />
+    </PageGuard>
   );
 }

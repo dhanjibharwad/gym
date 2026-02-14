@@ -1,51 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { UserProvider } from "@/components/rbac/PermissionGate";
 import GymLoader from "@/components/GymLoader";
-
-interface User {
-  id: number;
-  name: string;
-  role: string;
-  permissions: string[];
-  isAdmin: boolean;
-  companyName?: string;
-}
+import { useUser } from "@/lib/hooks/useUser";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.user);
-      } else {
-        router.push('/auth/login');
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      router.push('/auth/login');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, loading } = useUser();
 
   if (loading) {
     return (
