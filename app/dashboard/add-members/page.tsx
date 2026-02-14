@@ -104,6 +104,7 @@ const AddMemberPage = () => {
   const [memberType, setMemberType] = useState<'new' | 'existing'>('new');
   const [showSuccess, setShowSuccess] = useState(false);
   const [memberId, setMemberId] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [toast, setToast] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -658,10 +659,12 @@ const AddMemberPage = () => {
 
         if (result.success) {
           setMemberId(result.memberId);
+          setSuccessMessage(result.message);
           setShowSuccess(true);
           setTimeout(() => {
             setShowSuccess(false);
             setMemberId(null);
+            setSuccessMessage('');
             resetForm();
           }, 2000);
         } else {
@@ -715,9 +718,13 @@ const AddMemberPage = () => {
                 </svg>
               </div>
               
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Member Added Successfully!</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                {memberType === 'existing' ? 'Membership Renewed!' : 'Member Added Successfully!'}
+              </h3>
               <p className="text-slate-600 mb-6 leading-relaxed">
-                New member has been registered to <span className="font-semibold text-orange-600">GYM FLEX</span>!
+                {successMessage || (memberType === 'existing' 
+                  ? 'Membership has been renewed successfully!' 
+                  : 'New member has been registered to GYM !')}
               </p>
               
               <div className="bg-gradient-to-r from-orange-50 to-blue-50 rounded-xl p-4 mb-6">
@@ -1259,7 +1266,8 @@ const AddMemberPage = () => {
                   <option value="">{plansLoading ? 'Loading plans...' : 'Choose a plan'}</option>
                   {plans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
-                      {plan.plan_name} - ₹{plan.price.toLocaleString()}
+                      {plan.plan_name}
+                       {/* { {plan.plan_name} - ₹{plan.price.toLocaleString()}} */}
                     </option>
                   ))}
                 </select>
