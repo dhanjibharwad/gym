@@ -523,7 +523,7 @@ const PaymentsPage = () => {
               <option value="full">Paid Full</option>
               <option value="partial">Partial</option>
               <option value="pending">Pending</option>
-              <option value="refunded">Refunded</option>
+              {/* <option value="refunded">Refunded</option> */}
             </select>
           </div>
 
@@ -537,6 +537,7 @@ const PaymentsPage = () => {
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
               <option value="Card">Card</option>
+              <option value="Cheque">Cheque</option>
               <option value="Online">Online Transfer</option>
             </select>
           </div>
