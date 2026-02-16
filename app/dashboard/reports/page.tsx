@@ -23,6 +23,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import Toast from '@/app/components/Toast';
+import GymLoader from '@/components/GymLoader';
 
 interface Membership {
   id: number;
@@ -147,6 +149,7 @@ function ReportsPage() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [customDateApplied, setCustomDateApplied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   
   // Data states
   const [membershipData, setMembershipData] = useState<{ memberships: Membership[], summary: any }>({ memberships: [], summary: null });
@@ -157,6 +160,11 @@ function ReportsPage() {
   // Search states
   const [membershipSearch, setMembershipSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const tabs = [
     { id: 'overall', label: 'Overall Dashboard', icon: BarChart3 },
@@ -200,7 +208,7 @@ function ReportsPage() {
         // Check if end date is after start date
         if (endDateObj < startDateObj) {
           console.error('End date cannot be before start date:', { customStartDate, customEndDate });
-          alert('End date must be after start date');
+          showToast('End date must be after start date', 'error');
           setLoading(false);
           return;
         }
@@ -283,6 +291,7 @@ function ReportsPage() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      showToast('Failed to fetch report data', 'error');
     } finally {
       setLoading(false);
     }
@@ -345,13 +354,12 @@ function ReportsPage() {
         fileName = `revenue-reports-${new Date().toISOString().split('T')[0]}`;
         break;
       case 'overall':
-        // Overall dashboard doesn't have detailed data to export
-        alert('Overall dashboard summary cannot be exported. Please select a specific report tab.');
+        showToast('Overall dashboard summary cannot be exported. Please select a specific report tab.', 'info');
         return;
     }
 
     if (data.length === 0) {
-      alert('No data available to export for the current selection.');
+      showToast('No data available to export', 'info');
       return;
     }
 
@@ -361,6 +369,7 @@ function ReportsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
     XLSX.writeFile(wb, `${fileName}.xlsx`);
+    showToast('Excel file exported successfully', 'success');
   };
 
   // Export to PDF
@@ -438,6 +447,7 @@ function ReportsPage() {
     const fileName = `reports-${activeTab}-${new Date().toISOString().split('T')[0]}.pdf`;
     console.log('Saving PDF:', fileName);
     doc.save(fileName);
+    showToast('PDF file exported successfully', 'success');
   };
 
   // Handle date filter change
@@ -491,6 +501,14 @@ function ReportsPage() {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -610,7 +628,7 @@ function ReportsPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <GymLoader size="lg" />
         </div>
       )}
 
