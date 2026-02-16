@@ -20,7 +20,8 @@ import {
   History,
   Settings,
   Shield,
-  Receipt
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 import { hasAnyPermission, isAdmin } from '@/lib/rbac';
 
@@ -110,6 +111,12 @@ const navItems = [
     href: "/dashboard/settings", 
     icon: Settings, 
     permissions: ['manage_settings'] 
+  },
+  { 
+    label: "Reports", 
+    href: "/dashboard/reports", 
+    icon: BarChart3, 
+    permissions: ['view_reports'] 
   },
   { 
     label: "Receipt Template", 
