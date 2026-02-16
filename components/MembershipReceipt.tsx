@@ -88,7 +88,7 @@ const defaultRulesAndRegulations = [
   "Do not bring or wear the valuables things/jewelry in to gymnasium during the training period. Gym Management is not responsible for loss of or damages thereof.",
   "Do not make fun with any members of the gym also to do not misbehave OR obnoxiously with any female members of the gym, a legal action will be taken against those who do so.",
   "The gym management is not allowed Pan/Padiku /Gutaka /Tabacco /smoking /illegal liquor and intoxicating substances in the gym.",
-  "Member shall avail of the facilities at their own risk and liability. The Eagle fitness gym shall have no responsibility for female members coming to the gym having any illicit relations with other male members or staff of the gym.",
+  "Member shall avail of the facilities at their own risk and liability. The gym shall have no responsibility for female members coming to the gym having any illicit relations with other male members or staff of the gym.",
   "Member should have do the medical check-up compulsory during the training session of their own cost. Who have severe skin, respiratory, asthma, TB and infectious diseases should not join the gym.",
   "The Gym shall not be liable in case of any injuries/illness/health issue/death of the members during the training sessions.",
   "Using of the Cardio Machine up to 10 Minutes and the exercise session is allowed up to one hour for each members in the gym.",
@@ -110,10 +110,10 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
     receiptNumber,
     template
   }, ref) => {
-    // Use template values if provided, otherwise fall back to props or defaults
-    const gymName = template?.gymName || propGymName || "THE EAGLE FITNESS GYM";
-    const gymAddress = template?.gymAddress || propGymAddress || "FF-7, Sunrise Complex, B/h. Hanumanji Temple, Vrundavan Crossing, Waghodia Road, Vadodara-390 025.";
-    const gymPhone = template?.gymPhone || propGymPhone || "M. 9737415234 / 7567762022";
+    // Use template values if provided, otherwise fall back to props or empty strings
+    const gymName = template?.gymName || propGymName || "";
+    const gymAddress = template?.gymAddress || propGymAddress || "";
+    const gymPhone = template?.gymPhone || propGymPhone || "";
     const gymEmail = template?.gymEmail || "";
     const gymWebsite = template?.gymWebsite || "";
     const formTitle = template?.formTitle || "ADMISSION FORM";
