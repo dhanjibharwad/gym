@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { checkPermission } from '@/lib/api-permissions';
+import { createAuditLog } from '@/lib/audit-logger';
 import nodemailer from 'nodemailer';
 
 // Generate a random password
@@ -84,6 +85,17 @@ export async function POST(request: NextRequest) {
     );
 
     const newUser = result.rows[0];
+
+    // Log staff creation in audit logs
+    await createAuditLog({
+      companyId: auth.session!.user.companyId,
+      action: 'CREATE',
+      entityType: 'staff',
+      entityId: newUser.id,
+      details: `Staff member "${name.trim()}" (${normalizedEmail}) added with role "${selectedRole.name}" by ${auth.session!.user.name}`,
+      userRole: auth.session!.user.role,
+      userId: auth.session!.user.id
+    });
 
     // Send email with login credentials
     try {

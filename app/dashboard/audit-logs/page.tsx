@@ -60,8 +60,10 @@ function AuditLogsPage() {
 
   const getActionColor = (action: string) => {
     switch (action) {
-      case 'CREATE': return 'bg-green-100 text-green-800';
-      case 'UPDATE': return 'bg-blue-100 text-blue-800';
+      case 'LOGIN': return 'bg-green-100 text-green-800';
+      case 'LOGOUT': return 'bg-gray-100 text-gray-800';
+      case 'CREATE': return 'bg-blue-100 text-blue-800';
+      case 'UPDATE': return 'bg-yellow-100 text-yellow-800';
       case 'DELETE': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -94,7 +96,7 @@ function AuditLogsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="text-gray-600">Track all reception activities and changes</p>
+            <p className="text-gray-600">Track all staff activities including login/logout and changes</p>
           </div>
         </div>
 

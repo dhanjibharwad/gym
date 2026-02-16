@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyPassword, createSession, updateLastLogin } from '@/lib/auth';
+import { createAuditLog } from '@/lib/audit-logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +114,17 @@ export async function POST(request: NextRequest) {
 
       // Update last login timestamp
       await updateLastLogin(user.id);
+
+      // Log successful login to audit logs
+      await createAuditLog({
+        companyId: user.company_id,
+        action: 'LOGIN',
+        entityType: 'user',
+        entityId: user.id,
+        details: `${user.name} (${user.email}) logged in successfully`,
+        userRole: user.role,
+        userId: user.id
+      });
 
       return NextResponse.json({
         message: 'Login successful',

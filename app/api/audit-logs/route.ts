@@ -52,11 +52,13 @@ export async function GET(request: NextRequest) {
       const result = await client.query(`
         SELECT 
           id,
+          user_id,
           action,
           entity_type,
           entity_id,
           details,
           user_role,
+          ip_address,
           created_at
         FROM audit_logs
         WHERE company_id = $1
