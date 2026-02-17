@@ -132,7 +132,7 @@ function ExpiredMembersPage() {
             placeholder="Search by name or phone number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 placeholder-slate-400 border border-gray-200 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-transparent"
           />
         </div>
       </div>

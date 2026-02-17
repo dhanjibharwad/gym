@@ -190,7 +190,7 @@ function MembershipPlansPage() {
         {showForm && (
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">
                 {editingPlan ? 'Edit Plan' : 'Add New Plan'}
               </h2>
               <form onSubmit={handleSubmit}>
@@ -202,7 +202,7 @@ function MembershipPlansPage() {
                     type="text"
                     value={formData.plan_name}
                     onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-900"
                     required
                   />
                 </div>
@@ -215,7 +215,7 @@ function MembershipPlansPage() {
                     min="1"
                     value={formData.duration_months}
                     onChange={(e) => setFormData({ ...formData, duration_months: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-900"
                     required
                   />
                 </div>
@@ -229,7 +229,7 @@ function MembershipPlansPage() {
                     step="0.01"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-900"
                     required
                   />
                 </div>
@@ -271,7 +271,7 @@ function MembershipPlansPage() {
             <div key={plan.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">{plan.plan_name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{plan.plan_name}</h3>
                   {can('manage_plans') && (
                     <div className="flex gap-2">
                       <button
@@ -302,11 +302,11 @@ function MembershipPlansPage() {
                 
                 <div className="text-center mb-4">
                   <div className="text-3xl font-bold text-orange-600 mb-2">₹{plan.price}</div>
-                  <div className="text-gray-600 flex items-center justify-center gap-1 mb-2">
+                  <div className="text-gray-900 flex items-center justify-center gap-1 mb-2">
                     <Calendar className="w-4 h-4" />
                     {plan.duration_months} {plan.duration_months === 1 ? 'Month' : 'Months'}
                   </div>
-                  <div className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                  <div className="text-sm text-gray-900 flex items-center justify-center gap-1">
                     ₹{(plan.price / plan.duration_months).toFixed(0)}/month
                   </div>
                 </div>

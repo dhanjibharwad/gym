@@ -528,7 +528,7 @@ const MemberProfilePage = () => {
               <button
                 onClick={confirmResumeMembership}
                 disabled={processing}
-                className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                className="flex-1 px-5 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
               >
                 {processing ? (
                   <>
@@ -567,12 +567,12 @@ const MemberProfilePage = () => {
                     value={holdDuration.value}
                     onChange={(e) => setHoldDuration({ ...holdDuration, value: e.target.value })}
                     placeholder="Enter duration"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="flex-1 px-4 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                   <select
                     value={holdDuration.unit}
                     onChange={(e) => setHoldDuration({ ...holdDuration, unit: e.target.value })}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="px-4 py-2 border border-gray-300 text-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >
                     <option value="days">Days</option>
                     <option value="months">Months</option>
@@ -586,7 +586,7 @@ const MemberProfilePage = () => {
                   value={holdReason}
                   onChange={(e) => setHoldReason(e.target.value)}
                   placeholder="Enter reason for holding"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-3 placeholder-slate-400 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
                   rows={3}
                 />
               </div>
@@ -596,7 +596,7 @@ const MemberProfilePage = () => {
               <button
                 onClick={submitHold}
                 disabled={processing}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {processing ? (
                   <>
@@ -607,7 +607,7 @@ const MemberProfilePage = () => {
               <button
                 onClick={() => { setShowHoldModal(false); setHoldReason(''); setHoldDuration({ value: '', unit: 'days' }); }}
                 disabled={processing}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -870,10 +870,10 @@ const MemberProfilePage = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-black hover:border-black hover:text-white transition-all duration-200"
+            className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:text-white transition-all duration-200"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Back</span>
+            <ArrowLeft className="w-4 h-4 text-gray-800" />
+            <span className="text-sm font-medium text-gray-800">Back</span>
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Member Profile</h1>
@@ -1278,21 +1278,21 @@ const MemberProfilePage = () => {
                           <table className="w-full text-xs">
                             <thead className="bg-green-100">
                               <tr>
-                                <th className="px-2 py-2 text-left font-semibold">Date</th>
-                                <th className="px-2 py-2 text-left font-semibold">Type</th>
-                                <th className="px-2 py-2 text-left font-semibold">Amount</th>
-                                <th className="px-2 py-2 text-left font-semibold">Mode</th>
-                                <th className="px-2 py-2 text-left font-semibold">Reference</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Date</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Type</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Amount</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Mode</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Reference</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-green-100">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
                                 <tr key={transaction.id} className="hover:bg-green-50">
-                                  <td className="px-2 py-2">{formatDate(transaction.transaction_date)}</td>
-                                  <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
+                                  <td className="px-2 py-2 text-gray-900">{formatDate(transaction.transaction_date)}</td>
+                                  <td className="px-2 py-2 capitalize text-gray-900">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
-                                  <td className="px-2 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-2 py-2">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
+                                  <td className="px-2 py-2 text-gray-900">{transaction.payment_mode}</td>
+                                  <td className="px-2 py-2 text-gray-900">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1430,21 +1430,21 @@ const MemberProfilePage = () => {
                           <table className="w-full text-xs">
                             <thead className="bg-gray-200">
                               <tr>
-                                <th className="px-2 py-2 text-left font-semibold">Date</th>
-                                <th className="px-2 py-2 text-left font-semibold">Type</th>
-                                <th className="px-2 py-2 text-left font-semibold">Amount</th>
-                                <th className="px-2 py-2 text-left font-semibold">Mode</th>
-                                <th className="px-2 py-2 text-left font-semibold">Reference</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Date</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Type</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Amount</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Mode</th>
+                                <th className="px-2 py-2 text-left font-semibold text-gray-900">Reference</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                               {getTransactionsForMembership(membership.id).map((transaction) => (
                                 <tr key={transaction.id} className="hover:bg-gray-100">
-                                  <td className="px-2 py-2">{formatDate(transaction.transaction_date)}</td>
-                                  <td className="px-2 py-2 capitalize">{transaction.transaction_type.replace(/_/g, ' ')}</td>
+                                  <td className="px-2 py-2 text-gray-900">{formatDate(transaction.transaction_date)}</td>
+                                  <td className="px-2 py-2 capitalize text-gray-900">{transaction.transaction_type.replace(/_/g, ' ')}</td>
                                   <td className="px-2 py-2 font-semibold text-green-700">₹{transaction.amount}</td>
-                                  <td className="px-2 py-2">{transaction.payment_mode}</td>
-                                  <td className="px-2 py-2">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
+                                  <td className="px-2 py-2 text-gray-900">{transaction.payment_mode}</td>
+                                  <td className="px-2 py-2 text-gray-900">{transaction.reference_number || transaction.receipt_number || 'N/A'}</td>
                                 </tr>
                               ))}
                             </tbody>

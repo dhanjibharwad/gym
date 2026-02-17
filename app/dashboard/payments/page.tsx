@@ -509,7 +509,7 @@ const PaymentsPage = () => {
               placeholder="Search by member name or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
             />
           </div>
 
@@ -517,7 +517,7 @@ const PaymentsPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="full">Paid Full</option>
@@ -531,7 +531,7 @@ const PaymentsPage = () => {
             <select
               value={paymentModeFilter}
               onChange={(e) => setPaymentModeFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
             >
               <option value="all">All Payment Modes</option>
               <option value="Cash">Cash</option>
@@ -550,13 +550,13 @@ const PaymentsPage = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Member</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Payment Mode</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Due Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -668,53 +668,53 @@ const PaymentsPage = () => {
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Amount Paid:</span>
+                  <span className="text-sm text-gray-900">Amount Paid:</span>
                   <span className="text-lg font-semibold text-green-600">{formatCurrency(transaction.amount)}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Payment Mode:</span>
+                  <span className="text-sm text-gray-900">Payment Mode:</span>
                   <div className="flex items-center gap-1">
                     {getPaymentModeIcon(transaction.payment_mode)}
-                    <span className="text-sm font-medium">{transaction.payment_mode}</span>
+                    <span className="text-sm font-medium text-gray-900">{transaction.payment_mode}</span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Payment Date:</span>
-                  <span className="text-sm font-medium">{formatDate(transaction.transaction_date)}</span>
+                  <span className="text-sm text-gray-900">Payment Date:</span>
+                  <span className="text-sm font-medium text-gray-900">{formatDate(transaction.transaction_date)}</span>
                 </div>
                 
                 {transaction.receipt_number && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Reference:</span>
-                    <span className="text-sm font-mono text-gray-800">{transaction.receipt_number}</span>
+                    <span className="text-sm text-gray-900">Reference:</span>
+                    <span className="text-sm font-mono text-gray-900">{transaction.receipt_number}</span>
                   </div>
                 )}
                 
                 <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">Plan:</span>
-                    <span className="text-sm font-medium">{transaction.plan_name}</span>
+                    <span className="text-sm text-gray-900">Plan:</span>
+                    <span className="text-sm font-medium text-gray-900">{transaction.plan_name}</span>
                   </div>
                   
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">Total Amount:</span>
-                    <span className="text-sm font-medium">{formatCurrency(transaction.total_amount)}</span>
+                    <span className="text-sm text-gray-900">Total Amount:</span>
+                    <span className="text-sm font-medium text-gray-900">{formatCurrency(transaction.total_amount)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">Paid Amount:</span>
+                    <span className="text-sm text-gray-900">Paid Amount:</span>
                     <span className="text-sm font-medium text-green-600">{formatCurrency(transaction.paid_amount)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Remaining:</span>
+                    <span className="text-sm text-gray-900">Remaining:</span>
                     <span className="text-sm font-medium text-red-600">{formatCurrency(transaction.total_amount - transaction.paid_amount)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm text-gray-600">Status:</span>
+                    <span className="text-sm text-gray-900">Status:</span>
                     {getStatusBadge(transaction.payment_status)}
                   </div>
                 </div>
@@ -770,23 +770,23 @@ const PaymentsPage = () => {
                 <h5 className="text-sm font-medium text-gray-900 mb-3">Previous Payment</h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Amount:</span>
-                    <span className="font-medium">{formatCurrency(selectedPayment.total_amount)}</span>
+                    <span className="text-gray-900">Total Amount:</span>
+                    <span className="font-medium text-gray-900">{formatCurrency(selectedPayment.total_amount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Paid Amount:</span>
+                    <span className="text-gray-900">Paid Amount:</span>
                     <span className="font-medium text-green-600">{formatCurrency(selectedPayment.paid_amount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Pending Amount:</span>
+                    <span className="text-gray-900">Pending Amount:</span>
                     <span className="font-medium text-red-600">{formatCurrency(selectedPayment.total_amount - selectedPayment.paid_amount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Date:</span>
-                    <span className="font-medium">{formatDate(selectedPayment.created_at)}</span>
+                    <span className="text-gray-900">Payment Date:</span>
+                    <span className="font-medium text-gray-900">{formatDate(selectedPayment.created_at)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
+                    <span className="text-gray-900">Status:</span>
                     <span>{getStatusBadge(selectedPayment.payment_status)}</span>
                   </div>
                 </div>
@@ -807,7 +807,7 @@ const PaymentsPage = () => {
                       onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
                       min="1"
                       max={selectedPayment.total_amount - selectedPayment.paid_amount}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-gray-900"
                       placeholder="Enter amount"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -820,7 +820,7 @@ const PaymentsPage = () => {
                     <select
                       value={newPayment.payment_mode}
                       onChange={(e) => setNewPayment({...newPayment, payment_mode: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 text-gray-900"
                     >
                       <option value="Cash">Cash</option>
                       <option value="UPI">UPI</option>
@@ -837,7 +837,7 @@ const PaymentsPage = () => {
                         type="text"
                         value={newPayment.reference_number}
                         onChange={(e) => setNewPayment({...newPayment, reference_number: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 text-gray-900"
                         placeholder="Enter transaction reference"
                       />
                     </div>
@@ -850,7 +850,7 @@ const PaymentsPage = () => {
                       value={newPayment.payment_date}
                       onChange={(e) => setNewPayment({...newPayment, payment_date: e.target.value})}
                       max={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 text-gray-900"
                     />
                   </div>
                 </div>

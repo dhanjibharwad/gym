@@ -267,7 +267,7 @@ const MembersPage = () => {
               placeholder="Search by name, phone, or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
             />
             {loading && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 animate-spin" />
@@ -280,7 +280,7 @@ const MembersPage = () => {
             onChange={(e) => {
               setPagination(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }));
             }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-700"
           >
             <option value={10}>10 per page</option>
             <option value={20}>20 per page</option>

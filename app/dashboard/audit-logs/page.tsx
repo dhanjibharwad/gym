@@ -110,7 +110,7 @@ function AuditLogsPage() {
               placeholder="Search by email, name or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none w-80"
+              className="pl-10 pr-4 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none w-80"
             />
           </div>
         </div>

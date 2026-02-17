@@ -199,7 +199,7 @@ const HistoryPage = () => {
                 placeholder="Search members by name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
               />
             </div>
           </div>
@@ -298,7 +298,7 @@ const HistoryPage = () => {
                 <select
                   value={transactionFilter}
                   onChange={(e) => setTransactionFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
                 >
                   <option value="all">All Types</option>
                   <option value="membership_fee">Membership Fee</option>
@@ -313,7 +313,7 @@ const HistoryPage = () => {
                 <select
                   value={paymentModeFilter}
                   onChange={(e) => setPaymentModeFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-900"
                 >
                   <option value="all">All Modes</option>
                   <option value="Cash">Cash</option>
@@ -371,20 +371,20 @@ const HistoryPage = () => {
                             
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                               <div>
-                                <span className="text-gray-500">Payment Mode:</span>
+                                <span className="text-gray-900">Payment Mode:</span>
                                 <div className="flex items-center gap-1 mt-1">
                                   {getPaymentModeIcon(transaction.payment_mode)}
-                                  <span className="font-medium">{transaction.payment_mode}</span>
+                                  <span className="font-medium text-gray-900">{transaction.payment_mode}</span>
                                 </div>
                               </div>
                               
                               <div>
-                                <span className="text-gray-500">Total Amount:</span>
-                                <p className="font-medium mt-1">{formatCurrency(parseFloat(transaction.total_amount.toString()) || 0)}</p>
+                                <span className="text-gray-900">Total Amount:</span>
+                                <p className="font-medium mt-1 text-gray-900">{formatCurrency(parseFloat(transaction.total_amount.toString()) || 0)}</p>
                               </div>
                               
                               <div>
-                                <span className="text-gray-500">Remaining:</span>
+                                <span className="text-gray-900">Remaining:</span>
                                 <p className="font-medium text-red-600 mt-1">{formatCurrency(parseFloat(transaction.remaining_amount?.toString() || '0') || 0)}</p>
                               </div>
                             </div>
@@ -393,8 +393,8 @@ const HistoryPage = () => {
                               <div className="mt-3 pt-3 border-t border-gray-200">
                                 <div className="flex items-center gap-2">
                                   <Receipt className="w-4 h-4 text-gray-500" />
-                                  <span className="text-xs text-gray-500">Reference: </span>
-                                  <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">{transaction.receipt_number}</span>
+                                  <span className="text-xs text-gray-900">Reference: </span>
+                                  <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-900">{transaction.receipt_number}</span>
                                 </div>
                               </div>
                             )}

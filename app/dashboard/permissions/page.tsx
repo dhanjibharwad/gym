@@ -161,7 +161,7 @@ function PermissionsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Role Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Users className="w-5 h-5" />
             Select Role
           </h2>
@@ -170,7 +170,7 @@ function PermissionsPage() {
               <button
                 key={role.id}
                 onClick={() => setSelectedRole(role.id)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                className={`w-full text-left p-3 rounded-lg border transition-colors text-gray-800 ${
                   selectedRole === role.id
                     ? 'border-orange-500 bg-orange-50 text-orange-700'
                     : 'border-gray-200 hover:bg-gray-50'
@@ -191,7 +191,7 @@ function PermissionsPage() {
             <>
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold">Module Permissions</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Module Permissions</h2>
                   <p className="text-sm text-gray-500">{selectedRoleName}</p>
                 </div>
                 {!isAdminRole && (
