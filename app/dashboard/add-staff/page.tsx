@@ -167,7 +167,7 @@ function AddStaffPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full placeholder-slate-400 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+                  className="w-full placeholder-slate-400 pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition text-gray-900"
                   placeholder="Enter staff member's full name"
                 />
               </div>
@@ -208,7 +208,7 @@ function AddStaffPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 placeholder-slate-400 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 placeholder-slate-400 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition text-gray-900"
                   placeholder="Enter staff member's email address"
                 />
               </div>

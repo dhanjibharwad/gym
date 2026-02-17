@@ -175,9 +175,9 @@ const SettingsPage = () => {
                                     [mode]: { ...config, processingFee: parseFloat(e.target.value) || 0 }
                                   }
                                 })}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-                                placeholder="0.00"
-                                min="0"
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-800"
+                                placeholder=""
+                                min=""
                                 max="10"
                                 step="0.1"
                               />

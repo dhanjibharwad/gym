@@ -297,7 +297,7 @@ function ReceiptTemplatePage() {
                       type="text"
                       value={template.gymName}
                       onChange={(e) => setTemplate({ ...template, gymName: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="Enter gym name"
                     />
                   </div>
@@ -311,7 +311,7 @@ function ReceiptTemplatePage() {
                       type="text"
                       value={template.formTitle}
                       onChange={(e) => setTemplate({ ...template, formTitle: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="e.g., ADMISSION FORM"
                     />
                   </div>
@@ -328,7 +328,7 @@ function ReceiptTemplatePage() {
                       type="text"
                       value={template.gymPhone}
                       onChange={(e) => setTemplate({ ...template, gymPhone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="M. 1234567890"
                     />
                   </div>
@@ -345,7 +345,7 @@ function ReceiptTemplatePage() {
                       type="email"
                       value={template.gymEmail}
                       onChange={(e) => setTemplate({ ...template, gymEmail: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="gym@example.com"
                     />
                   </div>
@@ -362,7 +362,7 @@ function ReceiptTemplatePage() {
                       type="text"
                       value={template.gymWebsite}
                       onChange={(e) => setTemplate({ ...template, gymWebsite: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="www.example.com"
                     />
                   </div>
@@ -383,7 +383,7 @@ function ReceiptTemplatePage() {
                         type="text"
                         value={template.headerColor}
                         onChange={(e) => setTemplate({ ...template, headerColor: e.target.value })}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                         placeholder="#1e3a8a"
                       />
                     </div>
@@ -402,7 +402,7 @@ function ReceiptTemplatePage() {
                     value={template.gymAddress}
                     onChange={(e) => setTemplate({ ...template, gymAddress: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black resize-none text-gray-800"
                     placeholder="Enter complete address"
                   />
                 </div>
@@ -419,7 +419,7 @@ function ReceiptTemplatePage() {
                     type="text"
                     value={template.logoUrl}
                     onChange={(e) => setTemplate({ ...template, logoUrl: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                     placeholder="https://example.com/logo.png"
                   />
                   <p className="text-xs text-gray-500 mt-1">Leave empty to use default icon</p>
@@ -434,7 +434,7 @@ function ReceiptTemplatePage() {
                     type="text"
                     value={template.footerText}
                     onChange={(e) => setTemplate({ ...template, footerText: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                     placeholder="Footer text for the receipt"
                   />
                 </div>
@@ -482,7 +482,7 @@ function ReceiptTemplatePage() {
                       value={newRule}
                       onChange={(e) => setNewRule(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddRule()}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-800"
                       placeholder="Add a new rule..."
                     />
                     <button
@@ -511,7 +511,7 @@ function ReceiptTemplatePage() {
                             onChange={(e) => handleUpdateRule(index, e.target.value)}
                             onBlur={() => setEditingRuleIndex(null)}
                             autoFocus
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black resize-none text-gray-800"
                             rows={2}
                           />
                         ) : (
@@ -638,20 +638,20 @@ function ReceiptTemplatePage() {
                       {template.showSignatureSection && (
                         <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #d1d5db' }}>
                           <p style={{ fontSize: '8pt', color: '#374151', margin: '0 0 8px 0' }}>
-                            <strong>NB:</strong> So I hereby read & agreed with the above rules/regulations, instructions and reserves rights of the {template.gymName} and enrolled my admission for aforesaid training period.
+                            <strong style={{ color: '#1f2937' }}>NB:</strong> So I hereby read & agreed with the above rules/regulations, instructions and reserves rights of the {template.gymName} and enrolled my admission for aforesaid training period.
                           </p>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px' }}>
                             <div style={{ textAlign: 'center' }}>
                               <div style={{ width: '120px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Date</p>
+                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0', color: '#1f2937' }}>Date</p>
                             </div>
                             <div style={{ textAlign: 'center' }}>
                               <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Seal & Signature of the Gym Authority</p>
+                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0', color: '#1f2937' }}>Seal & Signature of the Gym Authority</p>
                             </div>
                             <div style={{ textAlign: 'center' }}>
                               <div style={{ width: '140px', borderBottom: '1px solid #9ca3af', marginBottom: '4px' }}></div>
-                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0' }}>Signature of Member</p>
+                              <p style={{ fontSize: '8pt', fontWeight: '600', margin: '0', color: '#1f2937' }}>Signature of Member</p>
                             </div>
                           </div>
                         </div>

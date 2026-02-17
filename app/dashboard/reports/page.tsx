@@ -523,7 +523,7 @@ function ReportsPage() {
               <select
                 value={dateFilter}
                 onChange={(e) => handleDateFilterChange(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
               >
                 {dateFilters.map(filter => (
                   <option key={filter.value} value={filter.value}>
@@ -545,7 +545,7 @@ function ReportsPage() {
                     setCustomStartDate(e.target.value);
                     setCustomDateApplied(false);
                   }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <span className="text-gray-500">to</span>
                 <input
@@ -556,7 +556,7 @@ function ReportsPage() {
                     setCustomEndDate(e.target.value);
                     setCustomDateApplied(false);
                   }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 />
                 <button
                   onClick={() => {
@@ -714,7 +714,7 @@ function ReportsPage() {
                     placeholder="Search memberships by name, phone, or plan..."
                     value={membershipSearch}
                     onChange={(e) => setMembershipSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full pl-10 pr-4 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-900"
                   />
                 </div>
               </div>
@@ -844,10 +844,10 @@ function ReportsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search payments by name, phone, receipt..."
+                    placeholder="Search payments by name, phone, transcation number..."
                     value={paymentSearch}
                     onChange={(e) => setPaymentSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full pl-10 pr-4 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 text-gray-800"
                   />
                 </div>
               </div>
@@ -865,7 +865,7 @@ function ReportsPage() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Mode</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference No.</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
