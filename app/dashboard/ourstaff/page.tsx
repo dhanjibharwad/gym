@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import GymLoader from '@/components/GymLoader';
+import Toast from '@/app/components/Toast';
 
 function OurStaffPage() {
   const { can } = usePermission();
@@ -20,6 +21,16 @@ function OurStaffPage() {
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<{ id: number; name: string } | null>(null);
+  
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -71,13 +82,14 @@ function OurStaffPage() {
         setStaff(staff.filter((member: any) => member.id !== staffToDelete.id));
         setShowDeleteModal(false);
         setStaffToDelete(null);
+        setToast({ message: 'Staff member deleted successfully', type: 'success' });
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete staff member');
+        setToast({ message: data.error || 'Failed to delete staff member', type: 'error' });
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Failed to delete staff member');
+      setToast({ message: 'Failed to delete staff member', type: 'error' });
     } finally {
       setDeleteLoading(null);
     }
@@ -120,13 +132,14 @@ function OurStaffPage() {
             : s
         ));
         handleCancelEdit();
+        setToast({ message: 'Staff member updated successfully', type: 'success' });
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to update staff member');
+        setToast({ message: data.error || 'Failed to update staff member', type: 'error' });
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert('Failed to update staff member');
+      setToast({ message: 'Failed to update staff member', type: 'error' });
     } finally {
       setUpdating(false);
     }
@@ -383,6 +396,9 @@ function OurStaffPage() {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

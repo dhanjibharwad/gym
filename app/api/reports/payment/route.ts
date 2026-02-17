@@ -93,12 +93,25 @@ export async function GET(request: NextRequest) {
         SELECT 
           COUNT(*) as total_transactions,
           SUM(pt.amount) as total_income,
-          SUM(CASE WHEN p.payment_status IN ('pending', 'partial') THEN (p.total_amount - p.paid_amount) ELSE 0 END) as pending_amount,
-          COUNT(CASE WHEN p.payment_status IN ('pending', 'partial') THEN 1 END) as pending_count
+          (
+            SELECT COALESCE(SUM(p.total_amount - p.paid_amount), 0)
+            FROM payments p
+            JOIN memberships ms ON p.membership_id = ms.id
+            JOIN members mem ON ms.member_id = mem.id
+            WHERE mem.company_id = $1
+            AND p.payment_status IN ('pending', 'partial')
+          ) as pending_amount,
+          (
+            SELECT COUNT(*)
+            FROM payments p
+            JOIN memberships ms ON p.membership_id = ms.id
+            JOIN members mem ON ms.member_id = mem.id
+            WHERE mem.company_id = $1
+            AND p.payment_status IN ('pending', 'partial')
+          ) as pending_count
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        JOIN payments p ON pt.membership_id = p.membership_id
         WHERE mem.company_id = $1
         ${dateFilter}
       `, dateParams);
