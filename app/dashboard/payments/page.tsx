@@ -522,7 +522,7 @@ const PaymentsPage = () => {
               <option value="all">All Status</option>
               <option value="full">Paid Full</option>
               <option value="partial">Partial</option>
-              <option value="pending">Pending</option>
+              {/* <option value="pending">Pending</option> */}
               {/* <option value="refunded">Refunded</option> */}
             </select>
           </div>
