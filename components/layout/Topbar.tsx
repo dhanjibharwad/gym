@@ -93,7 +93,7 @@ export default function Topbar({ userRole = "admin", userName = "User", companyN
                   </div>
                   <button 
                     onClick={handleLogout} 
-                    className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-sm text-gray-700 hover:text-red-600 transition-colors group"
+                    className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-3 text-sm text-gray-700 hover:text-red-600 transition-colors group cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
                     <span className="font-medium">Logout</span>
