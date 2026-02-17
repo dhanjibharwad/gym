@@ -523,7 +523,7 @@ function ReportsPage() {
               <select
                 value={dateFilter}
                 onChange={(e) => handleDateFilterChange(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-gray-800"
               >
                 {dateFilters.map(filter => (
                   <option key={filter.value} value={filter.value}>
