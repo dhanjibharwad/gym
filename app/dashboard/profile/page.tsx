@@ -235,7 +235,7 @@ const ProfilePage = () => {
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   disabled={savingProfile}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -256,7 +256,7 @@ const ProfilePage = () => {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   disabled={savingProfile}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -277,7 +277,7 @@ const ProfilePage = () => {
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   disabled={savingProfile}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                 />
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -383,7 +383,7 @@ const ProfilePage = () => {
                       value={passwordData.currentPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                       disabled={changingPassword}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                     />
                     <button
                       type="button"
@@ -407,7 +407,7 @@ const ProfilePage = () => {
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                       disabled={changingPassword}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                     />
                     <button
                       type="button"
@@ -431,7 +431,7 @@ const ProfilePage = () => {
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       disabled={changingPassword}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-1 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 text-gray-800"
                     />
                     <button
                       type="button"
