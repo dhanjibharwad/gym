@@ -38,8 +38,8 @@ const getCachedPlans = unstable_cache(
 
 export async function GET(request: NextRequest) {
   try {
-    // Check view_plans or manage_plans permission
-    const auth = await checkAnyPermission(request, ['view_plans', 'manage_plans']);
+    // Check view_plans, manage_plans, or add_members permission
+    const auth = await checkAnyPermission(request, ['view_plans', 'manage_plans', 'add_members']);
     if (!auth.authorized) {
       return auth.response;
     }
