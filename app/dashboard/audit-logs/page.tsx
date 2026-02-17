@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Clock, User, Activity } from 'lucide-react';
+import { FileText, Clock, User, Activity, Search } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
 
@@ -19,6 +19,7 @@ function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -90,13 +91,27 @@ function AuditLogsPage() {
       
       <div className="max-w-full mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Activity className="w-5 h-5 text-purple-600" />
+        <div className="flex items-center justify-between gap-3 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Activity className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+              <p className="text-gray-600">Track all staff activities including login/logout and changes</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="text-gray-600">Track all staff activities including login/logout and changes</p>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by email, name or role..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none w-80"
+            />
           </div>
         </div>
 
@@ -110,7 +125,13 @@ function AuditLogsPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {logs.map((log) => (
+              {logs.filter((log) => {
+                const query = searchQuery.toLowerCase();
+                return (
+                  log.details.toLowerCase().includes(query) ||
+                  log.user_role.toLowerCase().includes(query)
+                );
+              }).map((log) => (
                 <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
