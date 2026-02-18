@@ -15,6 +15,22 @@ export async function GET() {
       );
     }
 
+    // Handle SuperAdmin (no company/database lookup needed)
+    if (session.user.role === 'SuperAdmin') {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: session.user.id,
+          name: session.user.name,
+          role: 'SuperAdmin',
+          permissions: ['*'], // All permissions
+          isAdmin: true,
+          companyName: 'System',
+          companyId: null
+        }
+      });
+    }
+
     const userIsAdmin = isAdmin(session.user.role);
     let userPermissions: string[] = [];
     let companyName = '';
