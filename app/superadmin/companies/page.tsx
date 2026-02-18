@@ -176,7 +176,7 @@ export default function SuperAdminPage() {
               placeholder="Search by company name, email, or admin..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-transparent text-gray-800"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export default function SuperAdminPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-transparent bg-white"
+              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-gray-500 focus:border-transparent bg-white text-gray-800"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
