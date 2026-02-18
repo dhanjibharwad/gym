@@ -65,7 +65,8 @@ export async function GET() {
       role: roleName,
       permissions: userPermissions,
       isAdmin: userIsAdmin,
-      companyName
+      companyName,
+      companyId: session.user.companyId
     };
 
     return NextResponse.json({

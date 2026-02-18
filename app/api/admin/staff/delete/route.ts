@@ -53,15 +53,45 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Delete staff member
-    const result = await pool.query(
-      'DELETE FROM users WHERE id = $1 AND company_id = $2 RETURNING id, name',
-      [staffId, auth.session!.user.companyId]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    return NextResponse.json({ 
-      message: `Staff member "${result.rows[0].name}" deleted successfully` 
-    });
+      // 1. Delete sessions (CASCADE handles this, but explicit for clarity)
+      await client.query(
+        'DELETE FROM sessions WHERE user_id = $1',
+        [staffId]
+      );
+
+      // 2. Delete verification tokens (CASCADE handles this)
+      await client.query(
+        'DELETE FROM verification_tokens WHERE user_id = $1',
+        [staffId]
+      );
+
+      // 3. Update memberships created_by to NULL (preserve membership history)
+      await client.query(
+        'UPDATE memberships SET created_by = NULL WHERE created_by = $1',
+        [staffId]
+      );
+
+      // 4. Delete the user (CASCADE will handle related data)
+      const result = await client.query(
+        'DELETE FROM users WHERE id = $1 AND company_id = $2 RETURNING id, name',
+        [staffId, auth.session!.user.companyId]
+      );
+
+      await client.query('COMMIT');
+
+      return NextResponse.json({ 
+        message: `Staff member "${result.rows[0].name}" deleted successfully` 
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Delete staff error:', error);
     return NextResponse.json(
