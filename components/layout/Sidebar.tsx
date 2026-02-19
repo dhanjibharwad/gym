@@ -34,6 +34,30 @@ const navItems = [
     icon: LayoutDashboard, 
     permissions: ['view_dashboard'] 
   },
+   { 
+    label: "Membership Plans", 
+    href: "/dashboard/membership-plans", 
+    icon: Crown, 
+    permissions: ['view_plans', 'manage_plans'] 
+  },
+  { 
+    label: "Roles", 
+    href: "/dashboard/roles", 
+    icon: Shield, 
+    permissions: ['view_roles', 'manage_roles'] 
+  },
+  { 
+    label: "Permissions", 
+    href: "/dashboard/permissions", 
+    icon: Crown, 
+    permissions: ['manage_roles'] 
+  },
+  { 
+    label: "Add Members", 
+    href: "/dashboard/add-members", 
+    icon: UserPlus, 
+    permissions: ['add_members'] 
+  },
   { 
     label: "Members", 
     href: "/dashboard/members", 
@@ -41,10 +65,16 @@ const navItems = [
     permissions: ['view_members'] 
   },
   { 
-    label: "Add Members", 
-    href: "/dashboard/add-members", 
-    icon: UserPlus, 
-    permissions: ['add_members'] 
+    label: "Our Staff", 
+    href: "/dashboard/ourstaff", 
+    icon: UserCog, 
+    permissions: ['view_staff', 'add_staff', 'delete_staff'] 
+  },
+  { 
+    label: "Expired Membership", 
+    href: "/dashboard/expired", 
+    icon: UserX, 
+    permissions: ['view_payments'] 
   },
   { 
     label: "Payments", 
@@ -64,42 +94,28 @@ const navItems = [
     icon: BadgeCheck, 
     permissions: ['view_payments'] 
   },
-  { 
-    label: "Expired Membership", 
-    href: "/dashboard/expired", 
-    icon: UserX, 
-    permissions: ['view_payments'] 
+   { 
+    label: "Receipt Template", 
+    href: "/dashboard/receipt-template", 
+    icon: Receipt, 
+    permissions: ['manage_settings'] 
   },
-  { 
-    label: "Membership Plans", 
-    href: "/dashboard/membership-plans", 
-    icon: Crown, 
-    permissions: ['view_plans', 'manage_plans'] 
+   { 
+    label: "Reports", 
+    href: "/dashboard/reports", 
+    icon: BarChart3, 
+    permissions: ['view_reports'] 
   },
-  { 
-    label: "Our Staff", 
-    href: "/dashboard/ourstaff", 
-    icon: UserCog, 
-    permissions: ['view_staff', 'add_staff', 'delete_staff'] 
-  },
+  
+ 
+  
   // { 
   //   label: "Add Staff", 
   //   href: "/dashboard/add-staff", 
   //   icon: UserPlus, 
   //   permissions: ['add_staff'] 
   // },
-  { 
-    label: "Roles", 
-    href: "/dashboard/roles", 
-    icon: Shield, 
-    permissions: ['view_roles', 'manage_roles'] 
-  },
-  { 
-    label: "Permissions", 
-    href: "/dashboard/permissions", 
-    icon: Crown, 
-    permissions: ['manage_roles'] 
-  },
+  
   { 
     label: "Audit Logs", 
     href: "/dashboard/audit-logs", 
@@ -112,18 +128,8 @@ const navItems = [
     icon: Settings, 
     permissions: ['manage_settings'] 
   },
-  { 
-    label: "Reports", 
-    href: "/dashboard/reports", 
-    icon: BarChart3, 
-    permissions: ['view_reports'] 
-  },
-  { 
-    label: "Receipt Template", 
-    href: "/dashboard/receipt-template", 
-    icon: Receipt, 
-    permissions: ['manage_settings'] 
-  },
+ 
+ 
   { 
     label: "Profile", 
     href: "/dashboard/profile", 

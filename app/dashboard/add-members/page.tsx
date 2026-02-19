@@ -551,6 +551,7 @@ const AddMemberPage = () => {
       // For new members, validate personal information
       if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
       if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+      if (!formData.gender) newErrors.gender = 'Gender is required';
       
       // Phone number format validation
       const phoneRegex = /^[0-9]{10}$/;
@@ -909,7 +910,12 @@ const AddMemberPage = () => {
                     type="tel"
                     name="phoneNumber"
                     value={formData.phoneNumber}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 10) {
+                        setFormData(prev => ({ ...prev, phoneNumber: value }));
+                      }
+                    }}
                     maxLength={10}
                     data-error={!!errors.phoneNumber}
                     className={`w-full pl-11 pr-4 py-3 bg-white border ${
@@ -998,19 +1004,28 @@ const AddMemberPage = () => {
               {/* Gender */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Gender
+                  Gender <span className="text-orange-600">*</span>
                 </label>
                 <select
                   name="gender"
                   value={formData.gender}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  data-error={!!errors.gender}
+                  className={`w-full px-4 py-3 bg-white border ${
+                    errors.gender ? 'border-red-500' : 'border-slate-300'
+                  } rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer`}
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
+                {errors.gender && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.gender}
+                  </p>
+                )}
               </div>
 
               {/* Occupation */}
