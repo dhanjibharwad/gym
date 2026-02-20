@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { checkPermission } from '@/lib/api-permissions';
 import { unstable_cache, revalidateTag } from 'next/cache';
+import { getSession } from '@/lib/auth';
 
 // Cached function for fetching member details
 const getCachedMemberDetails = unstable_cache(
@@ -279,6 +280,23 @@ export async function PATCH(
         }
       }
 
+      // Create audit log for member update
+      const session = await getSession();
+      const userName = session?.user?.name || 'Unknown';
+      const userRole = session?.user?.role || 'staff';
+      await client.query(
+        `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'UPDATE',
+          'member',
+          memberId,
+          `Member ${memberResult.rows[0].full_name} updated by ${userName}`,
+          userRole,
+          companyId
+        ]
+      );
+
       await client.query('COMMIT');
       
       // Revalidate cache
@@ -337,7 +355,7 @@ export async function DELETE(
 
       // Verify member exists and belongs to the company
       const memberCheck = await client.query(
-        'SELECT id FROM members WHERE id = $1 AND company_id = $2',
+        'SELECT id, full_name FROM members WHERE id = $1 AND company_id = $2',
         [memberId, companyId]
       );
 
@@ -348,6 +366,8 @@ export async function DELETE(
           { status: 404 }
         );
       }
+
+      const memberName = memberCheck.rows[0].full_name;
 
       // Delete related data in order (respecting foreign key constraints)
       
@@ -392,6 +412,23 @@ export async function DELETE(
       await client.query(
         'DELETE FROM members WHERE id = $1 AND company_id = $2',
         [memberId, companyId]
+      );
+
+      // Create audit log for member deletion
+      const session = await getSession();
+      const userName = session?.user?.name || 'Unknown';
+      const userRole = session?.user?.role || 'staff';
+      await client.query(
+        `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'DELETE',
+          'member',
+          memberId,
+          `Member ${memberName} deleted by ${userName}`,
+          userRole,
+          companyId
+        ]
       );
 
       await client.query('COMMIT');

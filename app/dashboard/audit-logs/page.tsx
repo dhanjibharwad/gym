@@ -29,6 +29,7 @@ function AuditLogsPage() {
     { id: 'staff', label: 'Staff' },
     { id: 'member', label: 'Members' },
     { id: 'payment', label: 'Payments' },
+    { id: 'settings', label: 'Settings' },
   ];
 
   const filterLogsByTab = (log: AuditLog) => {
@@ -38,6 +39,7 @@ function AuditLogsPage() {
     if (activeTab === 'staff') return log.entity_type === 'staff';
     if (activeTab === 'member') return log.entity_type === 'member';
     if (activeTab === 'payment') return log.entity_type === 'payment';
+    if (activeTab === 'settings') return log.entity_type === 'settings';
     return true;
   };
 

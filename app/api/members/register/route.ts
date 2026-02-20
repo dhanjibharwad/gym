@@ -216,6 +216,21 @@ export async function POST(request: NextRequest) {
             userName
           ]
         );
+        
+        // Create audit log for initial payment
+        const userRole = session?.user?.role || 'staff';
+        await client.query(
+          `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            'CREATE',
+            'payment',
+            membershipId,
+            `Initial payment of ₹${data.amountPaidNow} for ${data.fullName} by ${userName}`,
+            userRole,
+            session?.user?.companyId
+          ]
+        );
       }
       
       // Create audit log for member creation

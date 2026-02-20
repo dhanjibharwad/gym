@@ -76,6 +76,28 @@ export async function POST(request: NextRequest) {
         [member_id, membership_id, 'additional_payment', amount, payment_mode, reference_number || null, userName]
       );
       
+      // Get member name for audit log
+      const memberResult = await client.query(
+        'SELECT full_name FROM members WHERE id = $1',
+        [member_id]
+      );
+      const memberName = memberResult.rows[0]?.full_name || 'Unknown';
+      
+      // Create audit log for payment
+      const userRole = session?.user?.role || 'staff';
+      await client.query(
+        `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'CREATE',
+          'payment',
+          membership_id,
+          `Payment of ₹${amount} added for ${memberName} by ${userName}`,
+          userRole,
+          companyId
+        ]
+      );
+      
       return NextResponse.json({
         success: true,
         message: 'Payment added successfully'

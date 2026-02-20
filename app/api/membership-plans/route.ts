@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
-          ['CREATE', 'membership_plan', result.rows[0].id, `Created plan by (${userName}): ${plan_name} (${duration_months} months, ₹${price})`, userRole, companyId]
+          ['CREATE', 'membership_plan', result.rows[0].id, `Membership plan ${plan_name} (${duration_months} months, ₹${price}) created by ${userName}`, userRole, companyId]
         );
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
@@ -184,7 +184,7 @@ export async function PUT(request: NextRequest) {
         const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
-          ['UPDATE', 'membership_plan', id, `Updated plan by (${userName}): ${old.plan_name} → ${plan_name}, ${old.duration_months}m → ${duration_months}m, ₹${old.price} → ₹${price}`, userRole, companyId]
+          ['UPDATE', 'membership_plan', id, `Membership plan ${old.plan_name} updated (${old.duration_months}m → ${duration_months}m, ₹${old.price} → ₹${price}) by ${userName}`, userRole, companyId]
         );
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
@@ -275,7 +275,7 @@ export async function DELETE(request: NextRequest) {
         const userName = auth.session!.user.name || 'Unknown User';
         await client.query(
           'INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id) VALUES ($1, $2, $3, $4, $5, $6)',
-          ['DELETE', 'membership_plan', id, `Deleted plan by (${userName}): ${plan.plan_name} (${plan.duration_months} months, ₹${plan.price})`, userRole, companyId]
+          ['DELETE', 'membership_plan', id, `Membership plan ${plan.plan_name} (${plan.duration_months} months, ₹${plan.price}) deleted by ${userName}`, userRole, companyId]
         );
       } catch (logError) {
         console.error('Failed to create audit log:', logError);
