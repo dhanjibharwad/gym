@@ -21,7 +21,9 @@ import {
   Settings,
   Shield,
   Receipt,
-  BarChart3
+  BarChart3,
+  X,
+  Menu
 } from 'lucide-react';
 import { hasAnyPermission, isAdmin } from '@/lib/rbac';
 
@@ -146,13 +148,16 @@ interface SidebarProps {
 const Sidebar = memo(function Sidebar({ userRole = "admin", userPermissions = [] }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
         setIsCollapsed(true);
+        setIsOpen(false);
       }
     };
 
@@ -161,133 +166,178 @@ const Sidebar = memo(function Sidebar({ userRole = "admin", userPermissions = []
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobile, isOpen]);
+
+  useEffect(() => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [pathname, isMobile]);
+
   const toggleSidebar = (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    setIsCollapsed(!isCollapsed);
+    if (isMobile) {
+      setIsOpen(!isOpen);
+    } else {
+      setIsCollapsed(!isCollapsed);
+    }
   };
 
   return (
-    <aside
-      className={`bg-white shadow-lg transition-all duration-300 ease-in-out flex flex-col sticky top-0 h-screen overflow-hidden ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}
-    >
-      {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        className={`absolute top-3 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 hover:shadow-lg transition-all duration-200 z-20 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:ring-opacity-50 cursor-pointer ${
-          isCollapsed ? 'left-1/2 transform -translate-x-1/2' : 'right-2'
-        }`}
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="w-5 h-5 text-gray-600" />
-        ) : (
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        )}
-      </button>
-
-      {/* Logo Section */}
-      {!isCollapsed && (
-        <div className="border-b border-gray-100 flex justify-center items-center p-5">
-          <div className="flex items-center gap-2">
-            {/* <div className="w-8 h-8 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
-              <Dumbbell className="w-5 h-5 text-white" />
-            </div> */}
-            <span className="text-2xl font-extrabold text-orange-500">OUR GYM</span>
-          </div>
-        </div>
+    <>
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-4 left-4 z-50 lg:hidden bg-white shadow-lg rounded-lg p-2.5 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          aria-label="Toggle menu"
+        >
+          {isOpen ? (
+            <X className="w-6 h-6 text-gray-700" />
+          ) : (
+            <Menu className="w-6 h-6 text-gray-700" />
+          )}
+        </button>
       )}
 
-      {/* Scrollable Navigation */}
-      <div className={`flex-1 overflow-hidden ${
-        isCollapsed ? 'pt-16' : ''
-      }`}>
-        <nav className="h-full">
-          <div className={`h-full py-2 ${
-            isCollapsed 
-              ? 'px-0 overflow-y-auto overflow-x-hidden scrollbar-hide' 
-              : 'px-4 overflow-y-auto overflow-x-hidden'
-          }`}>
-            <ul className="space-y-1">
-              {navItems
-                .filter(item => {
-                  // Show dashboard and profile to everyone
-                  if (item.href === '/dashboard' || item.href === '/dashboard/profile') return true;
-                  
-                  // Admin users see all sidebar items
-                  if (isAdmin(userRole)) return true;
-                  
-                  // Check if user has any of the required permissions
-                  if (item.permissions.length > 0) {
-                    return hasAnyPermission(userPermissions, item.permissions, userRole);
-                  }
-                  
-                  // If no permissions required, show the item
-                  return true;
-                })
-                .map((item) => {
-                const Icon = item.icon;
-                const isActive = item.href === '/dashboard' 
-                  ? pathname === '/dashboard'
-                  : pathname === item.href || pathname.startsWith(item.href + '/');
+      {/* Overlay for mobile */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center font-medium transition-all duration-200 group relative ${
-                        isActive
-                          ? 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-md'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-600'
-                      } ${
-                        isCollapsed 
-                          ? 'w-12 h-12 mx-2 justify-center rounded-lg' 
-                          : 'w-full gap-3 px-3 py-2.5 rounded-lg'
-                      }`}
-                      title={isCollapsed ? item.label : ''}
-                    >
-                      <Icon 
-                        className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" 
-                      />
-                      
-                      {!isCollapsed && (
-                        <span className="truncate text-sm">{item.label}</span>
-                      )}
+      <aside
+        className={`bg-white shadow-lg transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+          isMobile
+            ? `fixed top-0 left-0 h-full z-50 transform ${
+                isOpen ? 'translate-x-0' : '-translate-x-full'
+              } w-64`
+            : `sticky top-0 h-screen ${
+                isCollapsed ? 'w-16 xl:w-20' : 'w-64 xl:w-72'
+              }`
+        }`}
+      >
+        {/* Desktop Toggle Button */}
+        {!isMobile && (
+          <button
+            onClick={toggleSidebar}
+            className={`absolute top-3 bg-white shadow-md rounded-full p-2 hover:bg-gray-100 hover:shadow-lg transition-all duration-200 z-20 focus:outline-none focus:ring-2 focus:ring-gray-500 cursor-pointer ${
+              isCollapsed ? 'left-1/2 transform -translate-x-1/2' : 'right-2'
+            }`}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-5 h-5 text-gray-600" />
+            ) : (
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+        )}
 
-                      {/* Tooltip for collapsed state */}
-                      {isCollapsed && (
-                        <span className="absolute left-full ml-2 px-2 py-1.5 bg-gray-600 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
-                          {item.label}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className={`border-t border-gray-200 flex justify-center items-center ${
-        isCollapsed ? 'p-2' : 'p-4'
-      }`}>
-        {!isCollapsed ? (
-          <div className="text-xs text-gray-500">
-            Our  GYM © 2026
-          </div>
-        ) : (
-          <div className="text-xs text-gray-500 font-semibold">
-            Our Gym
+        {/* Logo Section */}
+        {(!isCollapsed || isMobile) && (
+          <div className="border-b border-gray-100 flex justify-center items-center p-5 min-h-[72px]">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-extrabold text-orange-500">OUR GYM</span>
+            </div>
           </div>
         )}
-      </div>
-    </aside>
+
+        {/* Scrollable Navigation */}
+        <div className={`flex-1 overflow-hidden ${
+          isCollapsed && !isMobile ? 'pt-16' : 'pt-2'
+        }`}>
+          <nav className="h-full">
+            <div className={`h-full py-2 ${
+              isCollapsed && !isMobile
+                ? 'px-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400' 
+                : 'px-4 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400'
+            }`}>
+              <ul className="space-y-1">
+                {navItems
+                  .filter(item => {
+                    if (item.href === '/dashboard' || item.href === '/dashboard/profile') return true;
+                    if (isAdmin(userRole)) return true;
+                    if (item.permissions.length > 0) {
+                      return hasAnyPermission(userPermissions, item.permissions, userRole);
+                    }
+                    return true;
+                  })
+                  .map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.href === '/dashboard' 
+                    ? pathname === '/dashboard'
+                    : pathname === item.href || pathname.startsWith(item.href + '/');
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`flex items-center font-medium transition-all duration-200 group relative touch-manipulation ${
+                          isActive
+                            ? 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-md'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-600 active:bg-gray-100'
+                        } ${
+                          isCollapsed && !isMobile
+                            ? 'w-12 h-12 mx-2 justify-center rounded-lg' 
+                            : 'w-full gap-3 px-3 py-2.5 rounded-lg min-h-[44px]'
+                        }`}
+                        title={isCollapsed && !isMobile ? item.label : ''}
+                      >
+                        <Icon 
+                          className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" 
+                        />
+                        
+                        {(!isCollapsed || isMobile) && (
+                          <span className="truncate text-sm">{item.label}</span>
+                        )}
+
+                        {/* Tooltip for collapsed state on desktop */}
+                        {isCollapsed && !isMobile && (
+                          <span className="absolute left-full ml-2 px-2 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50 shadow-lg">
+                            {item.label}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </nav>
+        </div>
+
+        {/* Footer */}
+        <div className={`border-t border-gray-200 flex justify-center items-center shrink-0 ${
+          isCollapsed && !isMobile ? 'p-2' : 'p-4'
+        }`}>
+          {(!isCollapsed || isMobile) ? (
+            <div className="text-xs text-gray-500">
+              Our GYM © 2026
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 font-semibold">
+              OG
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 });
 
