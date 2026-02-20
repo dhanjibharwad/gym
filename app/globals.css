@@ -93,3 +93,19 @@ body {
 .animate-slide-in {
   animation: slide-in 0.4s ease-out;
 }
+
+/* Confetti celebration animation */
+@keyframes confetti {
+  0% { 
+    transform: translateY(0) rotate(0deg); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(100vh) rotate(720deg); 
+    opacity: 0; 
+  }
+}
+
+.animate-confetti { 
+  animation: confetti 6s ease-in-out forwards; 
+}

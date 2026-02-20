@@ -105,6 +105,8 @@ const Dashboard = () => {
   
   // Birthday filter state
   const [birthdayFilter, setBirthdayFilter] = useState<7 | 15 | 30>(30);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [hasHoveredBirthday, setHasHoveredBirthday] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleString());
@@ -696,7 +698,37 @@ const Dashboard = () => {
         </div>
 
         {/* Upcoming Birthdays */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div 
+          className="bg-white rounded-xl shadow-lg border border-gray-200 relative"
+          onMouseEnter={() => {
+            if (!hasHoveredBirthday && dashboardData.upcomingBirthdays.length > 0) {
+              setShowConfetti(true);
+              setHasHoveredBirthday(true);
+              setTimeout(() => setShowConfetti(false), 6000);
+            }
+          }}
+        >
+          {/* Confetti Overlay */}
+          {showConfetti && (
+            <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden rounded-xl">
+              {[...Array(50)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute animate-confetti"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: '-10px',
+                    animationDelay: `${Math.random() * 0.5}s`,
+                    animationDuration: `${4 + Math.random() * 2}s`
+                  }}
+                >
+                  <span className="text-2xl">
+                    {['🎉', '🎊', '🎈', '🎂', '🎁', '⭐', '✨', '🌟'][Math.floor(Math.random() * 8)]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
