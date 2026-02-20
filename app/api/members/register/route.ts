@@ -218,6 +218,24 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      // Create audit log for member creation
+      if (memberType !== 'existing') {
+        const userName = session?.user?.name || 'Unknown';
+        const userRole = session?.user?.role || 'staff';
+        await client.query(
+          `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            'CREATE',
+            'member',
+            memberId,
+            `Member ${data.fullName} created by ${userName}`,
+            userRole,
+            session?.user?.companyId
+          ]
+        );
+      }
+      
       await client.query('COMMIT');
       
       // Get member number for response

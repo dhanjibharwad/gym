@@ -20,6 +20,26 @@ function AuditLogsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+
+  const tabs = [
+    { id: 'all', label: 'All Logs' },
+    { id: 'auth', label: 'Login/Logout' },
+    { id: 'membership', label: 'Membership Plans' },
+    { id: 'staff', label: 'Staff' },
+    { id: 'member', label: 'Members' },
+    { id: 'payment', label: 'Payments' },
+  ];
+
+  const filterLogsByTab = (log: AuditLog) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'auth') return log.action === 'LOGIN' || log.action === 'LOGOUT';
+    if (activeTab === 'membership') return log.entity_type === 'membership_plan';
+    if (activeTab === 'staff') return log.entity_type === 'staff';
+    if (activeTab === 'member') return log.entity_type === 'member';
+    if (activeTab === 'payment') return log.entity_type === 'payment';
+    return true;
+  };
 
   const formatDateTime = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -91,7 +111,7 @@ function AuditLogsPage() {
       
       <div className="max-w-full mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-8">
+        <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <Activity className="w-5 h-5 text-purple-600" />
@@ -115,6 +135,23 @@ function AuditLogsPage() {
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 font-medium text-sm transition-colors cursor-pointer ${
+                activeTab === tab.id
+                  ? 'text-orange-600 border-b-2 border-orange-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Logs List */}
         <div className="bg-white rounded-xl shadow-sm">
           {logs.length === 0 ? (
@@ -127,10 +164,9 @@ function AuditLogsPage() {
             <div className="divide-y divide-gray-200">
               {logs.filter((log) => {
                 const query = searchQuery.toLowerCase();
-                return (
-                  log.details.toLowerCase().includes(query) ||
-                  log.user_role.toLowerCase().includes(query)
-                );
+                const matchesSearch = log.details.toLowerCase().includes(query) ||
+                  log.user_role.toLowerCase().includes(query);
+                return matchesSearch && filterLogsByTab(log);
               }).map((log) => (
                 <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
