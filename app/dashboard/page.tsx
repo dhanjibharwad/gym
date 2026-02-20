@@ -494,7 +494,10 @@ const Dashboard = () => {
 
         {/* Total Revenue - Admin only */}
         {user.role.toLowerCase() === 'admin' && (
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all">
+          <div 
+            onClick={() => router.push('/dashboard/payments')}
+            className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
