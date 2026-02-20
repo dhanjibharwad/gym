@@ -832,12 +832,36 @@ const MemberProfilePage = () => {
               </div>
             </div>
             
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-red-800">
-                Are you sure you want to delete <strong>{member?.full_name}</strong>? 
-                This will permanently remove the member and all their membership history.
+                Are you sure you want to delete <strong>{member?.full_name}</strong>?
               </p>
             </div>
+
+            {activeMemberships.length > 0 && (
+              <div className="bg-orange-50 border border-orange-300 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-orange-900">Active Membership Warning</p>
+                    <p className="text-xs text-orange-800 mt-1">
+                      This member has {activeMemberships.length} active membership{activeMemberships.length > 1 ? 's' : ''}:
+                    </p>
+                  </div>
+                </div>
+                <ul className="ml-7 mt-2 space-y-1">
+                  {activeMemberships.map((m) => (
+                    <li key={m.id} className="text-xs text-orange-800">
+                      • {m.plan_name} ({m.status === 'on_hold' ? 'On Hold' : 'Active'}) - Expires: {formatDate(m.end_date)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <p className="text-xs text-gray-600 mb-6">
+              This will permanently remove the member and all their membership history.
+            </p>
             
             <div className="flex gap-3">
               <button
@@ -885,7 +909,7 @@ const MemberProfilePage = () => {
             <button
               onClick={handleEditClick}
               disabled={loading}
-              className="group flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">Edit Member</span>
@@ -906,7 +930,7 @@ const MemberProfilePage = () => {
 
       {/* Member Info Card */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="bg-black px-6 py-8">
+        <div className="bg-gray-700 px-6 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               {member.profile_photo_url ? (
