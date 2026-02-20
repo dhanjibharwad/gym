@@ -598,9 +598,9 @@ const PaymentsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(payment.payment_status)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {payment.next_due_date ? (
-                        <div className={`text-sm ${isOverdue(payment.next_due_date) ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                        <div className={`text-sm ${isOverdue(payment.next_due_date) && payment.payment_status !== 'full' ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
                           {formatDate(payment.next_due_date)}
-                          {isOverdue(payment.next_due_date) && <div className="text-xs text-red-500">Overdue</div>}
+                          {isOverdue(payment.next_due_date) && payment.payment_status !== 'full' && <div className="text-xs text-red-500">Overdue</div>}
                         </div>
                       ) : (
                         <span className="text-sm text-gray-500">N/A</span>
