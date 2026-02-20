@@ -33,6 +33,9 @@ interface MemberTransaction {
   phone_number: string;
   profile_photo_url: string;
   plan_name: string;
+  start_date: string;
+  end_date: string;
+  membership_status: string;
   total_amount: number;
   remaining_amount?: number;
   payment_status: string;
@@ -105,6 +108,34 @@ const HistoryPage = () => {
     const matchesMode = paymentModeFilter === 'all' || transaction.payment_mode === paymentModeFilter;
     return matchesType && matchesMode;
   });
+
+  // Group transactions by membership_id
+  const groupedTransactions = filteredTransactions.reduce((acc, transaction) => {
+    const key = transaction.membership_id;
+    if (!acc[key]) {
+      acc[key] = {
+        membership_id: transaction.membership_id,
+        plan_name: transaction.plan_name,
+        start_date: transaction.start_date,
+        end_date: transaction.end_date,
+        membership_status: transaction.membership_status,
+        total_amount: transaction.total_amount,
+        transactions: []
+      };
+    }
+    acc[key].transactions.push(transaction);
+    return acc;
+  }, {} as Record<number, {
+    membership_id: number;
+    plan_name: string;
+    start_date: string;
+    end_date: string;
+    membership_status: string;
+    total_amount: number;
+    transactions: MemberTransaction[];
+  }>);
+
+  const membershipGroups = Object.values(groupedTransactions);
 
   const getTransactionTypeIcon = (type: string) => {
     const typeConfig = {
@@ -327,95 +358,116 @@ const HistoryPage = () => {
           </div>
 
           {/* Transaction Timeline */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Transaction History</h3>
-              <p className="text-sm text-gray-600 mt-1">Complete payment timeline for {selectedMember.full_name}</p>
-            </div>
-            
-            <div className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <GymLoader size="md" />
-                </div>
-              ) : filteredTransactions.length > 0 ? (
-                <div className="space-y-6">
-                  {filteredTransactions.map((transaction, index) => {
-                    const typeInfo = getTransactionTypeIcon(transaction.transaction_type);
-                    const isLast = index === filteredTransactions.length - 1;
-                    
-                    return (
-                      <div key={transaction.id} className="relative">
-                        {!isLast && (
-                          <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200"></div>
-                        )}
-                        
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0 w-12 h-12 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center">
-                            {typeInfo.icon}
-                          </div>
-                          
-                          <div className="flex-1 bg-gray-50 rounded-lg p-4">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <h4 className="text-sm font-semibold text-gray-900">{typeInfo.label}</h4>
-                                <p className="text-xs text-gray-500">{transaction.plan_name}</p>
-                                <p className="text-xs text-orange-600">Added by: {transaction.created_by || '-'}</p>
-                              </div>
-                              
-                              <div className="text-right">
-                                <p className="text-lg font-bold text-green-600">{formatCurrency(parseFloat(transaction.amount.toString()) || 0)}</p>
-                                <p className="text-xs text-gray-500">{formatDateTime(transaction.transaction_date)}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-900">Payment Mode:</span>
-                                <div className="flex items-center gap-1 mt-1">
-                                  {getPaymentModeIcon(transaction.payment_mode)}
-                                  <span className="font-medium text-gray-900">{transaction.payment_mode}</span>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <span className="text-gray-900">Total Amount:</span>
-                                <p className="font-medium mt-1 text-gray-900">{formatCurrency(parseFloat(transaction.total_amount.toString()) || 0)}</p>
-                              </div>
-                              
-                              <div>
-                                <span className="text-gray-900">Remaining:</span>
-                                <p className="font-medium text-red-600 mt-1">{formatCurrency(parseFloat(transaction.remaining_amount?.toString() || '0') || 0)}</p>
-                              </div>
-                            </div>
-                            
-                            {transaction.receipt_number && (
-                              <div className="mt-3 pt-3 border-t border-gray-200">
-                                <div className="flex items-center gap-2">
-                                  <Receipt className="w-4 h-4 text-gray-500" />
-                                  <span className="text-xs text-gray-900">Reference: </span>
-                                  <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-900">{transaction.receipt_number}</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+          <div className="space-y-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <GymLoader size="md" />
+              </div>
+            ) : membershipGroups.length > 0 ? (
+              membershipGroups.map((group) => (
+                <div key={group.membership_id} className="bg-white rounded-xl shadow-sm border border-gray-200">
+                  {/* Membership Header */}
+                  <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{group.plan_name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {formatDate(group.start_date)} - {formatDate(group.end_date)}
+                        </p>
                       </div>
-                    );
-                  })}
+                      <div className="text-right">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          group.membership_status === 'active' ? 'bg-green-100 text-green-800' :
+                          group.membership_status === 'expired' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {group.membership_status.toUpperCase()}
+                        </span>
+                        <p className="text-sm text-gray-600 mt-2">Total: {formatCurrency(group.total_amount)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Transactions for this membership */}
+                  <div className="p-6">
+                    <div className="space-y-6">
+                      {group.transactions.map((transaction, index) => {
+                        const typeInfo = getTransactionTypeIcon(transaction.transaction_type);
+                        const isLast = index === group.transactions.length - 1;
+                        
+                        return (
+                          <div key={transaction.id} className="relative">
+                            {!isLast && (
+                              <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-200"></div>
+                            )}
+                            
+                            <div className="flex items-start space-x-4">
+                              <div className="flex-shrink-0 w-12 h-12 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center">
+                                {typeInfo.icon}
+                              </div>
+                              
+                              <div className="flex-1 bg-gray-50 rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-900">{typeInfo.label}</h4>
+                                    <p className="text-xs text-orange-600">Added by: {transaction.created_by || '-'}</p>
+                                  </div>
+                                  
+                                  <div className="text-right">
+                                    <p className="text-lg font-bold text-green-600">{formatCurrency(parseFloat(transaction.amount.toString()) || 0)}</p>
+                                    <p className="text-xs text-gray-500">{formatDateTime(transaction.transaction_date)}</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-gray-900">Payment Mode:</span>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {getPaymentModeIcon(transaction.payment_mode)}
+                                      <span className="font-medium text-gray-900">{transaction.payment_mode}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-gray-900">Total Amount:</span>
+                                    <p className="font-medium mt-1 text-gray-900">{formatCurrency(parseFloat(transaction.total_amount.toString()) || 0)}</p>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-gray-900">Remaining:</span>
+                                    <p className="font-medium text-red-600 mt-1">{formatCurrency(parseFloat(transaction.remaining_amount?.toString() || '0') || 0)}</p>
+                                  </div>
+                                </div>
+                                
+                                {transaction.receipt_number && (
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                      <Receipt className="w-4 h-4 text-gray-500" />
+                                      <span className="text-xs text-gray-900">Reference: </span>
+                                      <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-900">{transaction.receipt_number}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Receipt className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {transactionFilter !== 'all' || paymentModeFilter !== 'all'
-                      ? 'Try adjusting your filters.'
-                      : 'No payment history available for this member.'}
-                  </p>
-                </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <Receipt className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No transactions found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {transactionFilter !== 'all' || paymentModeFilter !== 'all'
+                    ? 'Try adjusting your filters.'
+                    : 'No payment history available for this member.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

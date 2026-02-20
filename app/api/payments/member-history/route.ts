@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
           m.phone_number,
           m.profile_photo_url,
           mp.plan_name,
+          ms.start_date,
+          ms.end_date,
+          ms.status as membership_status,
           p.total_amount,
           (
             SELECT COALESCE(SUM(pt2.amount), 0)
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest) {
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN payments p ON pt.membership_id = p.membership_id
         WHERE pt.member_id = $1 AND m.company_id = $2
-        ORDER BY pt.transaction_date DESC, pt.created_at DESC
+        ORDER BY ms.start_date DESC, pt.transaction_date DESC, pt.created_at DESC
       `, [memberId, companyId]);
       
       const transactionsWithNumbers = result.rows.map(transaction => ({
