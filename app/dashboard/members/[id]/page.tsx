@@ -200,7 +200,11 @@ const MemberProfilePage = () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/members/${memberId}?_t=${Date.now()}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
       const data = await response.json();
       
@@ -326,14 +330,12 @@ const MemberProfilePage = () => {
       
       const result = await response.json();
       if (result.success) {
-        // Optimistic UI update - remove membership from state immediately
-        setMemberships(prev => prev.filter(m => m.id !== selectedDeleteMembershipId));
-        setPayments(prev => prev.filter(p => p.membership_id !== selectedDeleteMembershipId));
-        setTransactions(prev => prev.filter(t => t.membership_id !== selectedDeleteMembershipId));
-        
         showToast('Membership deleted successfully', 'success');
         setShowDeleteMembershipModal(false);
         setSelectedDeleteMembershipId(null);
+        
+        // Fetch fresh data from server
+        await fetchMemberData();
       } else {
         showToast(result.message || 'Failed to delete membership', 'error');
       }
