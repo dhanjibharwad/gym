@@ -164,6 +164,11 @@ const MemberProfilePage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Delete membership modal state
+  const [showDeleteMembershipModal, setShowDeleteMembershipModal] = useState(false);
+  const [selectedDeleteMembershipId, setSelectedDeleteMembershipId] = useState<number | null>(null);
+  const [deletingMembership, setDeletingMembership] = useState(false);
+
   useEffect(() => {
     if (memberId) {
       fetchMemberData();
@@ -301,6 +306,41 @@ const MemberProfilePage = () => {
     } catch (error) {
       showToast('Failed to delete member', 'error');
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteMembership = (membershipId: number) => {
+    setSelectedDeleteMembershipId(membershipId);
+    setShowDeleteMembershipModal(true);
+  };
+
+  const confirmDeleteMembership = async () => {
+    if (!selectedDeleteMembershipId) return;
+    
+    setDeletingMembership(true);
+    try {
+      const response = await fetch(`/api/members/${memberId}/memberships/${selectedDeleteMembershipId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        // Optimistic UI update - remove membership from state immediately
+        setMemberships(prev => prev.filter(m => m.id !== selectedDeleteMembershipId));
+        setPayments(prev => prev.filter(p => p.membership_id !== selectedDeleteMembershipId));
+        setTransactions(prev => prev.filter(t => t.membership_id !== selectedDeleteMembershipId));
+        
+        showToast('Membership deleted successfully', 'success');
+        setShowDeleteMembershipModal(false);
+        setSelectedDeleteMembershipId(null);
+      } else {
+        showToast(result.message || 'Failed to delete membership', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to delete membership', 'error');
+    } finally {
+      setDeletingMembership(false);
     }
   };
 
@@ -818,6 +858,52 @@ const MemberProfilePage = () => {
         </div>
       )}
 
+      {/* Delete Membership Modal */}
+      {showDeleteMembershipModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Membership</h3>
+                <p className="text-sm text-gray-600">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800">
+                Are you sure you want to delete this membership? This will permanently remove the membership and all its payment history.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDeleteMembership}
+                disabled={deletingMembership}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {deletingMembership ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Deleting...
+                  </>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Delete Membership</>
+                )}
+              </button>
+              <button
+                onClick={() => { setShowDeleteMembershipModal(false); setSelectedDeleteMembershipId(null); }}
+                disabled={deletingMembership}
+                className="px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Member Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -1144,6 +1230,15 @@ const MemberProfilePage = () => {
                             <Play className="w-4 h-4" /> Resume
                           </>
                         )}
+                      </button>
+                    )}
+                    {can('delete_members') && (
+                      <button
+                        onClick={() => handleDeleteMembership(membership.id)}
+                        disabled={processing || deletingMembership}
+                        className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors shadow-md flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
                       </button>
                     )}
                   </div>
