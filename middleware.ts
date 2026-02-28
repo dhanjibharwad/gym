@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/auth/superadmin-login', '/', '/unauthorized', '/setup'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/verify-email', '/auth/superadmin-login', '/', '/unauthorized', '/setup', '/test-plans'];
 const authPaths = ['/auth/login', '/auth/register', '/auth/superadmin-login'];
 
 export async function middleware(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
   // Handle API routes that need authentication
   if (pathname.startsWith('/api')) {
     // Skip auth APIs
-    if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/setup')) {
+    if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/setup') || pathname.startsWith('/api/superadmin/plans')) {
       return NextResponse.next();
     }
 

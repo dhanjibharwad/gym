@@ -5,11 +5,13 @@ export async function GET() {
   try {
     const result = await pool.query(`
       SELECT 
-        c.id, c.name, c.email, c.status, c.created_at,
-        u.name as admin_name, u.phone as admin_phone
+        c.id, c.name, c.email, c.status, c.created_at, c.subscription_plan_id,
+        u.name as admin_name, u.phone as admin_phone,
+        sp.name as plan_name, sp.price as plan_price, sp.billing_period
       FROM companies c
       JOIN users u ON c.id = u.company_id
       JOIN roles r ON u.role_id = r.id
+      LEFT JOIN subscription_plans sp ON c.subscription_plan_id = sp.id
       WHERE r.name = 'Admin'
       ORDER BY c.created_at DESC
     `);

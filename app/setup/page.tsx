@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Plan {
+  id: number;
+  name: string;
+  price: number;
+  billing_period: string;
+  details: string;
+}
+
 type Toast = {
   id: number;
   message: string;
@@ -18,7 +26,9 @@ export default function SetupPage() {
     adminPhone: '',
     adminPassword: '',
     confirmPassword: '',
+    subscriptionPlanId: '',
   });
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
   const [checkingSetup, setCheckingSetup] = useState(true);
   const [error, setError] = useState('');
@@ -37,6 +47,7 @@ export default function SetupPage() {
 
   useEffect(() => {
     checkSetupStatus();
+    fetchPlans();
   }, []);
 
   const checkSetupStatus = async () => {
@@ -50,11 +61,23 @@ export default function SetupPage() {
     }
   };
 
+  const fetchPlans = async () => {
+    try {
+      console.log('Fetching plans...');
+      const res = await fetch('/api/superadmin/plans');
+      const data = await res.json();
+      console.log('Plans fetched:', data);
+      setPlans(data.plans || []);
+    } catch (error) {
+      console.error('Failed to fetch plans:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.companyName.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPhone.trim() || !formData.adminPassword) {
+    if (!formData.companyName.trim() || !formData.adminName.trim() || !formData.adminEmail.trim() || !formData.adminPhone.trim() || !formData.adminPassword || !formData.subscriptionPlanId) {
       setError('All required fields must be filled');
       return;
     }
@@ -86,6 +109,7 @@ export default function SetupPage() {
           adminEmail: formData.adminEmail.trim(),
           adminPhone: formData.adminPhone.trim(),
           adminPassword: formData.adminPassword,
+          subscriptionPlanId: parseInt(formData.subscriptionPlanId),
         }),
       });
 
@@ -269,6 +293,26 @@ export default function SetupPage() {
             </div>
 
             <div>
+              <label htmlFor="subscriptionPlan" className="block text-sm font-semibold text-gray-700 mb-2">
+                Select Subscription Plan
+              </label>
+              <select
+                id="subscriptionPlan"
+                required
+                value={formData.subscriptionPlanId}
+                onChange={(e) => setFormData({ ...formData, subscriptionPlanId: e.target.value })}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-transparent outline-none bg-white text-gray-900 transition-all duration-200 hover:border-gray-400"
+              >
+                <option value="">Choose a plan</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} - ₹{plan.price}/{plan.billing_period === 'yearly' ? 'year' : 'month'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="adminPassword" className="block text-sm font-semibold text-gray-700 mb-2">
                 Admin Password
               </label>
@@ -350,7 +394,7 @@ export default function SetupPage() {
                 </>
               ) : (
                 <>
-                  <span>Create Company & Admin</span>
+                  <span>Create Gym & Admin</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

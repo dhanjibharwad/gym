@@ -14,6 +14,9 @@ interface Company {
   created_at: string;
   admin_name: string;
   admin_phone: string;
+  plan_name?: string;
+  plan_price?: number;
+  billing_period?: string;
 }
 
 export default function SuperAdminPage() {
@@ -209,6 +212,7 @@ export default function SuperAdminPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Company</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Admin</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plan</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Registered</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -242,6 +246,18 @@ export default function SuperAdminPage() {
                           {company.admin_phone}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {company.plan_name ? (
+                        <div>
+                          <div className="font-medium text-gray-900">{company.plan_name}</div>
+                          <div className="text-sm text-gray-500">
+                            ₹{company.plan_price}/{company.billing_period === 'yearly' ? 'year' : 'month'}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">No plan</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-gray-600">

@@ -4,10 +4,10 @@ import pool from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyName, adminEmail, adminPassword, adminName, adminPhone } = await request.json();
+    const { companyName, adminEmail, adminPassword, adminName, adminPhone, subscriptionPlanId } = await request.json();
 
     // Validate required fields
-    if (!companyName || !adminEmail || !adminPassword || !adminName || !adminPhone) {
+    if (!companyName || !adminEmail || !adminPassword || !adminName || !adminPhone || !subscriptionPlanId) {
       return NextResponse.json(
         { error: 'All required fields must be provided' },
         { status: 400 }
@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
 
       // Create company in pending status (no subdomain until approved)
       const companyResult = await client.query(
-        `INSERT INTO companies (name, email, status, subscription_status, trial_ends_at) 
-         VALUES ($1, $2, 'pending', 'trial', NOW() + INTERVAL '30 days') RETURNING *`,
-        [companyName, adminEmail]
+        `INSERT INTO companies (name, email, status, subscription_status, subscription_plan_id, trial_ends_at) 
+         VALUES ($1, $2, 'pending', 'trial', $3, NOW() + INTERVAL '30 days') RETURNING *`,
+        [companyName, adminEmail, subscriptionPlanId]
       );
       const company = companyResult.rows[0];
 
