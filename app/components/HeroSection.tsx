@@ -20,7 +20,7 @@ const HeroSection = () => {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
-          src='/images/eagle1.png'
+          src='/images/hero-gym.jpg'  
           alt="Premium gym interior"
           className="w-full h-full object-cover object-center"
         />
