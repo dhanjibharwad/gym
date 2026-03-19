@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           p.created_at,
           m.id as member_id,
           m.member_number,
-          LPAD(m.member_number::text, 4, '0') as formatted_member_id,
+          m.member_number as formatted_member_id,
           m.full_name,
           m.phone_number,
           m.profile_photo_url,

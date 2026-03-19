@@ -12,7 +12,7 @@ const pool = new Pool({
   port: 5432,
   database: 'Gymportal',
   user: 'postgres',
-  password: 'Qwerty123@711',
+  password: 'Jashma@2026',
 });
 
 const permissions = [

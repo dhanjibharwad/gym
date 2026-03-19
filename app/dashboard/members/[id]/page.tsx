@@ -1637,6 +1637,7 @@ const MemberProfilePage = () => {
                   }}
                   membership={selectedReceiptMembership}
                   payment={getPaymentsForMembership(selectedReceiptMembership.id)[0] || null}
+                  paymentHistory={getTransactionsForMembership(selectedReceiptMembership.id)}
                   receiptNumber={`REC-${selectedReceiptMembership.id}-${Date.now()}`}
                   template={receiptTemplate}
                 />

@@ -8,13 +8,14 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const session = await getSession();
-    
+
     // Check if this is for an existing member
     const memberType = formData.get('memberType') as string;
     const existingMemberId = formData.get('existingMemberId') as string;
-    
+
     // Extract data from FormData
     const data = {
+      serialNumber: formData.get('serialNumber') as string,
       fullName: formData.get('fullName') as string,
       phoneNumber: formData.get('phoneNumber') as string,
       email: formData.get('email') as string || null,
@@ -44,35 +45,57 @@ export async function POST(request: NextRequest) {
       nextDueDate: formData.get('nextDueDate') as string || null,
       profilePhoto: formData.get('profilePhoto') as File || null,
     };
-    
+
+    const parsedMemberNumber = data.serialNumber ? data.serialNumber.trim() : '';
+    if (memberType !== 'existing') {
+      if (!parsedMemberNumber) {
+        return NextResponse.json(
+          { success: false, message: 'Serial No. (member number) is required' },
+          { status: 400 }
+        );
+      }
+      // Validate alphanumeric format
+      if (!/^[a-zA-Z0-9]+$/.test(parsedMemberNumber)) {
+        return NextResponse.json(
+          { success: false, message: 'Serial No. must contain only letters and numbers' },
+          { status: 400 }
+        );
+      }
+    }
+
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       let memberId: number;
-      
+
       // Handle existing member or create new member
       if (memberType === 'existing' && existingMemberId) {
         memberId = parseInt(existingMemberId);
-        
+
         // Verify member belongs to user's company
         const memberCheck = await client.query(
           'SELECT id FROM members WHERE id = $1 AND company_id = $2',
           [memberId, session?.user?.companyId]
         );
-        
+
         if (memberCheck.rows.length === 0) {
           throw new Error('Member not found or unauthorized');
         }
       } else {
-        // Get next member number for this company
-        const memberNumberResult = await client.query(
-          'SELECT COALESCE(MAX(member_number), 0) + 1 as next_number FROM members WHERE company_id = $1',
-          [session?.user?.companyId]
+        // Ensure member_number (Serial No.) is unique per company
+        const existingNumber = await client.query(
+          'SELECT id FROM members WHERE company_id = $1 AND member_number = $2',
+          [session?.user?.companyId, parsedMemberNumber]
         );
-        const memberNumber = memberNumberResult.rows[0].next_number;
-        
+        if (existingNumber.rows.length > 0) {
+          return NextResponse.json(
+            { success: false, message: 'Serial No. already exists' },
+            { status: 400 }
+          );
+        }
+
         // Insert new member
         const memberResult = await client.query(
           `INSERT INTO members (
@@ -81,7 +104,7 @@ export async function POST(request: NextRequest) {
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, member_number`,
           [
             session?.user?.companyId,
-            memberNumber,
+            parsedMemberNumber,
             data.fullName,
             data.phoneNumber,
             data.email,
@@ -94,26 +117,26 @@ export async function POST(request: NextRequest) {
             data.emergencyContactPhone
           ]
         );
-        
+
         memberId = memberResult.rows[0].id;
-        
+
         // Handle profile photo upload for new members
         if (data.profilePhoto && data.profilePhoto.size > 0) {
           const bytes = await data.profilePhoto.arrayBuffer();
           const buffer = Buffer.from(bytes);
-          
+
           const fileName = `${memberId}_${data.profilePhoto.name}`;
           const filePath = path.join(process.cwd(), 'public/uploads/members', fileName);
-          
+
           await writeFile(filePath, buffer);
-          
+
           const profilePhotoUrl = `/uploads/members/${fileName}`;
           await client.query(
             'UPDATE members SET profile_photo_url = $1 WHERE id = $2',
             [profilePhotoUrl, memberId]
           );
         }
-        
+
         // Insert medical info for new members
         await client.query(
           `INSERT INTO medical_info (
@@ -127,19 +150,19 @@ export async function POST(request: NextRequest) {
           ]
         );
       }
-      
+
       // Get plan ID
       const planResult = await client.query(
         'SELECT id FROM membership_plans WHERE plan_name = $1',
         [data.selectedPlan]
       );
-      
+
       if (planResult.rows.length === 0) {
         throw new Error('Invalid plan selected');
       }
-      
+
       const planId = planResult.rows[0].id;
-      
+
       // Use provided end date or calculate it
       let endDate: string;
       if (data.planEndDate) {
@@ -149,41 +172,73 @@ export async function POST(request: NextRequest) {
           'SELECT duration_months FROM membership_plans WHERE id = $1',
           [planId]
         );
-        
+
         const startDate = new Date(data.planStartDate);
         const calculatedEndDate = new Date(startDate);
         const monthsToAdd = planDetailsResult.rows[0].duration_months;
         calculatedEndDate.setMonth(calculatedEndDate.getMonth() + monthsToAdd);
         endDate = calculatedEndDate.toISOString().split('T')[0];
       }
-      
+
       // Insert membership
-      const membershipResult = await client.query(
-        `INSERT INTO memberships (
-          member_id, plan_id, date_of_admission, start_date, end_date, trainer_assigned,
-          batch_time, membership_types, reference_of_admission, notes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-        [
-          memberId,
-          planId,
-          data.dateOfAdmission,
-          data.planStartDate,
-          endDate,
-          data.trainerAssigned,
-          data.batchTime,
-          data.membershipTypes ? data.membershipTypes.split(',') : null,
-          data.referenceOfAdmission,
-          data.notes,
-          session?.user?.id
-        ]
-      );
-      
+      let membershipResult;
+      await client.query('SAVEPOINT membership_insert');
+      try {
+        membershipResult = await client.query(
+          `INSERT INTO memberships (
+            member_id, plan_id, date_of_admission, start_date, end_date, trainer_assigned,
+            batch_time, membership_types, reference_of_admission, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+          [
+            memberId,
+            planId,
+            data.dateOfAdmission,
+            data.planStartDate,
+            endDate,
+            data.trainerAssigned,
+            data.batchTime,
+            data.membershipTypes ? data.membershipTypes.split(',') : null,
+            data.referenceOfAdmission,
+            data.notes,
+            session?.user?.id
+          ]
+        );
+      } catch (error) {
+        const pgError = error as { code?: string; message?: string };
+        if (pgError?.code === '42703' && (pgError.message || '').includes('date_of_admission')) {
+          await client.query('ROLLBACK TO SAVEPOINT membership_insert');
+          membershipResult = await client.query(
+            `INSERT INTO memberships (
+              member_id, plan_id, start_date, end_date, trainer_assigned,
+              batch_time, membership_types, reference_of_admission, notes, created_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+            [
+              memberId,
+              planId,
+              data.planStartDate,
+              endDate,
+              data.trainerAssigned,
+              data.batchTime,
+              data.membershipTypes ? data.membershipTypes.split(',') : null,
+              data.referenceOfAdmission,
+              data.notes,
+              session?.user?.id
+            ]
+          );
+        } else {
+          await client.query('ROLLBACK TO SAVEPOINT membership_insert');
+          throw error;
+        }
+      } finally {
+        await client.query('RELEASE SAVEPOINT membership_insert');
+      }
+
       const membershipId = membershipResult.rows[0].id;
-      
+
       // Insert payment
-      const paymentStatus = data.amountPaidNow >= data.totalPlanFee ? 'full' : 
-                           data.amountPaidNow > 0 ? 'partial' : 'pending';
-      
+      const paymentStatus = data.amountPaidNow >= data.totalPlanFee ? 'full' :
+        data.amountPaidNow > 0 ? 'partial' : 'pending';
+
       await client.query(
         `INSERT INTO payments (
           membership_id, total_amount, paid_amount, payment_mode,
@@ -199,7 +254,7 @@ export async function POST(request: NextRequest) {
           data.nextDueDate || null
         ]
       );
-      
+
       // Insert initial payment transaction if amount was paid
       if (data.amountPaidNow > 0) {
         const userName = session?.user?.name || 'user not logged in';
@@ -216,7 +271,7 @@ export async function POST(request: NextRequest) {
             userName
           ]
         );
-        
+
         // Create audit log for initial payment
         const userRole = session?.user?.role || 'staff';
         await client.query(
@@ -232,7 +287,7 @@ export async function POST(request: NextRequest) {
           ]
         );
       }
-      
+
       // Create audit log for member creation
       if (memberType !== 'existing') {
         const userName = session?.user?.name || 'Unknown';
@@ -250,32 +305,32 @@ export async function POST(request: NextRequest) {
           ]
         );
       }
-      
+
       await client.query('COMMIT');
-      
+
       // Get member number for response
       const memberNumberQuery = await client.query(
-        'SELECT LPAD(member_number::text, 4, \'0\') as formatted_id FROM members WHERE id = $1',
+        'SELECT member_number as formatted_id FROM members WHERE id = $1',
         [memberId]
       );
       const displayMemberId = memberNumberQuery.rows[0]?.formatted_id || String(memberId).padStart(4, '0');
-      
+
       return NextResponse.json({
         success: true,
         message: memberType === 'existing' ? 'Membership renewed successfully' : 'Member registered successfully',
         memberId: displayMemberId
       });
-      
+
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
     } finally {
       client.release();
     }
-    
+
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     // Handle specific database errors
     if (error instanceof Error) {
       if (error.message.includes('phone_number')) {
@@ -290,8 +345,14 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      if (error.message.includes('unique_company_member_number')) {
+        return NextResponse.json(
+          { success: false, message: 'Serial No. already exists' },
+          { status: 400 }
+        );
+      }
     }
-    
+
     return NextResponse.json(
       { success: false, message: 'Registration failed' },
       { status: 500 }

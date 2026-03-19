@@ -463,12 +463,12 @@ const AddMemberPage = () => {
         }
         
         const selectedMode = paymentModes.find(mode => mode.name === value);
-        // Use current totalPlanFee if manually edited, otherwise use basePlanFee
-        const currentFee = formData.totalPlanFee > 0 ? Number(formData.totalPlanFee) : Number(basePlanFee) || 0;
-        
-        if (selectedMode && currentFee > 0) {
-          const processingFee = (currentFee * selectedMode.processingFee) / 100;
-          const totalWithFee = currentFee + processingFee;
+        // Always calculate from base plan fee to avoid fee accumulation when switching modes
+        const feeBase = Number(basePlanFee) || 0;
+
+        if (selectedMode && feeBase > 0) {
+          const processingFee = (feeBase * selectedMode.processingFee) / 100;
+          const totalWithFee = feeBase + processingFee;
           
           setFormData(prev => ({ 
             ...prev, 
@@ -477,9 +477,10 @@ const AddMemberPage = () => {
           }));
           return;
         } else {
-          setFormData(prev => ({ 
-            ...prev, 
-            paymentMode: value as FormData['paymentMode']
+          setFormData(prev => ({
+            ...prev,
+            paymentMode: value as FormData['paymentMode'],
+            totalPlanFee: feeBase
           }));
           return;
         }
@@ -549,6 +550,11 @@ const AddMemberPage = () => {
       }
     } else {
       // For new members, validate personal information
+      if (!formData.serialNumber.trim()) newErrors.serialNumber = 'Serial No. is required';
+      const serialRegex = /^[a-zA-Z0-9]+$/;
+      if (formData.serialNumber && !serialRegex.test(formData.serialNumber)) {
+        newErrors.serialNumber = 'Serial No. must contain only letters and numbers';
+      }
       if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
       if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
       if (!formData.gender) newErrors.gender = 'Gender is required';
@@ -876,7 +882,7 @@ const AddMemberPage = () => {
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Full Name */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Full Name <span className="text-orange-600">*</span>
                 </label>
@@ -895,6 +901,36 @@ const AddMemberPage = () => {
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
                     {errors.fullName}
+                  </p>
+                )}
+              </div>
+
+              {/* Serial No. */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Serial No.
+                </label>
+                <input
+                  type="text"
+                  name="serialNumber"
+                  value={formData.serialNumber}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, serialNumber: value }));
+                    if (errors.serialNumber) {
+                      setErrors(prev => ({ ...prev, serialNumber: '' }));
+                    }
+                  }}
+                  data-error={!!errors.serialNumber}
+                  className={`w-full px-4 py-3 bg-white border ${
+                    errors.serialNumber ? 'border-red-500' : 'border-slate-300'
+                  } rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
+                  placeholder="Enter serial number"
+                />
+                {errors.serialNumber && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.serialNumber}
                   </p>
                 )}
               </div>

@@ -16,7 +16,14 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  FileUp,
+  Archive,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Dumbbell
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -33,6 +40,14 @@ interface Member {
   date_of_birth: string;
   profile_photo_url: string;
   created_at: string;
+  membership_status: 'none' | 'active' | 'expired';
+  membership_details?: {
+    plan_name: string;
+    start_date: string;
+    end_date: string;
+    trainer_assigned?: string;
+    batch_time?: string;
+  };
 }
 
 interface Pagination {
@@ -55,6 +70,11 @@ const MembersPage = () => {
   const [editingMember, setEditingMember] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ phone_number: '', email: '' });
   const [updating, setUpdating] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{ importedCount: number; skippedCount: number; errors?: string[] } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Pagination state
   const [pagination, setPagination] = useState<Pagination>({
@@ -211,9 +231,109 @@ const MembersPage = () => {
     return pages;
   };
 
+  const handleImportFile = async () => {
+    if (!importFile) return;
+
+    setImportLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('type', 'excel');
+
+      const response = await fetch('/api/members/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setImportResult({
+          importedCount: result.importedCount,
+          skippedCount: result.skippedCount,
+          errors: result.errors
+        });
+        setImportFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Refresh members list
+        fetchMembers();
+      } else {
+        setImportResult({
+          importedCount: 0,
+          skippedCount: 0,
+          errors: [result.message]
+        });
+      }
+    } catch (error) {
+      setImportResult({
+        importedCount: 0,
+        skippedCount: 0,
+        errors: ['Error importing file: ' + (error as Error).message]
+      });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-IN');
+  };
+
+  const getMembershipBadge = (status: string) => {
+    const styles = {
+      active: 'bg-green-100 text-green-700',
+      expired: 'bg-red-100 text-red-700',
+      none: 'bg-orange-100 text-orange-700'
+    };
+    
+    const icons = {
+      active: <CheckCircle className="w-3 h-3" />,
+      expired: <AlertCircle className="w-3 h-3" />,
+      none: <Clock className="w-3 h-3" />
+    };
+    
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`}>
+        {icons[status as keyof typeof icons]}
+        {status === 'none' ? 'No Membership' : status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  const membersWithoutMembershipCount = members.filter(m => m.membership_status === 'none').length;
+
+  const handleDeleteMember = async (memberId: number, memberName: string) => {
+    if (!confirm(`Are you sure you want to delete ${memberName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove from UI immediately for better UX
+        setMembers(prev => prev.filter(m => m.id !== memberId));
+        // Refresh to ensure consistency
+        setTimeout(() => fetchMembers(), 500);
+      } else {
+        console.error('Delete failed:', result.message);
+        alert('Failed to delete member: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      alert('Error deleting member: ' + (error as Error).message);
+    }
   };
 
   return (
@@ -254,8 +374,43 @@ const MembersPage = () => {
               Cards
             </button>
           </div>
+
+          {/* Import Button */}
+          <button
+            onClick={() => window.open('/api/members/template', '_blank')}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
+          >
+            <FileUp className="w-4 h-4" />
+            Download Template
+          </button>
+
+          {/* Bulk Import Button */}
+          <button
+            onClick={() => router.push('/dashboard/bulk-import')}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm"
+          >
+            <FileUp className="w-4 h-4" />
+            Bulk Import
+          </button>
         </div>
       </div>
+
+      {membersWithoutMembershipCount > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm text-orange-900">
+              <span className="font-semibold">{membersWithoutMembershipCount}</span>{' '}
+              member{membersWithoutMembershipCount > 1 ? 's' : ''} without membership. Assign now.
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/bulk-import?step=assign')}
+              className="px-3 py-1.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Assign Membership
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -264,10 +419,10 @@ const MembersPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, phone, or email..."
+              placeholder="Search by name, phone, email, or serial number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 placeholder-slate-400 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 pr-10 py-2 placeholder-gray-500 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent"
             />
             {loading && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 animate-spin" />
@@ -306,6 +461,9 @@ const MembersPage = () => {
                     Gender
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Membership
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Joined Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -316,7 +474,7 @@ const MembersPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12">
+                    <td colSpan={6} className="px-6 py-12">
                       <div className="flex items-center justify-center">
                         <GymLoader size="md" />
                       </div>
@@ -400,6 +558,21 @@ const MembersPage = () => {
                       </div>
                     </td>
 
+                    {/* Membership Status */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-1">
+                        {getMembershipBadge(member.membership_status)}
+                        {member.membership_details && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>{member.membership_details.plan_name}</div>
+                            {member.membership_details.trainer_assigned && (
+                              <div>Trainer: {member.membership_details.trainer_assigned}</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
                     {/* Joined Date */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -449,6 +622,16 @@ const MembersPage = () => {
                               title="Edit contact info"
                             >
                               <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {/* Delete button - only visible to users with 'delete_members' permission */}
+                          {can('delete_members') && (
+                            <button
+                              onClick={() => handleDeleteMember(member.id, member.full_name)}
+                              className="text-red-600 hover:text-red-900 transition-colors"
+                              title="Delete member"
+                            >
+                              <X className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -540,12 +723,23 @@ const MembersPage = () => {
                 <div className="text-xs text-gray-500">
                   Joined {formatDate(member.created_at)}
                 </div>
-                <button
-                  onClick={() => router.push(`/dashboard/members/${member.id}`)}
-                  className="text-orange-600 hover:text-orange-900 text-sm font-medium cursor-pointer"
-                >
-                  View Profile
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => router.push(`/dashboard/members/${member.id}`)}
+                    className="text-orange-600 hover:text-orange-900 text-sm font-medium cursor-pointer"
+                  >
+                    View Profile
+                  </button>
+                  {can('delete_members') && (
+                    <button
+                      onClick={() => handleDeleteMember(member.id, member.full_name)}
+                      className="text-red-600 hover:text-red-900 transition-colors"
+                      title="Delete member"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -614,6 +808,140 @@ const MembersPage = () => {
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Import Members</h2>
+              <button onClick={() => {
+                setShowImportModal(false);
+                setImportFile(null);
+                setImportResult(null);
+              }} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {importResult ? (
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg ${importResult.importedCount > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <p className="font-semibold text-gray-900">Import Results</p>
+                  <p className="text-sm text-gray-700 mt-2">
+                    ✓ Imported: <span className="font-semibold">{importResult.importedCount}</span> members
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    ⊝ Skipped: <span className="font-semibold">{importResult.skippedCount}</span> records
+                  </p>
+                </div>
+                
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-h-40 overflow-y-auto">
+                    <p className="font-semibold text-sm text-yellow-800 mb-2">Issues Found:</p>
+                    <ul className="space-y-1">
+                      {importResult.errors.slice(0, 5).map((error, idx) => (
+                        <li key={idx} className="text-xs text-yellow-700">{error}</li>
+                      ))}
+                      {importResult.errors.length > 5 && (
+                        <li className="text-xs text-yellow-700 italic">... and {importResult.errors.length - 5} more</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportResult(null);
+                      setImportFile(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 font-medium"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setImportResult(null);
+                      setImportFile(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
+                  >
+                    Import Again
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">Upload an Excel or PDF file with member data to import.</p>
+                
+                {/* Download Template Button */}
+                <a
+                  href="/api/members/template"
+                  download="Member_Import_Template.xlsx"
+                  className="block px-4 py-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 font-medium text-center text-sm transition-colors"
+                >
+                  ⬇️ Download Template
+                </a>
+
+                <p className="text-xs text-gray-500 italic">Download the template, fill in your member details, and upload it back.</p>
+                
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-500 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Archive className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-700">Choose file to upload</p>
+                  <p className="text-xs text-gray-500">Excel (.xlsx, .xls)</p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+
+                {importFile && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm font-medium text-blue-900">Selected: {importFile.name}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportFile(null);
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleImportFile}
+                    disabled={!importFile || importLoading}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 font-medium flex items-center justify-center gap-2"
+                  >
+                    {importLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <FileUp className="w-4 h-4" />
+                        Import
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

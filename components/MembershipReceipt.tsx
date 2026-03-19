@@ -7,6 +7,8 @@ import React, { forwardRef } from 'react';
 
 interface Member {
   id: number;
+  member_number?: number;
+  formatted_member_id?: string;
   full_name: string;
   phone_number: string;
   email: string;
@@ -48,6 +50,13 @@ interface Payment {
   next_due_date?: string;
 }
 
+interface PaymentTransaction {
+  id: number;
+  amount: number;
+  payment_mode: string;
+  transaction_date: string;
+}
+
 interface ReceiptTemplate {
   gymName: string;
   gymAddress: string;
@@ -67,6 +76,7 @@ interface MembershipReceiptProps {
   member: Member;
   membership: Membership;
   payment: Payment | null;
+  paymentHistory?: PaymentTransaction[];
   gymName?: string;
   gymAddress?: string;
   gymPhone?: string;
@@ -104,6 +114,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
     member, 
     membership, 
     payment, 
+    paymentHistory,
     gymName: propGymName,
     gymAddress: propGymAddress,
     gymPhone: propGymPhone,
@@ -147,6 +158,8 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
       return age;
     };
 
+    const serialNo = member.formatted_member_id || (member.member_number != null ? String(member.member_number) : '');
+
     return (
       <div 
         ref={ref} 
@@ -157,6 +170,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
           maxWidth: '210mm',
           margin: '0 auto',
           backgroundColor: 'white',
+          color: '#111827',
           boxSizing: 'border-box',
           fontFamily: 'Arial, sans-serif',
           fontSize: '11pt',
@@ -266,17 +280,25 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
           }}>MEMBER INFORMATION</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* Row 1 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(1) Name of Member :</span>
-              <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
-                <span style={{ fontSize: '10pt' }}>{member.full_name}</span>
+            {/* Row 1 - Name and Sr. No on separate lines */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(1) Name of Member :</span>
+                <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
+                  <span style={{ fontSize: '10pt' }}>{member.full_name}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(2) Sr. No. :</span>
+                <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
+                  <span style={{ fontSize: '10pt' }}>{serialNo || 'N/A'}</span>
+                </div>
               </div>
             </div>
 
             {/* Row 2 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(2) Address :</span>
+              <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(3) Address :</span>
               <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                 <span style={{ fontSize: '10pt' }}>{member.address || 'N/A'}</span>
               </div>
@@ -285,7 +307,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Row 3 */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(3) Date of Birth :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(4) Date of Birth :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                   <span style={{ fontSize: '10pt' }}>{formatDate(member.date_of_birth)}</span>
                 </div>
@@ -307,7 +329,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Row 4 */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(4) Gender & Status :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(5) Gender & Status :</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span style={{ fontSize: '10pt' }}>Male</span>
                   <div style={{
@@ -336,7 +358,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(ii) Occupation :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>Occupation :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                   <span style={{ fontSize: '10pt' }}>{member.occupation || 'N/A'}</span>
                 </div>
@@ -346,7 +368,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Row 5 */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(5) Mobile No : (i) Self :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600', whiteSpace: 'nowrap' }}>(6) Mobile No : (i) Self :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                   <span style={{ fontSize: '10pt' }}>{member.phone_number}</span>
                 </div>
@@ -361,7 +383,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
 
             {/* Membership Plan Details */}
             <div style={{ marginTop: '12px' }}>
-              <h3 style={{ fontSize: '10pt', fontWeight: 'bold', color: '#1e3a8a', margin: '0 0 8px 0' }}>(6) GENERAL FITNESS PLAN :</h3>
+              <h3 style={{ fontSize: '10pt', fontWeight: 'bold', color: '#1e3a8a', margin: '0 0 8px 0' }}>(7) GENERAL FITNESS PLAN :</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '10pt' }}>(i) Months</span>
                 <div style={{ width: '50px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
@@ -377,14 +399,38 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 </div>
               </div>
               
-              {/* Paid Amount Row */}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                <span style={{ fontSize: '10pt' }}>(ii) Paid Amount :</span>
-                <span style={{ fontSize: '10pt' }}>Rs. :</span>
-                <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{payment ? Number(payment.paid_amount).toFixed(0) : '0'}</span>
+              {/* Paid Amount Row - Show payment history if available */}
+              {paymentHistory && paymentHistory.length > 0 ? (
+                paymentHistory.map((trans, idx) => (
+                  <div key={trans.id || idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10pt' }}>({String.fromCharCode(97 + idx + 1)}) Payment {idx + 1} :</span>
+                    <span style={{ fontSize: '10pt' }}>Rs. :</span>
+                    <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '10pt' }}>{Number(trans.amount).toFixed(0)}</span>
+                    </div>
+                    <span style={{ fontSize: '10pt' }}>(Cash / G.Pay / CC.)</span>
+                    <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '10pt' }}>{trans.payment_mode || 'Cash'}</span>
+                    </div>
+                    <span style={{ fontSize: '10pt' }}>Date:</span>
+                    <div style={{ width: '80px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '10pt' }}>{formatDate(trans.transaction_date)}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '10pt' }}>(ii) Paid Amount :</span>
+                  <span style={{ fontSize: '10pt' }}>Rs. :</span>
+                  <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '10pt' }}>{payment ? Number(payment.paid_amount).toFixed(0) : '0'}</span>
+                  </div>
+                  <span style={{ fontSize: '10pt' }}>(Cash / G.Pay / CC.)</span>
+                  <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '10pt' }}>{payment ? payment.payment_mode || 'Cash' : ''}</span>
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Balance Payment Row */}
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -401,7 +447,12 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 <div style={{ width: '60px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>
                     {payment 
-                      ? Math.max(0, Number(payment.total_amount) - Number(payment.paid_amount)).toFixed(0) 
+                      ? (() => {
+                          const totalPaid = paymentHistory && paymentHistory.length > 0
+                            ? paymentHistory.reduce((sum, trans) => sum + Number(trans.amount), 0)
+                            : Number(payment.paid_amount);
+                          return Math.max(0, Number(payment.total_amount) - totalPaid).toFixed(0);
+                        })()
                       : '0'
                     }
                   </span>
@@ -411,8 +462,8 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
 
             {/* Personal Training Plan */}
             <div>
-              <h3 style={{ fontSize: '10pt', fontWeight: 'bold', color: '#1e3a8a', margin: '8px 0' }}>(7) PERSONAL TRAINING PLAN :</h3>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '10pt', fontWeight: 'bold', color: '#1e3a8a', margin: '8px 0' }}>(8) PERSONAL TRAINING PLAN :</h3>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '10pt' }}>(i) Months</span>
                 <div style={{ width: '50px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>{membership.membership_types?.includes('Personal Training') ? membership.duration_months : ''}</span>
@@ -426,7 +477,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
 
             {/* Reference */}
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span style={{ fontSize: '10pt', fontWeight: '600' }}>(8) Reference of Admission :</span>
+              <span style={{ fontSize: '10pt', fontWeight: '600' }}>(9) Reference of Admission :</span>
               <span style={{ fontSize: '10pt' }}>(Manager / Trainers / Receptionist) Mr./Ms.</span>
               <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                 <span style={{ fontSize: '10pt' }}>{membership.reference_of_admission || membership.created_by_name || 'N/A'}</span>
@@ -436,7 +487,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Dates */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600' }}>(9) Date of Admission :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600' }}>(10) Date of Admission :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                   <span style={{ fontSize: '10pt' }}>{formatDate(member.created_at)}</span>
                 </div>
@@ -452,7 +503,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
             {/* Course Dates */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-                <span style={{ fontSize: '10pt', fontWeight: '600' }}>(10) Course Starting Date :</span>
+                <span style={{ fontSize: '10pt', fontWeight: '600' }}>(11) Course Starting Date :</span>
                 <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}>
                   <span style={{ fontSize: '10pt' }}>{formatDate(membership.start_date)}</span>
                 </div>
@@ -467,7 +518,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
 
             {/* Membership Type Checkboxes */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-              <span style={{ fontSize: '10pt', fontWeight: '600' }}>NB : Type of Membership :</span>
+              <span style={{ fontSize: '10pt', fontWeight: '600' }}>(12) Type of Membership :</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ fontSize: '10pt' }}>New</span>
                 <div style={{ 
@@ -525,14 +576,16 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 }}>{membership.membership_types?.includes('Diet') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '10px' }}>
-                <span style={{ fontSize: '10pt' }}>Old Sr. No.</span>
-                <div style={{ width: '80px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px' }}></div>
+                <span style={{ fontSize: '10pt' }}>Sr. No.</span>
+                <div style={{ width: '80px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '10pt' }}>{member.formatted_member_id || (member.member_number != null ? String(member.member_number) : '')}</span>
+                </div>
               </div>
             </div>
 
             {/* Note */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
-              <span style={{ fontSize: '10pt', fontWeight: '600' }}>Note :</span>
+              <span style={{ fontSize: '10pt', fontWeight: '600' }}>(13) Note :</span>
               <div style={{ flex: 1, borderBottom: '1px solid #9ca3af', paddingBottom: '2px', minHeight: '30px' }}>
                 <span style={{ fontSize: '10pt' }}>{membership.notes || ''}</span>
               </div>

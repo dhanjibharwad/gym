@@ -13,6 +13,14 @@ interface MemberQueryResult {
   date_of_birth: string;
   profile_photo_url: string;
   created_at: string;
+  membership_status: 'none' | 'active' | 'expired';
+  membership_details?: {
+    plan_name: string;
+    start_date: string;
+    end_date: string;
+    trainer_assigned?: string;
+    batch_time?: string;
+  };
 }
 
 // Cached function for fetching members with pagination
@@ -37,7 +45,8 @@ const getCachedMembers = unstable_cache(
         searchCondition = `AND (
           LOWER(full_name) LIKE $2 OR 
           phone_number LIKE $2 OR 
-          LOWER(email) LIKE $2
+          LOWER(email) LIKE $2 OR
+          LOWER(member_number) LIKE $2
         )`;
         searchParams = [companyId, searchTerm];
       }
@@ -55,19 +64,44 @@ const getCachedMembers = unstable_cache(
       // Get paginated members - only fetch needed columns for list view
       const membersQuery = `
         SELECT 
-          id,
-          member_number,
-          LPAD(member_number::text, 4, '0') as formatted_member_id,
-          full_name,
-          phone_number,
-          email,
-          gender,
-          date_of_birth,
-          profile_photo_url,
-          created_at
-        FROM members 
-        WHERE company_id = $1 ${searchCondition}
-        ORDER BY created_at DESC
+          m.id,
+          m.member_number,
+          m.member_number as formatted_member_id,
+          m.full_name,
+          m.phone_number,
+          m.email,
+          m.gender,
+          m.date_of_birth,
+          m.profile_photo_url,
+          m.created_at,
+          CASE 
+            WHEN membership.id IS NULL THEN 'none'
+            WHEN membership.end_date >= CURRENT_DATE THEN 'active'
+            ELSE 'expired'
+          END as membership_status,
+          membership.plan_name,
+          membership.start_date,
+          membership.end_date,
+          membership.trainer_assigned,
+          membership.batch_time
+        FROM members m
+        LEFT JOIN (
+          SELECT 
+            ms.id,
+            ms.member_id,
+            ms.plan_id,
+            ms.start_date,
+            ms.end_date,
+            ms.trainer_assigned,
+            ms.batch_time,
+            mp.plan_name,
+            ROW_NUMBER() OVER (PARTITION BY ms.member_id ORDER BY ms.created_at DESC) as rn
+          FROM memberships ms
+          JOIN membership_plans mp ON ms.plan_id = mp.id
+          WHERE mp.company_id = $1
+        ) membership ON m.id = membership.member_id AND membership.rn = 1
+        WHERE m.company_id = $1 ${searchCondition}
+        ORDER BY m.created_at DESC
         LIMIT $${searchParams.length + 1} OFFSET $${searchParams.length + 2}
       `;
       
@@ -77,8 +111,20 @@ const getCachedMembers = unstable_cache(
         offset
       ]);
       
+      // Format the results to match the expected interface
+      const formattedMembers = membersResult.rows.map(row => ({
+        ...row,
+        membership_details: row.plan_name ? {
+          plan_name: row.plan_name,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          trainer_assigned: row.trainer_assigned,
+          batch_time: row.batch_time
+        } : undefined
+      }));
+      
       return {
-        members: membersResult.rows,
+        members: formattedMembers,
         total,
         totalPages
       };
