@@ -438,7 +438,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 <div style={{ width: '100px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>
                     {payment?.payment_status === 'partial' 
-                      ? (payment?.next_due_date ? formatDate(payment.next_due_date) : 'As per agreement')
+                      ? (payment?.next_due_date ? formatDate(payment.next_due_date) : '')
                       : 'N/A'
                     }
                   </span>

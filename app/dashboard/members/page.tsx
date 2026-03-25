@@ -74,8 +74,13 @@ const MembersPage = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ importedCount: number; skippedCount: number; errors?: string[] } | null>(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteMode, setDeleteMode] = useState<'selected' | 'all'>('all');
+  const [showSelection, setShowSelection] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Pagination state
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -305,6 +310,115 @@ const MembersPage = () => {
 
   const membersWithoutMembershipCount = members.filter(m => m.membership_status === 'none').length;
 
+  const toggleMemberSelection = (memberId: number) => {
+    setSelectedMembers(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  const selectAllMembers = () => {
+    if (selectedMembers.length === members.length) {
+      setSelectedMembers([]);
+    } else {
+      setSelectedMembers(members.map(m => m.id));
+    }
+  };
+
+  const handleDeleteModal = (mode: 'selected' | 'all') => {
+    setDeleteMode(mode);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteMembers = async () => {
+    setDeleteAllLoading(true);
+    try {
+      let response;
+      
+      if (deleteMode === 'all') {
+        response = await fetch('/api/members/delete-all', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+      } else {
+        // Delete selected members
+        const deletePromises = selectedMembers.map(memberId =>
+          fetch(`/api/members/${memberId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          })
+        );
+        
+        const results = await Promise.all(deletePromises);
+        const failedDeletes = results.filter(res => !res.ok);
+        
+        if (failedDeletes.length === 0) {
+          setDeleteAllLoading(false);
+          setShowDeleteModal(false);
+          setSelectedMembers([]);
+          fetchMembers();
+          return;
+        } else {
+          throw new Error(`${failedDeletes.length} members could not be deleted`);
+        }
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setDeleteAllLoading(false);
+        setShowDeleteModal(false);
+        setSelectedMembers([]);
+        fetchMembers();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error deleting members:', error);
+      setDeleteAllLoading(false);
+      alert('Error deleting members: ' + (error as Error).message);
+    }
+  };
+
+  const handleDeleteAllMembers = async () => {
+    if (!confirm(`Are you sure you want to delete ALL members? This action cannot be undone and will remove all members and their membership data.`)) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    try {
+      const response = await fetch('/api/members/delete-all', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`Successfully deleted ${result.deletedCount} members`);
+        // Refresh the members list
+        fetchMembers();
+      } else {
+        alert('Failed to delete members: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error deleting all members:', error);
+      alert('Error deleting members: ' + (error as Error).message);
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   const handleDeleteMember = async (memberId: number, memberName: string) => {
     if (!confirm(`Are you sure you want to delete ${memberName}? This action cannot be undone.`)) {
       return;
@@ -336,6 +450,15 @@ const MembersPage = () => {
     }
   };
 
+  const handleDeleteButtonClick = () => {
+    if (!showSelection) {
+      setShowSelection(true);
+      return;
+    }
+
+    handleDeleteModal(selectedMembers.length > 0 ? 'selected' : 'all');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -344,7 +467,7 @@ const MembersPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Members</h1>
           <p className="text-gray-600 mt-1">Manage gym members</p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center gap-4">
+        <div className="mt-4 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-4">
           <span className="text-sm text-gray-500">
             Total Members: <span className="font-semibold text-gray-900">{pagination.total.toLocaleString()}</span>
           </span>
@@ -392,6 +515,22 @@ const MembersPage = () => {
             <FileUp className="w-4 h-4" />
             Bulk Import
           </button>
+
+          {/* Delete Actions - Only visible to users with delete_members permission */}
+          {can('delete_members') && (
+            <button
+              onClick={handleDeleteButtonClick}
+              disabled={pagination.total === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-4 h-4" />
+              {showSelection
+                ? (selectedMembers.length > 0
+                  ? `Delete Selected (${selectedMembers.length})`
+                  : `Delete All (${pagination.total})`)
+                : 'Delete'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -411,6 +550,8 @@ const MembersPage = () => {
           </div>
         </div>
       )}
+
+      
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -451,6 +592,16 @@ const MembersPage = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  {can('delete_members') && showSelection && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={selectedMembers.length === members.length && members.length > 0}
+                        onChange={selectAllMembers}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Member
                   </th>
@@ -474,7 +625,7 @@ const MembersPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12">
+                    <td colSpan={can('delete_members') && showSelection ? 7 : 6} className="px-6 py-12">
                       <div className="flex items-center justify-center">
                         <GymLoader size="md" />
                       </div>
@@ -483,6 +634,16 @@ const MembersPage = () => {
                 ) : (
                   members.map((member: Member, index: number) => (
                   <tr key={`${member.id}-${index}`} className="hover:bg-gray-50">
+                    {can('delete_members') && showSelection && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedMembers.includes(member.id)}
+                          onChange={() => toggleMemberSelection(member.id)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                      </td>
+                    )}
                     {/* Member Info */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -615,7 +776,7 @@ const MembersPage = () => {
                           </button>
                           {/* Edit button - allows inline editing of member's phone and email
                               Only visible to users with 'edit_members' permission */}
-                          {can('edit_members') && (
+                          {/* {can('edit_members') && (
                             <button
                               onClick={() => handleEditMember(member)}
                               className="text-blue-600 hover:text-blue-900"
@@ -623,9 +784,9 @@ const MembersPage = () => {
                             >
                               <Edit className="w-4 h-4" />
                             </button>
-                          )}
+                          )} */}
                           {/* Delete button - only visible to users with 'delete_members' permission */}
-                          {can('delete_members') && (
+                          {/* {can('delete_members') && (
                             <button
                               onClick={() => handleDeleteMember(member.id, member.full_name)}
                               className="text-red-600 hover:text-red-900 transition-colors"
@@ -633,7 +794,7 @@ const MembersPage = () => {
                             >
                               <X className="w-4 h-4" />
                             </button>
-                          )}
+                          )} */}
                         </div>
                       )}
                     </td>
@@ -832,10 +993,10 @@ const MembersPage = () => {
                 <div className={`p-4 rounded-lg ${importResult.importedCount > 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                   <p className="font-semibold text-gray-900">Import Results</p>
                   <p className="text-sm text-gray-700 mt-2">
-                    ✓ Imported: <span className="font-semibold">{importResult.importedCount}</span> members
+                    Imported: <span className="font-semibold">{importResult.importedCount}</span> members
                   </p>
                   <p className="text-sm text-gray-700">
-                    ⊝ Skipped: <span className="font-semibold">{importResult.skippedCount}</span> records
+                    Skipped: <span className="font-semibold">{importResult.skippedCount}</span> records
                   </p>
                 </div>
                 
@@ -885,7 +1046,7 @@ const MembersPage = () => {
                   download="Member_Import_Template.xlsx"
                   className="block px-4 py-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 font-medium text-center text-sm transition-colors"
                 >
-                  ⬇️ Download Template
+                  Download Template
                 </a>
 
                 <p className="text-xs text-gray-500 italic">Download the template, fill in your member details, and upload it back.</p>
@@ -942,6 +1103,95 @@ const MembersPage = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div 
+          className="fixed inset-0" 
+          style={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6 border border-gray-200" 
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              backgroundColor: 'white',
+              maxWidth: '500px'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                {deleteMode === 'all' ? 'Delete All Members' : 'Delete Selected Members'}
+              </h2>
+              <button 
+                onClick={() => setShowDeleteModal(false)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-red-900">
+                      {deleteMode === 'all' 
+                        ? 'You are about to delete ALL members from the gym.'
+                        : `You are about to delete ${selectedMembers.length} member(s).`
+                      }
+                    </p>
+                    <p className="text-sm text-red-700 mt-1">
+                      This action cannot be undone and will permanently remove all member data including their membership history.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                {deleteMode === 'all' 
+                  ? `This will delete all ${pagination.total} members and their associated data.`
+                  : `This will delete the selected ${selectedMembers.length} members and their associated data.`
+                }
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleteAllLoading}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteMembers}
+                  disabled={deleteAllLoading}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                >
+                  {deleteAllLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      {deleteMode === 'all' ? 'Delete All' : `Delete ${selectedMembers.length}`}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Upload, 
   Users, 
@@ -12,7 +12,8 @@ import {
   Dumbbell,
   FileText,
   ArrowRight,
-  Settings
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
@@ -40,6 +41,7 @@ interface PaymentMode {
 
 const BulkImportPage = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [importedMembers, setImportedMembers] = useState<ImportedMember[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
@@ -304,9 +306,18 @@ const BulkImportPage = () => {
       {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({show: false, message: '', type: 'success'})} />}
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bulk Member Import</h1>
-        <p className="text-gray-600 mt-1">Import members from Excel and assign memberships</p>
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          title="Go back"
+        >
+          <ArrowLeft className="w-6 h-6 text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bulk Member Import</h1>
+          <p className="text-gray-600 mt-1">Import members from Excel and assign memberships</p>
+        </div>
       </div>
 
       {/* Progress Steps */}
@@ -635,17 +646,17 @@ const BulkImportPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
             <button
               onClick={() => setCurrentStep(1)}
-              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors"
+              className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors order-2 sm:order-1"
             >
               Back to Import
             </button>
             <button
               onClick={handleBulkAssignment}
               disabled={processing || selectedMembers.length === 0}
-              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 order-1 sm:order-2"
             >
               {processing ? 'Processing...' : 'Assign Membership'}
               <ArrowRight className="w-4 h-4" />
