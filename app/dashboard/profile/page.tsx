@@ -13,7 +13,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface UserProfile {
   id: number;
@@ -30,7 +30,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);  
   const [changingPassword, setChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -168,19 +168,12 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
-  }
-
   if (!profile) return null;
 
   return (
     <div className="space-y-6">
       {/* Header */}
+      <TopLoadingBar isLoading={loading} progress={loading ? 30 : 100} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Profile</h1>

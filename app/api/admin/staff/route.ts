@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { checkAnyPermission } from '@/lib/api-permissions';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +12,13 @@ export async function GET(request: NextRequest) {
     }
 
     const companyId = auth.session!.user.companyId;
+    
+    // Check cache first
+    const cacheKey = `staff:list:${companyId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json({ staff: cached });
+    }
 
     const result = await pool.query(
       `SELECT u.id, u.name, u.email, r.name as role, r.id as role_id, u.is_verified, u.created_at 
@@ -20,6 +28,9 @@ export async function GET(request: NextRequest) {
        ORDER BY u.created_at DESC`,
       [companyId]
     );
+
+    // Cache for 5 minutes
+    cache.set(cacheKey, result.rows, 300);
 
     return NextResponse.json({ staff: result.rows });
   } catch (error) {

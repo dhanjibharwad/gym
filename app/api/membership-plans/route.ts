@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
-import { unstable_cache, revalidateTag } from 'next/cache';
+import { cache } from '@/lib/cache/MemoryCache';
 
-// Cached function for fetching membership plans
-const getCachedPlans = unstable_cache(
-  async (companyId: number) => {
+// Remove Next.js unstable_cache - using our custom cache instead
+
+export async function GET(request: NextRequest) {
+  try {
+    // Check view_plans, manage_plans, or add_members permission
+    const auth = await checkAnyPermission(request, ['view_plans', 'manage_plans', 'add_members']);
+    if (!auth.authorized) {
+      return auth.response;
+    }
+
+    const companyId = auth.session!.user.companyId;
+    
+    // Check our ultra-fast in-memory cache first (5 minute TTL)
+    const cacheKey = `membership-plans:${companyId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json({ success: true, plans: cached });
+    }
+    
     const client = await pool.connect();
     
     try {
@@ -24,42 +40,19 @@ const getCachedPlans = unstable_cache(
         ORDER BY duration_months ASC
       `, [companyId]);
       
-      return result.rows;
+      const plans = result.rows;
+      
+      // Cache for 5 minutes (300 seconds)
+      cache.set(cacheKey, plans, 300);
+      
+      return NextResponse.json({
+        success: true,
+        plans
+      });
+      
     } finally {
       client.release();
     }
-  },
-  ['membership-plans'],
-  {
-    revalidate: 60, // Cache for 60 seconds
-    tags: ['membership-plans']
-  }
-);
-
-export async function GET(request: NextRequest) {
-  try {
-    // Check view_plans, manage_plans, or add_members permission
-    const auth = await checkAnyPermission(request, ['view_plans', 'manage_plans', 'add_members']);
-    if (!auth.authorized) {
-      return auth.response;
-    }
-
-    const companyId = auth.session!.user.companyId;
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    // Use cached function for better performance
-    const plans = await getCachedPlans(companyId);
-    
-    return NextResponse.json({
-      success: true,
-      plans
-    });
     
   } catch (error) {
     console.error('Database error:', error);
@@ -113,8 +106,8 @@ export async function POST(request: NextRequest) {
         console.error('Failed to create audit log:', logError);
       }
       
-      // Revalidate cache
-      revalidateTag('membership-plans');
+      // Invalidate cache
+      cache.delete(`membership-plans:${companyId}`);
       
       return NextResponse.json({
         success: true,
@@ -190,8 +183,8 @@ export async function PUT(request: NextRequest) {
         console.error('Failed to create audit log:', logError);
       }
       
-      // Revalidate cache
-      revalidateTag('membership-plans');
+      // Invalidate cache
+      cache.delete(`membership-plans:${companyId}`);
       
       return NextResponse.json({
         success: true,
@@ -281,8 +274,8 @@ export async function DELETE(request: NextRequest) {
         console.error('Failed to create audit log:', logError);
       }
       
-      // Revalidate cache
-      revalidateTag('membership-plans');
+      // Invalidate cache
+      cache.delete(`membership-plans:${companyId}`);
       
       return NextResponse.json({
         success: true,

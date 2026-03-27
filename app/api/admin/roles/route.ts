@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
 import { isProtectedRole } from '@/lib/rbac';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +10,15 @@ export async function GET(request: NextRequest) {
     const auth = await checkAnyPermission(request, ['view_roles', 'manage_roles']);
     if (!auth.authorized) {
       return auth.response;
+    }
+    
+    const companyId = auth.session!.user.companyId;
+    
+    // Check cache first (5 minute cache)
+    const cacheKey = `admin:roles:${companyId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json({ roles: cached });
     }
 
     const result = await pool.query(
@@ -21,12 +31,14 @@ export async function GET(request: NextRequest) {
        WHERE r.company_id = $1
        GROUP BY r.id, r.name, r.description, r.is_protected, r.is_system_role
        ORDER BY r.name`,
-      [auth.session!.user.companyId]
+      [companyId]
     );
+    
+    // Cache for 5 minutes
+    cache.set(cacheKey, result.rows, 300);
 
     return NextResponse.json({ roles: result.rows });
   } catch (error) {
-    console.error('Get roles error:', error);
     return NextResponse.json({ error: 'Failed to fetch roles' }, { status: 500 });
   }
 }
@@ -74,7 +86,6 @@ export async function POST(request: NextRequest) {
       role: result.rows[0]
     });
   } catch (error) {
-    console.error('Create role error:', error);
     return NextResponse.json({ error: 'Failed to create role' }, { status: 500 });
   }
 }
@@ -141,7 +152,6 @@ export async function PUT(request: NextRequest) {
       role: result.rows[0]
     });
   } catch (error) {
-    console.error('Update role error:', error);
     return NextResponse.json({ error: 'Failed to update role' }, { status: 500 });
   }
 }
@@ -203,7 +213,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ message: 'Role deleted successfully' });
   } catch (error) {
-    console.error('Delete role error:', error);
     return NextResponse.json({ error: 'Failed to delete role' }, { status: 500 });
   }
 }

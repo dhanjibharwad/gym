@@ -6,7 +6,8 @@
     "dev": "next dev -p 8004",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup:indexes": "node scripts/setup-performance-indexes.js"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

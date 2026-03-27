@@ -21,13 +21,17 @@ export async function createAuditLog({
 }: AuditLogParams): Promise<void> {
   const client = await pool.connect();
   try {
+    // Removed user_id from insert as it doesn't exist in the table
     await client.query(
-      `INSERT INTO audit_logs (company_id, action, entity_type, entity_id, details, user_role, user_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [companyId, action, entityType, entityId, details, userRole, userId || null]
+      `INSERT INTO audit_logs (company_id, action, entity_type, entity_id, details, user_role) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [companyId, action, entityType, entityId, details, userRole]
     );
   } catch (error) {
-    console.error('Failed to create audit log:', error);
+    // Silent fail for non-critical audit logs
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Audit Logger] Failed to create audit log:', error instanceof Error ? error.message : error);
+    }
   } finally {
     client.release();
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Role {
   id: number;
@@ -141,11 +141,7 @@ function PermissionsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
+    return <TopLoadingBar isLoading={true} progress={30} />;
   }
 
   return (

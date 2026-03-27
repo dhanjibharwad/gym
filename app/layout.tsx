@@ -1,6 +1,9 @@
 import "./globals.css";
 import LayoutContent from "./LayoutContent";
 
+// Run startup script (cache warming, DB connection check)
+import './startup';
+
 export const metadata = {
   title: "GymPortal",
   description: "Smart gym management system",

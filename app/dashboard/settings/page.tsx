@@ -9,7 +9,7 @@ import {
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 const SettingsPage = () => {
   const { can } = usePermission();
@@ -92,9 +92,7 @@ const SettingsPage = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <GymLoader size="md" />
-        </div>
+        <TopLoadingBar isLoading={true} progress={30} />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="border-b border-gray-200">

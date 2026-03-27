@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   reactStrictMode: true,
   
+  // Reduce dev server startup time
+  webpack: (config, { isServer, dev }) => {
+    if (dev) {
+      // Reduce source maps in dev mode
+      config.devtool = false;
+      
+      // Exclude some files from watching
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: ['**/node_modules', '**/.git', '**/*.log'],
+      };
+    }
+    return config;
+  },
+  
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -19,6 +34,8 @@ const nextConfig: NextConfig = {
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    // Reduce bundle size in dev
+    optimizeCss: true,
   },
   
   // Compiler optimizations
@@ -26,6 +43,12 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
     } : false,
+  },
+  
+  // Faster refresh in development
+  devIndicators: {
+    buildActivity: true,
+    buildActivityPosition: 'bottom-right',
   },
 };
 

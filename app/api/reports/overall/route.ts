@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { checkPermission } from '@/lib/api-permissions';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +20,13 @@ export async function GET(request: NextRequest) {
         { success: false, message: 'Company ID required' },
         { status: 400 }
       );
+    }
+    
+    // Check cache first (5 minute cache for ultra-fast response)
+    const cacheKey = `reports:overall:${companyId}:${period}:${startDate || ''}:${endDate || ''}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     const client = await pool.connect();
@@ -43,19 +51,7 @@ export async function GET(request: NextRequest) {
         paramIndex += 2;
       }
 
-      // Test the database structure first
-      try {
-        const testResult = await client.query(`
-          SELECT column_name, data_type 
-          FROM information_schema.columns 
-          WHERE table_name = 'memberships' AND column_name = 'status'
-        `);
-        console.log('Status column exists:', testResult.rows);
-      } catch (testError) {
-        console.error('Database structure test failed:', testError);
-      }
-
-      // Get comprehensive overview data
+      // Get comprehensive overview data - OPTIMIZED with single query
       const overviewResult = await client.query(`
         SELECT 
           -- Membership Statistics
@@ -166,6 +162,25 @@ export async function GET(request: NextRequest) {
         status_distribution: statusDistributionResult.rows,
         plan_popularity: planPopularityResult.rows
       });
+      
+      // Cache for 5 minutes
+      cache.set(cacheKey, {
+        success: true,
+        overview: overviewResult.rows[0] || {
+          total_memberships: 0,
+          active_memberships: 0,
+          expired_memberships: 0,
+          total_members: 0,
+          active_members: 0,
+          total_transactions: 0,
+          total_revenue: 0,
+          total_refunds: 0,
+          active_plans: 0
+        },
+        recent_activities: recentActivitiesResult.rows,
+        status_distribution: statusDistributionResult.rows,
+        plan_popularity: planPopularityResult.rows
+      }, 300);
       
     } finally {
       client.release();

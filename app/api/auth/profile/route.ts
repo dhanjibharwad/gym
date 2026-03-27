@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import pool from '@/lib/db';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET() {
   try {
@@ -11,6 +12,13 @@ export async function GET() {
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
+    }
+    
+    // Check cache first (10 minute cache for user profile)
+    const cacheKey = `profile:${session.user.id}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
     const result = await pool.query(
@@ -26,8 +34,7 @@ export async function GET() {
     }
 
     const user = result.rows[0];
-
-    return NextResponse.json({
+    const responseData = {
       success: true,
       user: {
         id: user.id,
@@ -39,7 +46,12 @@ export async function GET() {
         last_login_at: user.last_login_at,
         updated_at: user.updated_at
       }
-    });
+    };
+    
+    // Cache for 10 minutes
+    cache.set(cacheKey, responseData, 600);
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error('Profile fetch error:', error);

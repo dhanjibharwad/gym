@@ -24,7 +24,7 @@ import {
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Payment {
   id: number;
@@ -399,11 +399,7 @@ const PaymentsPage = () => {
   const overduePayments = payments.filter(p => p.payment_status !== 'full' && isOverdue(p.next_due_date)).length;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
+    return <TopLoadingBar isLoading={true} progress={30} />;
   }
 
   return (

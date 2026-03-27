@@ -5,7 +5,7 @@ import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X } f
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 import Toast from '@/app/components/Toast';
 
 function OurStaffPage() {
@@ -184,8 +184,8 @@ function OurStaffPage() {
           
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center">
-                <GymLoader size="md" />
+              <div className="p-8 text-center text-gray-400">
+                Loading staff...
               </div>
             ) : staff.length === 0 ? (
               <div className="p-8 text-center">

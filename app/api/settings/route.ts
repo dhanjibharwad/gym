@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { checkPermission } from '@/lib/api-permissions';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET() {
   try {
@@ -10,9 +11,18 @@ export async function GET() {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
+    const companyId = session.user.companyId;
+    
+    // Check cache first
+    const cacheKey = `settings:${companyId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
     const result = await pool.query(
       'SELECT payment_modes FROM settings WHERE company_id = $1',
-      [session.user.companyId]
+      [companyId]
     );
 
     const paymentModes = result.rows[0]?.payment_modes || {
@@ -23,10 +33,15 @@ export async function GET() {
       Cheque: { enabled: true, processingFee: 0 }
     };
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       settings: { paymentModes }
-    });
+    };
+    
+    // Cache for 10 minutes (settings don't change often)
+    cache.set(cacheKey, responseData, 600);
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json({
@@ -56,6 +71,10 @@ export async function POST(request: NextRequest) {
        DO UPDATE SET payment_modes = $2, updated_at = CURRENT_TIMESTAMP`,
       [session.user.companyId, JSON.stringify(body.paymentModes)]
     );
+    
+    // Invalidate cache
+    const cacheKey = `settings:${session.user.companyId}`;
+    cache.delete(cacheKey);
     
     // Create audit log for settings update
     const userName = session?.user?.name || 'Unknown';

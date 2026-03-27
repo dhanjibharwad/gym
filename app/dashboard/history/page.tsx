@@ -16,7 +16,7 @@ import {
   ArrowLeft,
   Filter
 } from 'lucide-react';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface MemberTransaction {
   id: number;
@@ -191,11 +191,7 @@ const HistoryPage = () => {
   };
 
   if (loading && !selectedMember) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
+    return <TopLoadingBar isLoading={true} progress={30} />;
   }
 
   return (
@@ -360,8 +356,8 @@ const HistoryPage = () => {
           {/* Transaction Timeline */}
           <div className="space-y-6">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <GymLoader size="md" />
+              <div className="flex items-center justify-center py-12 text-gray-400">
+                Loading transactions...
               </div>
             ) : membershipGroups.length > 0 ? (
               membershipGroups.map((group) => (

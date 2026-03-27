@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import { useUser } from '@/lib/hooks/useUser';
-import GymLoader from '@/components/GymLoader';
+import { prefetchByRole } from '@/lib/prefetch-pages';
 
 interface User {
   id: number;
@@ -112,6 +112,18 @@ const Dashboard = () => {
     setCurrentTime(new Date().toLocaleString());
     fetchDashboardData();
   }, []);
+
+  // Prefetch pages after dashboard data is loaded
+  useEffect(() => {
+    if (!loading && user) {
+      // Start background prefetching after a short delay
+      const prefetchTimeout = setTimeout(() => {
+        prefetchByRole(user.role);
+      }, 1000); // Wait 1 second after dashboard loads
+      
+      return () => clearTimeout(prefetchTimeout);
+    }
+  }, [loading, user]);
 
   // Recalculate when birthday filter changes
   useEffect(() => {
@@ -283,25 +295,73 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [membersRes, paymentsRes] = await Promise.all([
-        fetch('/api/members?limit=1000', { cache: 'no-store' }),
-        fetch('/api/payments?limit=1000', { cache: 'no-store' })
-      ]);
+      setLoading(true);
       
-      const membersData = await membersRes.json();
-      const paymentsData = await paymentsRes.json();
+      // Single API call for all dashboard stats - OPTIMIZED with no-store to prevent stale data
+      const startTime = Date.now();
+      const statsRes = await fetch('/api/dashboard/stats?limit=1000', { 
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (membersData.success && paymentsData.success) {
-        const members: Member[] = membersData.members;
-        const payments: Payment[] = paymentsData.payments;
+      if (!statsRes.ok) {
+        throw new Error(`HTTP error! status: ${statsRes.status}`);
+      }
+      
+      const statsData = await statsRes.json();
+      const endTime = Date.now();
+      console.log(`Dashboard data loaded in ${endTime - startTime}ms`);
+      
+      if (statsData.success) {
+        const stats = statsData.stats;
         
-        setAllMembers(members);
-        setAllPayments(payments);
-        
-        calculateDashboardData(members, payments);
+        // Safely parse JSON strings from the backend
+        const safeJsonParse = (value: any) => {
+          if (!value || value === null || value === undefined) return [];
+          if (typeof value === 'object') return value; // Already parsed
+          if (typeof value === 'string') {
+            try {
+              return JSON.parse(value);
+            } catch (e) {
+              console.error('Error parsing JSON:', e);
+              return [];
+            }
+          }
+          return [];
+        };
+
+        setDashboardData({
+          totalMembers: parseInt(stats.total_members) || 0,
+          newMembersToday: parseInt(stats.new_today) || 0,
+          expiringThisWeek: parseInt(stats.expiring_week) || 0,
+          todayRevenue: parseFloat(stats.today_revenue) || 0,
+          monthlyRevenue: parseFloat(stats.monthly_revenue) || 0,
+          totalRevenue: parseFloat(stats.total_revenue) || 0,
+          pendingPayments: parseInt(stats.pending_payments) || 0,
+          recentMembers: safeJsonParse(stats.recent_members_list),
+          expiringMembers: [], // Can be added to query if needed
+          upcomingBirthdays: safeJsonParse(stats.upcoming_birthdays_list)
+        });
+      } else {
+        console.error('Failed to fetch dashboard data:', statsData.message);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set default values on error to prevent UI breaks
+      setDashboardData({
+        totalMembers: 0,
+        newMembersToday: 0,
+        expiringThisWeek: 0,
+        todayRevenue: 0,
+        monthlyRevenue: 0,
+        totalRevenue: 0,
+        pendingPayments: 0,
+        recentMembers: [],
+        expiringMembers: [],
+        upcomingBirthdays: []
+      });
     } finally {
       setLoading(false);
     }
@@ -352,12 +412,8 @@ const Dashboard = () => {
     }
   ];
 
-  if (loading || !user) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <GymLoader size="md" />
-      </div>
-    );
+  if (!user) {
+    return null;
   }
 
   return (

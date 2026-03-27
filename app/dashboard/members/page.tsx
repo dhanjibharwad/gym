@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Member {
   id: number;
@@ -626,8 +626,8 @@ const MembersPage = () => {
                 {loading ? (
                   <tr>
                     <td colSpan={can('delete_members') && showSelection ? 7 : 6} className="px-6 py-12">
-                      <div className="flex items-center justify-center">
-                        <GymLoader size="md" />
+                      <div className="flex items-center justify-center text-gray-400">
+                        Loading members...
                       </div>
                     </td>
                   </tr>
@@ -818,8 +818,8 @@ const MembersPage = () => {
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <GymLoader size="md" />
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              Loading members...
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

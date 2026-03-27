@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Member {
   id: number;
@@ -74,11 +74,7 @@ function FullPaymentPage() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <GymLoader size="lg" />
-      </div>
-    );
+    return <TopLoadingBar isLoading={true} progress={30} />;
   }
 
   return (

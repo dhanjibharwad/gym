@@ -61,7 +61,7 @@ function AuditLogsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/audit-logs', {
+      const response = await fetch('/api/audit-logs?page=1&limit=100', {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -164,41 +164,61 @@ function AuditLogsPage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {logs.filter((log) => {
-                const query = searchQuery.toLowerCase();
-                const matchesSearch = log.details.toLowerCase().includes(query) ||
-                  log.user_role.toLowerCase().includes(query);
-                return matchesSearch && filterLogsByTab(log);
-              }).map((log) => (
-                <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                          {log.action}
-                        </span>
-                        <span className="text-sm text-gray-500 capitalize">
-                          {log.entity_type.replace('_', ' ')}
-                        </span>
-                        <span className="text-sm text-gray-400">
-                          ID: {log.entity_id}
-                        </span>
-                      </div>
-                      <p className="text-gray-900 mb-2">{log.details}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          <span className="capitalize">{log.user_role}</span>
+              {(() => {
+                const filteredLogs = logs.filter((log) => {
+                  const query = searchQuery.toLowerCase();
+                  const matchesSearch = log.details.toLowerCase().includes(query) ||
+                    log.user_role.toLowerCase().includes(query);
+                  return matchesSearch && filterLogsByTab(log);
+                });
+                
+                if (filteredLogs.length === 0) {
+                  return (
+                    <div className="text-center py-12">
+                      <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg mb-2">
+                        No {activeTab === 'all' ? '' : tabs.find(t => t.id === activeTab)?.label.toLowerCase() + ' '}logs found
+                      </p>
+                      <p className="text-gray-400">
+                        {activeTab === 'all' 
+                          ? 'Activity logs will appear here'
+                          : `No ${tabs.find(t => t.id === activeTab)?.label.toLowerCase()} activity recorded yet`}
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return filteredLogs.map((log) => (
+                  <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
+                            {log.action}
+                          </span>
+                          <span className="text-sm text-gray-500 capitalize">
+                            {log.entity_type.replace('_', ' ')}
+                          </span>
+                          <span className="text-sm text-gray-400">
+                            ID: {log.entity_id}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatDateTime(log.created_at)}</span>
+                        <p className="text-gray-900 mb-2">{log.details}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            <span className="capitalize">{log.user_role}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            <span>{formatDateTime(log.created_at)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           )}
         </div>

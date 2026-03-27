@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, ChangeEvent, FormEvent, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   User, 
   Phone, 
@@ -14,7 +15,9 @@ import {
   Camera,
   Users,
   Briefcase,
-  UserCheck
+  UserCheck,
+  FileUp,
+  Download
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
@@ -100,6 +103,7 @@ interface StaffMember {
 }
 
 const AddMemberPage = () => {
+  const router = useRouter();
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [memberType, setMemberType] = useState<'new' | 'existing'>('new');
   const [showSuccess, setShowSuccess] = useState(false);
@@ -744,36 +748,62 @@ const AddMemberPage = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Add New Member</h1>
           <p className="text-gray-600 mt-1">Register a new gym member with complete details</p>
         </div>
         
+        <div className="flex items-center gap-3 flex-wrap justify-center lg:justify-end">
+          {/* Download Template Button */}
+          <button
+            type="button"
+            onClick={() => window.open('/api/members/template', '_blank')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl border border-emerald-700"
+            title="Download Excel template for bulk import"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download Template</span>
+          </button>
+          
+          {/* Bulk Import Button */}
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/bulk-import')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-all font-semibold text-sm shadow-lg hover:shadow-xl border border-orange-700"
+            title="Import multiple members at once"
+          >
+            <FileUp className="w-4 h-4" />
+            <span>Bulk Import</span>
+          </button>
+        </div>
+        
         {/* Member Type Toggle */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setMemberType('new')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all cursor-pointer ${
-              memberType === 'new'
-                ? 'bg-orange-600 text-white shadow-md'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            New Member
-          </button>
-          <button
-            type="button"
-            onClick={() => setMemberType('existing')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all cursor-pointer ${
-              memberType === 'existing'
-                ? 'bg-orange-600 text-white shadow-md'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Existing Member
-          </button>
+        <div className="flex-shrink-0">
+          <div className="inline-flex items-center gap-1 bg-slate-200/80 p-1.5 rounded-xl shadow-inner">
+            <button
+              type="button"
+              onClick={() => setMemberType('new')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-sm ${
+                memberType === 'new'
+                  ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-slate-600 hover:bg-slate-300/50'
+              }`}
+            >
+              New Member
+            </button>
+            <button
+              type="button"
+              onClick={() => setMemberType('existing')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all cursor-pointer text-sm ${
+                memberType === 'existing'
+                  ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg scale-105'
+                  : 'text-slate-600 hover:bg-slate-300/50'
+              }`}
+            >
+              Existing Member
+            </button>
+          </div>
         </div>
       </div>
 

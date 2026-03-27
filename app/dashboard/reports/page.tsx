@@ -24,7 +24,7 @@ import 'jspdf-autotable';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Membership {
   id: number;
@@ -627,9 +627,7 @@ function ReportsPage() {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center items-center py-12">
-          <GymLoader size="lg" />
-        </div>
+        <TopLoadingBar isLoading={true} progress={30} />
       )}
 
       {/* Tab Content */}
