@@ -340,9 +340,23 @@ const Dashboard = () => {
           monthlyRevenue: parseFloat(stats.monthly_revenue) || 0,
           totalRevenue: parseFloat(stats.total_revenue) || 0,
           pendingPayments: parseInt(stats.pending_payments) || 0,
-          recentMembers: safeJsonParse(stats.recent_members_list),
+          recentMembers: safeJsonParse(stats.recent_members_list).map((m: any) => ({
+            id: m.id,
+            name: m.full_name || 'Unknown',
+            plan: m.plan_name || 'No Plan',
+            joinDate: m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB').replace(/\//g, '-') : 'Unknown',
+            status: m.membership_status?.toLowerCase() === 'active' ? 'Active' : m.membership_status?.toLowerCase() === 'expired' ? 'Expired' : m.membership_status?.toLowerCase() === 'suspended' ? 'Suspended' : 'Inactive',
+            profilePhoto: m.profile_photo_url
+          })),
           expiringMembers: [], // Can be added to query if needed
-          upcomingBirthdays: safeJsonParse(stats.upcoming_birthdays_list)
+          upcomingBirthdays: safeJsonParse(stats.upcoming_birthdays_list).map((b: any) => ({
+            id: b.id,
+            name: b.full_name || 'Unknown',
+            birthdayDate: b.date_of_birth ? new Date(b.date_of_birth).toLocaleDateString('en-GB').replace(/\//g, '-') : 'Unknown',
+            age: Math.floor(b.turning_age) || 0,
+            daysUntil: Math.floor(b.days_until_birthday) || 0,
+            profilePhoto: b.profile_photo_url
+          }))
         });
       } else {
         console.error('Failed to fetch dashboard data:', statsData.message);
