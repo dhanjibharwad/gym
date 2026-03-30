@@ -16,13 +16,15 @@ export default function DashboardLayout({
   const { user, loading } = useUser();
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Prefetch common pages after user is loaded
+  // Prefetch common pages IMMEDIATELY after user is loaded - THROTTLED
   useEffect(() => {
     if (!loading && user) {
-      // Start prefetching after a delay to not block initial render
+      console.log('[Dashboard Layout] 🚀 Starting throttled prefetch for role:', user.role);
+      
+      // Start prefetching with longer delay to not overwhelm DB
       const timeoutId = setTimeout(() => {
         prefetchByRole(user.role);
-      }, 2000);
+      }, 1000); // Increased from 500ms to 1000ms
       
       return () => clearTimeout(timeoutId);
     }

@@ -113,13 +113,15 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // Prefetch pages after dashboard data is loaded
+  // Prefetch pages IMMEDIATELY after dashboard data is loaded - THROTTLED
   useEffect(() => {
     if (!loading && user) {
-      // Start background prefetching after a short delay
+      // console.log('[Dashboard Page] 🚀 Starting throttled prefetch after dashboard load');
+      
+      // Start prefetching with delay to not overwhelm DB
       const prefetchTimeout = setTimeout(() => {
         prefetchByRole(user.role);
-      }, 1000); // Wait 1 second after dashboard loads
+      }, 500); // Increased from 200ms to 500ms
       
       return () => clearTimeout(prefetchTimeout);
     }

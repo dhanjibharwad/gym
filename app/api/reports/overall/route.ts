@@ -24,10 +24,13 @@ export async function GET(request: NextRequest) {
     
     // Check cache first (5 minute cache for ultra-fast response)
     const cacheKey = `reports:overall:${companyId}:${period}:${startDate || ''}:${endDate || ''}`;
+    // console.log('[Reports API] Checking cache for key:', cacheKey);
     const cached = cache.get(cacheKey);
     if (cached) {
+      // console.log('[Reports API] ✅ Cache HIT');
       return NextResponse.json(cached);
     }
+    // console.log('[Reports API] ❌ Cache MISS, fetching from DB...');
 
     const client = await pool.connect();
     
@@ -52,6 +55,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get comprehensive overview data - OPTIMIZED with single query
+      // console.log('[Reports API] Fetching overview data for company:', companyId, 'period:', period);
       const overviewResult = await client.query(`
         SELECT 
           -- Membership Statistics
@@ -60,17 +64,28 @@ export async function GET(request: NextRequest) {
           (SELECT COUNT(*) FROM memberships m JOIN members mem ON m.member_id = mem.id WHERE mem.company_id = $1 AND m.status = 'expired' ${dateFilter.replace('created_at', 'm.created_at')}) as expired_memberships,
           
           -- Member Statistics
-          (SELECT COUNT(*) FROM members WHERE company_id = $1 ${dateFilter.replace('created_at', 'created_at')}) as total_members,
-          (SELECT COUNT(*) FROM members WHERE company_id = $1 ${dateFilter.replace('created_at', 'created_at')}) as active_members,
+          (SELECT COUNT(*) FROM members WHERE company_id = $1) as total_members,
+          (SELECT COUNT(*) FROM members m INNER JOIN memberships ms ON m.id = ms.member_id WHERE m.company_id = $1 AND ms.status = 'active') as active_members,
           
-          -- Payment Statistics
-          (SELECT COUNT(*) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 ${dateFilter.replace('created_at', 'pt.transaction_date')}) as total_transactions,
-          (SELECT COALESCE(SUM(amount), 0) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 AND pt.transaction_type != 'refund' ${dateFilter.replace('created_at', 'pt.transaction_date')}) as total_revenue,
-          (SELECT COALESCE(SUM(amount), 0) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 AND pt.transaction_type = 'refund' ${dateFilter.replace('created_at', 'pt.transaction_date')}) as total_refunds,
+          -- Payment Statistics (from payment_transactions if exists, otherwise from payments)
+          COALESCE(
+            (SELECT COUNT(*) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 ${dateFilter.replace('created_at', 'pt.transaction_date')}),
+            (SELECT COUNT(*) FROM payments p JOIN memberships ms ON p.membership_id = ms.id JOIN members mem ON ms.member_id = mem.id WHERE mem.company_id = $1 ${dateFilter.replace('created_at', 'p.created_at')})
+          ) as total_transactions,
+          COALESCE(
+            (SELECT SUM(amount) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 AND pt.transaction_type != 'refund' ${dateFilter.replace('created_at', 'pt.transaction_date')}),
+            (SELECT SUM(paid_amount) FROM payments p JOIN memberships ms ON p.membership_id = ms.id JOIN members mem ON ms.member_id = mem.id WHERE mem.company_id = $1 ${dateFilter.replace('created_at', 'p.created_at')})
+          ) as total_revenue,
+          COALESCE(
+            (SELECT SUM(amount) FROM payment_transactions pt JOIN memberships ms ON pt.membership_id = ms.id JOIN members mem ON pt.member_id = mem.id WHERE mem.company_id = $1 AND pt.transaction_type = 'refund' ${dateFilter.replace('created_at', 'pt.transaction_date')}),
+            0
+          ) as total_refunds,
           
           -- Plan Statistics
-          (SELECT COUNT(DISTINCT plan_id) FROM memberships m JOIN members mem ON m.member_id = mem.id WHERE mem.company_id = $1 ${dateFilter.replace('created_at', 'm.created_at')}) as active_plans
+          (SELECT COUNT(DISTINCT plan_id) FROM memberships m JOIN members mem ON m.member_id = mem.id WHERE mem.company_id = $1 AND m.status = 'active') as active_plans
       `, dateParams.length > 1 ? [companyId, ...dateParams.slice(1)] : [companyId]);
+      
+      // console.log('[Reports API] Overview result:', overviewResult.rows[0]);
 
       // Get recent activities
       const recentActivitiesResult = await client.query(`

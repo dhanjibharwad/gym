@@ -99,10 +99,35 @@ export async function POST(request: NextRequest) {
 
     // Send email with login credentials
     try {
+      console.log(`[EMAIL] Attempting to send credentials to: ${normalizedEmail}`);
+      console.log(`[EMAIL] Email config:`, {
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        user: process.env.EMAIL_USER ? '***' + process.env.EMAIL_USER.slice(-4) : 'NOT_SET',
+        pass: process.env.EMAIL_APP_PASSWORD ? '***' + process.env.EMAIL_APP_PASSWORD.slice(-4) : 'NOT_SET'
+      });
+      
       await sendStaffCredentialsEmail(normalizedEmail, name.trim(), tempPassword, selectedRole.name);
+      console.log(`[EMAIL] ✅ Credentials email sent successfully to: ${normalizedEmail}`);
     } catch (emailError) {
-      console.error('Failed to send credentials email:', emailError);
-      // Don't fail the creation if email fails
+      console.error('[EMAIL] ❌ Failed to send credentials email:', emailError);
+      console.error('[EMAIL] Error details:', {
+        message: emailError instanceof Error ? emailError.message : emailError,
+        stack: emailError instanceof Error ? emailError.stack : undefined
+      });
+      
+      // Return warning but don't fail the creation
+      return NextResponse.json({
+        message: 'Staff member added successfully, but email sending failed',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: selectedRole.name,
+        },
+        warning: 'Login credentials email could not be sent. Please contact the staff member manually.',
+        emailError: emailError instanceof Error ? emailError.message : 'Unknown error'
+      });
     }
 
     return NextResponse.json({
@@ -126,21 +151,36 @@ export async function POST(request: NextRequest) {
 
 // Send credentials email to new staff
 async function sendStaffCredentialsEmail(email: string, name: string, password: string, roleName: string) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '465'),
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
-  });
+  try {
+    console.log(`[EMAIL] Creating transporter with config:`, {
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER ? '***' + process.env.EMAIL_USER.slice(-4) : 'NOT_SET',
+        pass: process.env.EMAIL_APP_PASSWORD ? '***' + process.env.EMAIL_APP_PASSWORD.slice(-4) : 'NOT_SET'
+      }
+    });
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Welcome to Our  Gym - Your Login Credentials',
-    html: `
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT || '465'),
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD,
+      },
+    });
+
+    // Verify transporter is created successfully
+    await transporter.verify();
+    console.log('[EMAIL] ✅ Transporter verified successfully');
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Welcome to Our  Gym - Your Login Credentials',
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #ea580c;">Welcome to Our  Gym!</h2>
         <p>Hello ${name},</p>
@@ -153,7 +193,7 @@ async function sendStaffCredentialsEmail(email: string, name: string, password: 
         
         <p><strong>Next Steps:</strong></p>
         <ol>
-          <li>Visit the gym management system login page</li>
+          <li>Visit gym management system login page</li>
           <li>Use the credentials above to log in</li>
           <li>Change your password after first login for security</li>
         </ol>
@@ -162,8 +202,15 @@ async function sendStaffCredentialsEmail(email: string, name: string, password: 
         
         <p>Best regards,<br>Our  Gym Management Team</p>
       </div>
-    `,
-  };
+      `,
+    };
 
-  await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Sending email to: ${email}`);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('[EMAIL] ✅ Email sent successfully:', result.messageId);
+    return result;
+  } catch (error) {
+    console.error('[EMAIL] ❌ Error sending email:', error);
+    throw error;
+  }
 }

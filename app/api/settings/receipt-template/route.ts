@@ -4,18 +4,31 @@ import { getSession } from '@/lib/auth';
 import { checkPermission } from '@/lib/api-permissions';
 
 export async function GET() {
+  const startTime = Date.now();
+  
   try {
     const session = await getSession();
     if (!session?.user?.companyId) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await pool.query(
+    console.log(`Receipt template API called for company ${session.user.companyId}`);
+
+    // Use a timeout promise to prevent long-running queries
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 5000);
+    });
+
+    const queryPromise = pool.query(
       'SELECT receipt_template FROM settings WHERE company_id = $1',
       [session.user.companyId]
     );
 
+    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
     const template = result.rows[0]?.receipt_template || null;
+
+    const duration = Date.now() - startTime;
+    console.log(`Receipt template API completed in ${duration}ms for company ${session.user.companyId}`);
 
     // Return with no-cache headers to prevent cross-company caching
     return new NextResponse(
@@ -35,7 +48,9 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('Error fetching receipt template:', error);
+    const duration = Date.now() - startTime;
+    console.error(`Error fetching receipt template after ${duration}ms:`, error);
+    
     return NextResponse.json({
       success: false,
       message: 'Failed to fetch receipt template'

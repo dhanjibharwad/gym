@@ -156,6 +156,33 @@ export async function POST(request: NextRequest) {
                 ]
               );
             }
+          } else if (membershipId) {
+            // Even if no payment is being processed, create a payment record with 0 paid
+            // This ensures the member shows up in the payments list
+            const planResult = await client.query(
+              'SELECT plan_name, price FROM membership_plans WHERE id = $1',
+              [membership.planId]
+            );
+            
+            if (planResult.rows.length > 0) {
+              const planAmount = parseFloat(planResult.rows[0].price) || 0;
+              
+              await client.query(
+                `INSERT INTO payments (
+                  membership_id, total_amount, paid_amount, payment_mode,
+                  payment_status, reference_number, next_due_date
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [
+                  membershipId,
+                  planAmount,
+                  0, // No payment made yet
+                  'Cash',
+                  'pending',
+                  null,
+                  membership.startDate // Use start date as next due date
+                ]
+              );
+            }
           }
 
           successCount++;
@@ -167,6 +194,11 @@ export async function POST(request: NextRequest) {
       }
 
       await client.query('COMMIT');
+
+      // Invalidate payments cache to refresh the list
+      const { cache } = await import('@/lib/cache/MemoryCache');
+      const paymentCacheKey = `payments:list:${session.user.companyId}:1:20:::`;
+      cache.delete(paymentCacheKey);
 
       return NextResponse.json({
         success: true,

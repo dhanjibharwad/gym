@@ -408,7 +408,13 @@ export async function DELETE(
         [memberId]
       );
 
-      // 6. Finally delete the member
+      // 6. Delete member payment summary
+      await client.query(
+        'DELETE FROM member_payment_summary WHERE member_id = $1',
+        [memberId]
+      );
+
+      // 7. Finally delete the member
       await client.query(
         'DELETE FROM members WHERE id = $1 AND company_id = $2',
         [memberId, companyId]

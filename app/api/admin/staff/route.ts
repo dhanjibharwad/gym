@@ -17,8 +17,11 @@ export async function GET(request: NextRequest) {
     const cacheKey = `staff:list:${companyId}`;
     const cached = cache.get(cacheKey);
     if (cached) {
+      console.log(`[Staff API] ✅ Cache HIT for company ${companyId}`);
       return NextResponse.json({ staff: cached });
     }
+    
+    console.log(`[Staff API] ❌ Cache MISS for company ${companyId}, fetching from DB...`);
 
     const result = await pool.query(
       `SELECT u.id, u.name, u.email, r.name as role, r.id as role_id, u.is_verified, u.created_at 
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Cache for 5 minutes
     cache.set(cacheKey, result.rows, 300);
+    console.log(`[Staff API] ✅ Cached ${result.rows.length} staff members`);
 
     return NextResponse.json({ staff: result.rows });
   } catch (error) {

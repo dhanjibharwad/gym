@@ -284,8 +284,12 @@ function ReportsPage() {
             }
           });
           const overallData = await overallRes.json();
+          console.log('[Reports Page] Overall API Response:', overallData);
           if (overallData.success) {
+            console.log('[Reports Page] Setting overall data with overview:', overallData.overview);
             setOverallData(overallData);
+          } else {
+            console.error('Overall API error:', overallData.message, overallData.error);
           }
           break;
       }

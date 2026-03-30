@@ -9,6 +9,13 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const session = await getSession();
 
+    if (!session?.user?.companyId) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Check if this is for an existing member
     const memberType = formData.get('memberType') as string;
     const existingMemberId = formData.get('existingMemberId') as string;
@@ -90,6 +97,7 @@ export async function POST(request: NextRequest) {
           [session?.user?.companyId, parsedMemberNumber]
         );
         if (existingNumber.rows.length > 0) {
+          await client.query('ROLLBACK');
           return NextResponse.json(
             { success: false, message: 'Serial No. already exists' },
             { status: 400 }
@@ -153,8 +161,8 @@ export async function POST(request: NextRequest) {
 
       // Get plan ID
       const planResult = await client.query(
-        'SELECT id FROM membership_plans WHERE plan_name = $1',
-        [data.selectedPlan]
+        'SELECT id FROM membership_plans WHERE plan_name = $1 AND company_id = $2',
+        [data.selectedPlan, session.user.companyId]
       );
 
       if (planResult.rows.length === 0) {
@@ -169,8 +177,8 @@ export async function POST(request: NextRequest) {
         endDate = data.planEndDate;
       } else {
         const planDetailsResult = await client.query(
-          'SELECT duration_months FROM membership_plans WHERE id = $1',
-          [planId]
+          'SELECT duration_months FROM membership_plans WHERE id = $1 AND company_id = $2',
+          [planId, session.user.companyId]
         );
 
         const startDate = new Date(data.planStartDate);

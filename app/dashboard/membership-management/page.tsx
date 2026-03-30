@@ -104,7 +104,7 @@ const MembershipDashboard = () => {
   };
 
   const selectFilteredMembers = () => {
-    const filteredMembers = filteredMembersList.map(m => m.id);
+    const filteredMembers = membersWithoutMembership.map(m => m.id);
     setSelectedMembers(filteredMembers);
   };
 
@@ -348,10 +348,10 @@ const MembershipDashboard = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
                     <input
                       type="checkbox"
-                      checked={selectedMembers.length === filteredMembersList.length}
+                      checked={membersWithoutMembership.length > 0 && selectedMembers.length === membersWithoutMembership.length}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedMembers(filteredMembersList.map(m => m.id));
+                          setSelectedMembers(membersWithoutMembership.map(m => m.id));
                         } else {
                           setSelectedMembers([]);
                         }
@@ -366,7 +366,7 @@ const MembershipDashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredMembersList.map((member) => (
+                {membersWithoutMembership.map((member) => (
                   <tr key={member.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -414,7 +414,7 @@ const MembershipDashboard = () => {
               </tbody>
             </table>
             
-            {filteredMembersList.length === 0 && (
+            {membersWithoutMembership.length === 0 && (
               <div className="p-8 text-center text-slate-500">
                 No members found matching your criteria
               </div>

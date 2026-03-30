@@ -109,12 +109,22 @@ function ReceiptTemplatePage() {
           'Cache-Control': 'no-cache',
         }
       });
-      const data = await response.json();
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 10000);
+      });
+      
+      const dataPromise = response.json();
+      const data = await Promise.race([dataPromise, timeoutPromise]) as any;
+      
       if (data.success && data.template) {
         setTemplate({ ...defaultTemplate, ...data.template });
       }
     } catch (error) {
       console.error('Error loading template:', error);
+      // Set default template on error to prevent infinite loading
+      setTemplate(defaultTemplate);
     } finally {
       setLoading(false);
     }

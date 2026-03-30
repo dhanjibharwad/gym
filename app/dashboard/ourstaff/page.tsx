@@ -96,8 +96,19 @@ function OurStaffPage() {
   };
 
   useEffect(() => {
-    fetchStaff();
-    fetchRoles();
+    // Fetch both in parallel but with Promise.all for better performance
+    const loadData = async () => {
+      try {
+        await Promise.all([
+          fetchStaff(),
+          fetchRoles()
+        ]);
+      } catch (error) {
+        console.error('Error loading staff data:', error);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const handleEdit = (member: any) => {

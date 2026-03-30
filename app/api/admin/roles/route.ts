@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
     const cacheKey = `admin:roles:${companyId}`;
     const cached = cache.get(cacheKey);
     if (cached) {
+      console.log(`[Roles API] ✅ Cache HIT for company ${companyId}`);
       return NextResponse.json({ roles: cached });
     }
+    
+    console.log(`[Roles API] ❌ Cache MISS for company ${companyId}, fetching from DB...`);
 
     const result = await pool.query(
       `SELECT r.id, r.name, r.description, r.is_protected, r.is_system_role,
@@ -36,6 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Cache for 5 minutes
     cache.set(cacheKey, result.rows, 300);
+    console.log(`[Roles API] ✅ Cached ${result.rows.length} roles`);
 
     return NextResponse.json({ roles: result.rows });
   } catch (error) {

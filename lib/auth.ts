@@ -63,48 +63,81 @@ export async function getSession() {
       };
     }
     
-    const result = await pool.query(
-      `SELECT 
-        s.id as session_id,
-        s.expires_at,
-        u.id as user_id,
-        u.company_id,
-        u.email,
-        u.name,
-        u.phone,
-        u.is_verified,
-        c.name as company_name,
-        c.subdomain,
-        r.name as role
-       FROM sessions s 
-       JOIN users u ON s.user_id = u.id 
-       JOIN companies c ON u.company_id = c.id
-       LEFT JOIN roles r ON u.role_id = r.id
-       WHERE s.session_token = $1 AND s.expires_at > NOW()`,
-      [token]
-    );
+    const maxRetries = 3;
+    let retries = 0;
+    let lastError: any = null;
+    let result: any;
 
-    if (result.rows.length === 0) return null;
+    while (retries < maxRetries) {
+      try {
+        // Add small delay to allow connections to be freed
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, retries), 1000)));
+        }
+        
+        result = await pool.query(
+          `SELECT 
+            s.id as session_id,
+            s.expires_at,
+            u.id as user_id,
+            u.company_id,
+            u.email,
+            u.name,
+            u.phone,
+            u.is_verified,
+            c.name as company_name,
+            c.subdomain,
+            r.name as role
+           FROM sessions s 
+           JOIN users u ON s.user_id = u.id 
+           JOIN companies c ON u.company_id = c.id
+           LEFT JOIN roles r ON u.role_id = r.id
+           WHERE s.session_token = $1 AND s.expires_at > NOW()`,
+          [token]
+        );
 
-    const data = result.rows[0];
-    return {
-      user: {
-        id: data.user_id,
-        companyId: data.company_id,
-        email: data.email,
-        name: data.name,
-        phone: data.phone,
-        role: data.role,
-        isVerified: data.is_verified,
-      },
-      company: {
-        id: data.company_id,
-        name: data.company_name,
-        subdomain: data.subdomain,
-      },
-      sessionId: data.session_id,
-      expiresAt: data.expires_at,
-    };
+        if (result.rows.length === 0) return null;
+
+        const data = result.rows[0];
+        return {
+          user: {
+            id: data.user_id,
+            companyId: data.company_id,
+            email: data.email,
+            name: data.name,
+            phone: data.phone,
+            role: data.role,
+            isVerified: data.is_verified,
+          },
+          company: {
+            id: data.company_id,
+            name: data.company_name,
+            subdomain: data.subdomain,
+          },
+          sessionId: data.session_id,
+          expiresAt: data.expires_at,
+        };
+      } catch (error) {
+        lastError = error;
+        retries++;
+        
+        // Log retry attempt
+        if (retries < maxRetries) {
+          console.warn(`Session verification retry ${retries}/${maxRetries}:`, error instanceof Error ? error.message : error);
+        }
+        
+        // If it's a connection pool issue, wait longer
+        if (error instanceof Error && (
+          error.message.includes('too many clients') || 
+          error.message.includes('ECONNRESET')
+        )) {
+          await new Promise(resolve => setTimeout(resolve, 500 * retries));
+        }
+      }
+    }
+    
+    console.error('Failed to retrieve session after', maxRetries, 'retries:', lastError);
+    return null;
   } catch (error) {
     console.error('Session verification error:', error);
     return null;

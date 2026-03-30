@@ -153,6 +153,15 @@ const PaymentsPage = () => {
       return;
     }
     
+    console.log('Submitting payment:', {
+      member_id: selectedPayment.member_id,
+      membership_id: selectedPayment.membership_id,
+      amount,
+      payment_mode: newPayment.payment_mode,
+      payment_date: newPayment.payment_date,
+      reference_number: newPayment.reference_number
+    });
+    
     setSubmitting(true);
     try {
       const response = await fetch('/api/payments/add', {
@@ -170,11 +179,11 @@ const PaymentsPage = () => {
         })
       });
       
-      if (!response.ok) {
-        throw new Error('Payment submission failed');
-      }
-      
       const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Payment submission failed');
+      }
       
       if (result.success) {
         setPayments(prevPayments => 
@@ -182,9 +191,9 @@ const PaymentsPage = () => {
             p.membership_id === selectedPayment.membership_id 
               ? {
                   ...p,
-                  paid_amount: p.paid_amount + amount,
-                  payment_status: (p.paid_amount + amount) >= p.total_amount ? 'full' : 
-                                 (p.paid_amount + amount) > 0 ? 'partial' : 'pending'
+                  paid_amount: Number(p.paid_amount) + amount,
+                  payment_status: (Number(p.paid_amount) + amount) >= Number(p.total_amount) ? 'full' : 
+                                 (Number(p.paid_amount) + amount) > 0 ? 'partial' : 'pending'
                 }
               : p
           )
@@ -199,7 +208,10 @@ const PaymentsPage = () => {
       }
     } catch (error) {
       console.error('Error adding payment:', error);
-      setNotification({type: 'error', message: 'Error adding payment. Please try again.'});
+      setNotification({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Error adding payment. Please try again.' 
+      });
     } finally {
       setSubmitting(false);
     }
@@ -289,11 +301,16 @@ const PaymentsPage = () => {
     try {
       const response = await fetch('/api/payments');
       
+      console.log('Fetch payments response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch payments');
+        const errorText = await response.text();
+        console.error('Payment API error response:', errorText);
+        throw new Error(`Failed to fetch payments: ${response.status} ${response.statusText}`);
       }
       
       const result = await response.json();
+      console.log('Fetched payments result:', result);
       
       if (result.success) {
         setPayments(result.payments);
@@ -391,10 +408,10 @@ const PaymentsPage = () => {
     return new Date(dueDate) < new Date();
   };
 
-  const totalRevenue = payments.reduce((sum, payment) => sum + payment.paid_amount, 0);
+  const totalRevenue = payments.reduce((sum, payment) => sum + (Number(payment.paid_amount) || 0), 0);
   const pendingAmount = payments
     .filter(p => p.payment_status === 'pending' || p.payment_status === 'partial')
-    .reduce((sum, payment) => sum + (payment.total_amount - payment.paid_amount), 0);
+    .reduce((sum, payment) => sum + ((Number(payment.total_amount) || 0) - (Number(payment.paid_amount) || 0)), 0);
   const fullPayments = payments.filter(p => p.payment_status === 'full').length;
   const overduePayments = payments.filter(p => p.payment_status !== 'full' && isOverdue(p.next_due_date)).length;
 
@@ -406,12 +423,57 @@ const PaymentsPage = () => {
     <div className="space-y-6">
       {notification && <Toast message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
 
+      {/* Alert for members without membership */}
+      {payments.some(p => p.payment_status === 'pending' && p.paid_amount === 0) && (
+        <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-lg shadow-sm">
+          <div className="flex items-start">
+            <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 mr-3" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-orange-800">Members Needing Membership Assignment</h3>
+              <p className="text-sm text-orange-700 mt-1">
+                Some members don't have active memberships. Click the button below to assign memberships.
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/dashboard/membership-management'}
+              className="ml-4 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors text-sm font-medium whitespace-nowrap cursor-pointer"
+            >
+              Assign Membership
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-600 mt-1">Track and manage member payments</p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
+          <button
+            onClick={() => {
+              fetchPayments();
+              fetchPaymentHistory();
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2 cursor-pointer shadow-sm"
+            title="Refresh payment data"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+              <path d="M16 21h5v-5"/>
+            </svg>
+            Refresh
+          </button>
+          <button
+            onClick={() => window.location.href = '/dashboard/membership-management'}
+            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2 cursor-pointer shadow-sm"
+            title="Assign memberships to members without one"
+          >
+            <User className="w-4 h-4" />
+            Assign Membership
+          </button>
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('summary')}

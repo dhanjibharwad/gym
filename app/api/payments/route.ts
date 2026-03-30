@@ -4,15 +4,19 @@ import { checkPermission } from '@/lib/api-permissions';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('=== Payments API Request ===');
+    
     // Check view_payments permission
     const { authorized, response } = await checkPermission(request, 'view_payments');
+    console.log('Permission check:', authorized ? 'Authorized' : 'Unauthorized');
     if (!authorized) return response;
 
     const companyId = request.headers.get('x-company-id');
+    console.log('Company ID from headers:', companyId);
     
     if (!companyId) {
       return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
+        { success: false, message: 'Company ID required' },
         { status: 401 }
       );
     }

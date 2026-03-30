@@ -227,6 +227,8 @@ export const paymentOps = {
     const { page = 1, limit = 20, status = '', startDate = '', endDate = '' } = options;
     const offset = (page - 1) * limit;
 
+    console.log('PaymentOps.getList called:', { companyId, page, limit, status });
+    
     const cacheKey = `payments:list:${companyId}:${page}:${limit}:${status}:${startDate}:${endDate}`;
     
     if (queryOptions.useCache) {
@@ -236,6 +238,8 @@ export const paymentOps = {
 
     const client = await pool.connect();
     try {
+      console.log('Database client connected, executing query...');
+      
       const conditions: string[] = ['m.company_id = $1']; // Filter by members.company_id instead
       const params: any[] = [companyId];
       let paramIndex = 2;
@@ -260,6 +264,8 @@ export const paymentOps = {
 
       const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
+      console.log('Building count query with conditions:', whereClause);
+      
       // Get total count
       const countResult = await client.query(
         `SELECT COUNT(*) as total FROM payments p 
@@ -274,15 +280,20 @@ export const paymentOps = {
       const query = `
         SELECT 
           p.id,
+          p.membership_id,
+          ms.member_id,
           p.total_amount,
           p.paid_amount,
           p.payment_mode,
           p.payment_status,
           p.created_at,
+          p.next_due_date,
           m.full_name,
           m.phone_number,
           m.profile_photo_url,
-          mp.plan_name
+          mp.plan_name,
+          ms.start_date,
+          ms.end_date
         FROM payments p
         JOIN memberships ms ON p.membership_id = ms.id
         JOIN members m ON ms.member_id = m.id
@@ -293,6 +304,7 @@ export const paymentOps = {
       `;
 
       const result = await client.query(query, [...params, limit, offset]);
+      console.log('Query executed successfully, rows returned:', result.rows.length);
 
       const response = {
         payments: result.rows,
@@ -311,6 +323,9 @@ export const paymentOps = {
       }
 
       return response;
+    } catch (error) {
+      console.error('PaymentOps.getList query error:', error);
+      throw error;
     } finally {
       client.release();
     }

@@ -20,8 +20,11 @@ export async function GET(request: NextRequest) {
     const cacheKey = `membership-plans:${companyId}`;
     const cached = cache.get(cacheKey);
     if (cached) {
+      // console.log(`[Membership Plans API] ✅ Cache HIT for company ${companyId}`);
       return NextResponse.json({ success: true, plans: cached });
     }
+    
+    // console.log(`[Membership Plans API] ❌ Cache MISS for company ${companyId}, fetching from DB...`);
     
     const client = await pool.connect();
     
@@ -44,6 +47,7 @@ export async function GET(request: NextRequest) {
       
       // Cache for 5 minutes (300 seconds)
       cache.set(cacheKey, plans, 300);
+      // console.log(`[Membership Plans API] ✅ Cached ${plans.length} plans`);
       
       return NextResponse.json({
         success: true,

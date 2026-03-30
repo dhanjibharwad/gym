@@ -300,6 +300,11 @@ const MembersPage = () => {
       none: <Clock className="w-3 h-3" />
     };
     
+    // Handle null/undefined status
+    if (!status) {
+      status = 'none';
+    }
+    
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`}>
         {icons[status as keyof typeof icons]}
@@ -308,7 +313,16 @@ const MembersPage = () => {
     );
   };
 
-  const membersWithoutMembershipCount = members.filter(m => m.membership_status === 'none').length;
+  const membersWithoutMembershipCount = members.filter(m => 
+    m.membership_status === 'none' || 
+    m.membership_status === 'expired'
+  ).length;
+  
+  console.log('[Members Page] Total members:', members.length);
+  console.log('[Members Page] Without membership count:', membersWithoutMembershipCount);
+  if (members.length > 0) {
+    console.log('[Members Page] First member status:', members[0].membership_status);
+  }
 
   const toggleMemberSelection = (memberId: number) => {
     setSelectedMembers(prev => 
@@ -460,7 +474,9 @@ const MembersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <TopLoadingBar />
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -468,6 +484,21 @@ const MembersPage = () => {
           <p className="text-gray-600 mt-1">Manage gym members</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-4">
+          {/* Assign Membership Button - Always show */}
+          <button
+            onClick={() => window.location.href = '/dashboard/membership-management'}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm cursor-pointer"
+            title="Assign memberships to members"
+          >
+            <User className="w-4 h-4" />
+            Assign Membership
+            {membersWithoutMembershipCount > 0 && (
+              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                {membersWithoutMembershipCount}
+              </span>
+            )}
+          </button>
+          
           <span className="text-sm text-gray-500">
             Total Members: <span className="font-semibold text-gray-900">{pagination.total.toLocaleString()}</span>
           </span>
@@ -774,6 +805,18 @@ const MembersPage = () => {
                           >
                             View
                           </button>
+                          
+                          {/* Add/Manage Membership button - visible when member has no/expired membership */}
+                          {(member.membership_status === 'none' || member.membership_status === 'expired') && (
+                            <button
+                              onClick={() => router.push(`/dashboard/members/${member.id}`)}
+                              className="px-3 py-1 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                              title={member.membership_status === 'none' ? 'Add membership' : 'Renew membership'}
+                            >
+                              {member.membership_status === 'none' ? 'Add Membership' : 'Renew'}
+                            </button>
+                          )}
+                          
                           {/* Edit button - allows inline editing of member's phone and email
                               Only visible to users with 'edit_members' permission */}
                           {/* {can('edit_members') && (
@@ -1196,6 +1239,7 @@ const MembersPage = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

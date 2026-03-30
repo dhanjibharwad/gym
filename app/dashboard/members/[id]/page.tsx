@@ -11,7 +11,7 @@ import {
 import Toast from '@/app/components/Toast';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import MembershipReceipt from '@/components/MembershipReceipt';
-import GymLoader from '@/components/GymLoader';
+import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Member {
   id: number;
@@ -371,9 +371,9 @@ const MemberProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <GymLoader size="lg" />
-      </div>
+      <>
+        <TopLoadingBar isLoading={true} progress={50} />
+      </>
     );
   }
 
