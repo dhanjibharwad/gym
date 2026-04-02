@@ -181,7 +181,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
           @media print {
             @page {
               size: A4;
-              margin: 0;
+              margin: 10mm;
             }
             body {
               margin: 0;
@@ -190,11 +190,10 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               print-color-adjust: exact !important;
             }
             .receipt-container {
-              width: 210mm !important;
-              min-height: 297mm !important;
-              max-width: 210mm !important;
-              margin: 0 !important;
-              padding: 10mm !important;
+              width: 190mm !important;
+              max-width: 190mm !important;
+              margin: 0 auto !important;
+              padding: 0 !important;
               box-shadow: none !important;
             }
           }
@@ -393,17 +392,13 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>{payment?.total_amount || membership.plan_price}</span>
                 </div>
-                <span style={{ fontSize: '10pt' }}>(Cash / G.Pay / CC.)</span>
-                <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '10pt' }}>{payment?.payment_mode || 'Cash'}</span>
-                </div>
               </div>
               
               {/* Paid Amount Row - Show payment history if available */}
               {paymentHistory && paymentHistory.length > 0 ? (
-                paymentHistory.map((trans, idx) => (
+                [...paymentHistory].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()).map((trans, idx) => (
                   <div key={trans.id || idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '10pt' }}>({String.fromCharCode(97 + idx + 1)}) Payment {idx + 1} :</span>
+                    <span style={{ fontSize: '10pt' }}>({String.fromCharCode(97 + idx)}) Payment {idx + 1} :</span>
                     <span style={{ fontSize: '10pt' }}>Rs. :</span>
                     <div style={{ width: '70px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                       <span style={{ fontSize: '10pt' }}>{Number(trans.amount).toFixed(0)}</span>
@@ -434,7 +429,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               
               {/* Balance Payment Row */}
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <span style={{ fontSize: '10pt' }}>(iii) Balance Payment : Date</span>
+                <span style={{ fontSize: '10pt' }}>(ii) Balance Payment : Date</span>
                 <div style={{ width: '100px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>
                     {payment?.payment_status === 'partial' 
@@ -594,9 +589,9 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
         </div>
 
         {/* Rules and Regulations */}
+        <div style={{ pageBreakBefore: 'always', paddingTop: '10mm' }}>
         <div style={{
           border: '2px solid #1e3a8a',
-          borderTop: 'none',
           padding: '12px',
           backgroundColor: '#f9fafb',
         }}>
@@ -648,6 +643,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
               </div>
             </div>
           )}
+        </div>
         </div>
 
         {/* Footer */}
