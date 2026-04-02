@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 import { checkPermission } from '@/lib/api-permissions';
 import { createAuditLog } from '@/lib/audit-logger';
 import { cache } from '@/lib/cache/MemoryCache';
-import nodemailer from 'nodemailer';
+import { sendStaffEmail } from '@/lib/staff-email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,15 +87,23 @@ export async function POST(request: NextRequest) {
     cache.delete(`staff:list:v2:${auth.session!.user.companyId}`);
 
     // Send email with login credentials
-    let emailSent = false;
-    let emailErrorMsg = '';
-    try {
-      await sendStaffCredentialsEmail(normalizedEmail, name.trim(), password, selectedRole.name);
-      emailSent = true;
-    } catch (emailError) {
-      console.error('[EMAIL] ❌ Failed to send credentials email:', emailError);
-      emailErrorMsg = emailError instanceof Error ? emailError.message : 'Unknown error';
-    }
+    const loginUrl = process.env.NEXTAUTH_URL || 'http://localhost:8004';
+    const { sent: emailSent, error: emailErrorMsg } = await sendStaffEmail(
+      auth.session!.user.companyId,
+      normalizedEmail,
+      'Welcome to Our Gym - Your Login Credentials',
+      `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+        <h2 style="color:#ea580c">Welcome to Our Gym!</h2>
+        <p>Hello ${name.trim()},</p>
+        <p>You have been added as a <strong>${selectedRole.name}</strong> staff member. Here are your login credentials:</p>
+        <div style="background:#f3f4f6;padding:20px;border-radius:8px;margin:20px 0">
+          <p><strong>Login URL:</strong> <a href="${loginUrl}/auth/login">${loginUrl}/auth/login</a></p>
+          <p><strong>Email:</strong> ${normalizedEmail}</p>
+          <p><strong>Password:</strong> <code style="background:#e5e7eb;padding:4px 8px;border-radius:4px">${password}</code></p>
+        </div>
+        <p>Best regards,<br>Gym Management Team</p>
+      </div>`
+    );
 
     return NextResponse.json({
       message: 'Staff member added successfully',
@@ -116,49 +124,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-async function sendStaffCredentialsEmail(email: string, name: string, password: string, roleName: string) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.hostinger.com',
-    port: parseInt(process.env.EMAIL_PORT || '465'),
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
-
-  await transporter.verify();
-
-  const loginUrl = process.env.NEXTAUTH_URL || 'http://localhost:8004';
-
-  await transporter.sendMail({
-    from: `"Gym Management" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Welcome to Our Gym - Your Login Credentials',
-    html: `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #ea580c;">Welcome to Our Gym!</h2>
-      <p>Hello ${name},</p>
-      <p>You have been added as a <strong>${roleName}</strong> staff member. Here are your login credentials:</p>
-      <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Login URL:</strong> <a href="${loginUrl}/auth/login">${loginUrl}/auth/login</a></p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> <code style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px;">${password}</code></p>
-      </div>
-      <p><strong>Next Steps:</strong></p>
-      <ol>
-        <li>Visit the login page using the URL above</li>
-        <li>Use the credentials above to log in</li>
-        <li>Change your password after first login for security</li>
-      </ol>
-      <p>If you have any questions, please contact your administrator.</p>
-      <p>Best regards,<br>Gym Management Team</p>
-    </div>
-    `,
-  });
 }

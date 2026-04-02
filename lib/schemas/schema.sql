@@ -13,11 +13,15 @@ CREATE TABLE IF NOT EXISTS members (
     emergency_contact_name VARCHAR(255),
     emergency_contact_phone VARCHAR(15),
     profile_photo_url VARCHAR(500),
+    member_number VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(company_id, phone_number),
     UNIQUE(company_id, email)
 );
+
+-- Missing columns for existing databases
+ALTER TABLE members ADD COLUMN IF NOT EXISTS member_number VARCHAR(50);
 
 -- Create membership_plans table
 CREATE TABLE IF NOT EXISTS membership_plans (
@@ -42,15 +46,28 @@ CREATE TABLE IF NOT EXISTS memberships (
     end_date DATE NOT NULL CHECK (end_date > start_date),
     trainer_assigned VARCHAR(255),
     batch_time VARCHAR(50) DEFAULT 'Flexible' CHECK (batch_time IN ('Morning', 'Evening', 'Flexible')),
-    membership_types TEXT[], -- Array to store multiple membership types
+    membership_types TEXT[],
     reference_of_admission VARCHAR(255),
     notes TEXT,
     locker_required BOOLEAN DEFAULT FALSE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired', 'suspended')),
+    is_on_hold BOOLEAN DEFAULT FALSE,
+    hold_start_date DATE,
+    hold_end_date DATE,
+    hold_reason TEXT,
+    original_end_date DATE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'expired', 'suspended', 'on_hold')),
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Missing columns for existing databases
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS date_of_admission DATE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS is_on_hold BOOLEAN DEFAULT FALSE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS hold_start_date DATE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS hold_end_date DATE;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS hold_reason TEXT;
+ALTER TABLE memberships ADD COLUMN IF NOT EXISTS original_end_date DATE;
 
 -- Create payments table
 CREATE TABLE IF NOT EXISTS payments (

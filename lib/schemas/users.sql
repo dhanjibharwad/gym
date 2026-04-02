@@ -15,6 +15,7 @@ CREATE TABLE companies (
     approved_by INTEGER REFERENCES users(id),
     approved_at TIMESTAMP,
     rejection_reason TEXT,
+    subscription_plan_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -25,6 +26,7 @@ CREATE TABLE roles (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     is_system_role BOOLEAN DEFAULT FALSE,
+    is_protected BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(company_id, name)
 );
@@ -57,6 +59,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     is_verified BOOLEAN DEFAULT FALSE,
+    is_company_owner BOOLEAN DEFAULT FALSE,
     last_login_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
