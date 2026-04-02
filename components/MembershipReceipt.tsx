@@ -571,7 +571,7 @@ const MembershipReceipt = forwardRef<HTMLDivElement, MembershipReceiptProps>(
                 }}>{membership.membership_types?.includes('Diet') ? '✓' : ''}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '10px' }}>
-                <span style={{ fontSize: '10pt' }}>Sr. No.</span>
+                <span style={{ fontSize: '10pt' }}>Old Sr. No.</span>
                 <div style={{ width: '80px', borderBottom: '1px solid #9ca3af', paddingBottom: '2px', textAlign: 'center' }}>
                   <span style={{ fontSize: '10pt' }}>{member.formatted_member_id || (member.member_number != null ? String(member.member_number) : '')}</span>
                 </div>
