@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X } from 'lucide-react';
+import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X, Copy, Check, KeyRound, Eye, EyeOff, KeySquare } from 'lucide-react';
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
@@ -17,6 +17,17 @@ function OurStaffPage() {
   const [editForm, setEditForm] = useState({ name: '', email: '', role_id: '' });
   const [roles, setRoles] = useState([]);
   const [updating, setUpdating] = useState(false);
+  const [newCredentials, setNewCredentials] = useState<{ name: string; email: string; password: string; role: string; emailSent: boolean } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
+  const [resetModal, setResetModal] = useState<{ id: number; name: string } | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<{ password: string; emailSent: boolean } | null>(null);
+
+  const togglePasswordVisibility = (id: number) => {
+    setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  };
   
   // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -31,6 +42,34 @@ function OurStaffPage() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Check for new staff credentials from sessionStorage
+  useEffect(() => {
+    // Small delay to ensure sessionStorage is written before we read
+    const timer = setTimeout(() => {
+      const stored = sessionStorage.getItem('newStaffCredentials');
+      if (stored) {
+        setNewCredentials(JSON.parse(stored));
+        sessionStorage.removeItem('newStaffCredentials');
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const copyToClipboard = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const copyAllCredentials = async () => {
+    if (!newCredentials) return;
+    const loginUrl = window.location.origin + '/auth/login';
+    const text = `Staff Login Credentials\nName: ${newCredentials.name}\nRole: ${newCredentials.role}\nEmail: ${newCredentials.email}\nPassword: ${newCredentials.password}\nLogin URL: ${loginUrl}`;
+    await navigator.clipboard.writeText(text);
+    setCopiedField('all');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -56,6 +95,33 @@ function OurStaffPage() {
       }
     } catch (error) {
       console.error('Failed to fetch roles:', error);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetModal || !resetPassword.trim()) return;
+    setResetLoading(true);
+    try {
+      const res = await fetch(`/api/admin/staff/${resetModal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: resetPassword.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStaff(staff.map((s: any) =>
+          s.id === resetModal.id ? { ...s, password: resetPassword.trim() } : s
+        ));
+        setResetResult({ password: resetPassword.trim(), emailSent: data.emailSent });
+        setToast({ message: 'Password reset successfully', type: 'success' });
+      } else {
+        const data = await res.json();
+        setToast({ message: data.error || 'Failed to reset password', type: 'error' });
+      }
+    } catch {
+      setToast({ message: 'Failed to reset password', type: 'error' });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -181,6 +247,55 @@ function OurStaffPage() {
           )}
         </div>
 
+        {/* New Staff Credentials Banner */}
+        {newCredentials && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 bg-green-100 border-b border-green-200">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-green-700" />
+                <span className="font-semibold text-green-800 text-sm">Staff Added — Login Credentials</span>
+                {!newCredentials.emailSent && (
+                  <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">Email not sent — share manually</span>
+                )}
+              </div>
+              <button onClick={() => setNewCredentials(null)} className="text-green-600 hover:text-green-800">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: 'Name', value: newCredentials.name, key: 'name' },
+                  { label: 'Role', value: newCredentials.role, key: 'role' },
+                  { label: 'Email', value: newCredentials.email, key: 'email' },
+                  { label: 'Password', value: newCredentials.password, key: 'password' },
+                ].map(({ label, value, key }) => (
+                  <div key={key} className="flex items-center justify-between bg-white border border-green-200 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-xs text-gray-500">{label}</p>
+                      <p className="text-sm font-mono font-medium text-gray-900">{value}</p>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(value, key)}
+                      className="ml-3 p-1.5 rounded hover:bg-green-100 text-green-600 transition"
+                      title={`Copy ${label}`}
+                    >
+                      {copiedField === key ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={copyAllCredentials}
+                className="flex items-center gap-2 text-sm font-medium text-green-700 hover:text-green-900 border border-green-300 bg-white px-4 py-2 rounded-lg hover:bg-green-50 transition"
+              >
+                {copiedField === 'all' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copiedField === 'all' ? 'Copied!' : 'Copy All Credentials'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Staff Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -210,6 +325,7 @@ function OurStaffPage() {
                   <tr>
                     <th className="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Member</th>
                     <th className="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="w-1/5 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
                     <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
                     <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -236,6 +352,29 @@ function OurStaffPage() {
                         <div className="text-sm text-gray-900">{member.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono text-gray-900">
+                            {visiblePasswords[member.id] ? member.password : '••••••••'}
+                          </span>
+                          <button
+                            onClick={() => togglePasswordVisibility(member.id)}
+                            className="p-1 text-gray-400 hover:text-gray-600 transition"
+                            title={visiblePasswords[member.id] ? 'Hide' : 'Show'}
+                          >
+                            {visiblePasswords[member.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          {member.password && (
+                            <button
+                              onClick={() => copyToClipboard(member.password, `pwd-${member.id}`)}
+                              className="p-1 text-gray-400 hover:text-orange-600 transition"
+                              title="Copy password"
+                            >
+                              {copiedField === `pwd-${member.id}` ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           member.is_verified 
                             ? 'bg-green-100 text-green-800' 
@@ -252,6 +391,15 @@ function OurStaffPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
+                          {can('edit_staff') && member.role?.toLowerCase() !== 'admin' && (
+                            <button
+                              onClick={() => { setResetModal({ id: member.id, name: member.name }); setResetPassword(''); setResetResult(null); }}
+                              className="p-1 rounded transition text-gray-400 hover:text-orange-600"
+                              title="Reset password"
+                            >
+                              <KeySquare className="w-4 h-4" />
+                            </button>
+                          )}
                           {can('edit_staff') && member.role?.toLowerCase() !== 'admin' && (
                             <button 
                               onClick={() => handleEdit(member)}
@@ -358,7 +506,7 @@ function OurStaffPage() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                 />
               </div>
               
@@ -368,7 +516,7 @@ function OurStaffPage() {
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                 />
               </div>
               
@@ -377,7 +525,7 @@ function OurStaffPage() {
                 <select
                   value={editForm.role_id}
                   onChange={(e) => setEditForm({ ...editForm, role_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                 >
                   <option value="">Select Role</option>
                   {roles.map((role: any) => (
@@ -404,6 +552,90 @@ function OurStaffPage() {
                 {updating ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+            <div className="bg-orange-50 px-6 py-4 border-b border-orange-100 flex items-center gap-3">
+              <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
+                <KeySquare className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Reset Password</h3>
+                <p className="text-xs text-gray-500">{resetModal.name}</p>
+              </div>
+              <button onClick={() => { setResetModal(null); setResetPassword(''); setResetResult(null); }} className="ml-auto text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {!resetResult ? (
+              <>
+                <div className="px-6 py-5">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <input
+                    type="text"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    placeholder="Enter new plain-text password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono text-sm text-gray-900"
+                    autoFocus
+                  />
+                </div>
+                <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                  <button
+                    onClick={() => { setResetModal(null); setResetPassword(''); setResetResult(null); }}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    disabled={resetLoading || !resetPassword.trim()}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50 text-sm font-medium"
+                  >
+                    {resetLoading ? 'Saving...' : 'Reset Password'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-6 py-5 space-y-3">
+                  <div className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg ${
+                    resetResult.emailSent ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+                  }`}>
+                    {resetResult.emailSent
+                      ? <><Check className="w-4 h-4" /> Email sent with new credentials</>
+                      : <><X className="w-4 h-4" /> Email not sent — share manually</>}
+                  </div>
+                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-xs text-gray-500">New Password</p>
+                      <p className="text-sm font-mono font-semibold text-gray-900">{resetResult.password}</p>
+                    </div>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(resetResult!.password)}
+                      className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition"
+                      title="Copy password"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="px-6 py-4 bg-gray-50 flex justify-end">
+                  <button
+                    onClick={() => { setResetModal(null); setResetPassword(''); setResetResult(null); }}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

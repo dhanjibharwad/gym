@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield, ArrowLeft } from 'lucide-react';
+import { UserPlus, Mail, User, AlertCircle, CheckCircle, Users, Shield, ArrowLeft, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import Dropdown from '@/app/components/Dropdown';
 import { PageGuard } from '@/components/rbac/PageGuard';
 
@@ -19,12 +19,16 @@ function AddStaffPage() {
     name: '',
     email: '',
     roleId: '',
+    password: '',
   });
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdCredentials, setCreatedCredentials] = useState<{ name: string; email: string; password: string; role: string; emailSent: boolean } | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchRoles();
@@ -53,6 +57,12 @@ function AddStaffPage() {
     return emailRegex.test(email);
   };
 
+  const copyToClipboard = async (text: string, key: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -79,6 +89,11 @@ function AddStaffPage() {
       return;
     }
 
+    if (!formData.password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -89,6 +104,7 @@ function AddStaffPage() {
           name: formData.name.trim(),
           email: formData.email.trim(),
           roleId: parseInt(formData.roleId),
+          password: formData.password.trim(),
         }),
       });
 
@@ -99,9 +115,15 @@ function AddStaffPage() {
         return;
       }
 
-      const selectedRole = roles.find(r => r.id === parseInt(formData.roleId));
-      setSuccess(`Staff member "${formData.name}" added successfully with role "${selectedRole?.name}"! They will receive login credentials via email.`);
-      setFormData({ name: '', email: '', roleId: '' });
+      setCreatedCredentials({
+        name: data.user.name,
+        email: data.user.email,
+        password: formData.password.trim(),
+        role: data.user.role,
+        emailSent: data.emailSent,
+      });
+      setFormData({ name: '', email: '', roleId: '', password: '' });
+      setShowPassword(false);
     } catch (err) {
       console.error('Add staff error:', err);
       setError('An error occurred. Please try again.');
@@ -149,6 +171,63 @@ function AddStaffPage() {
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <span className="text-sm">{success}</span>
+              </div>
+            )}
+
+            {/* Credentials Card — shown after successful creation */}
+            {createdCredentials && (
+              <div className="bg-green-50 border border-green-200 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-green-100 border-b border-green-200">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-700" />
+                    <span className="font-semibold text-green-800 text-sm">Staff Created Successfully</span>
+                  </div>
+                  {!createdCredentials.emailSent && (
+                    <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 px-2 py-0.5 rounded-full">Email not sent — copy manually</span>
+                  )}
+                  {createdCredentials.emailSent && (
+                    <span className="text-xs bg-green-200 text-green-800 border border-green-300 px-2 py-0.5 rounded-full">Email sent ✓</span>
+                  )}
+                </div>
+                <div className="px-4 py-4 space-y-2">
+                  {[
+                    { label: 'Name', value: createdCredentials.name, key: 'name' },
+                    { label: 'Role', value: createdCredentials.role, key: 'role' },
+                    { label: 'Email', value: createdCredentials.email, key: 'email' },
+                    { label: 'Password', value: createdCredentials.password, key: 'password' },
+                  ].map(({ label, value, key }) => (
+                    <div key={key} className="flex items-center justify-between bg-white border border-green-200 rounded-lg px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500">{label}</p>
+                        <p className="text-sm font-mono font-medium text-gray-900 truncate">
+                          {key === 'password'
+                            ? (showPassword ? value : '••••••••')
+                            : value}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        {key === 'password' && (
+                          <button onClick={() => setShowPassword(p => !p)} className="p-1.5 rounded hover:bg-green-100 text-green-600 transition">
+                            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                        <button onClick={() => copyToClipboard(value, key)} className="p-1.5 rounded hover:bg-green-100 text-green-600 transition">
+                          {copied === key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const text = `Name: ${createdCredentials.name}\nRole: ${createdCredentials.role}\nEmail: ${createdCredentials.email}\nPassword: ${createdCredentials.password}\nLogin: ${window.location.origin}/auth/login`;
+                      copyToClipboard(text, 'all');
+                    }}
+                    className="flex items-center gap-2 text-sm font-medium text-green-700 hover:text-green-900 border border-green-300 bg-white px-4 py-2 rounded-lg hover:bg-green-50 transition w-full justify-center mt-1"
+                  >
+                    {copied === 'all' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'all' ? 'Copied!' : 'Copy All Credentials'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -212,9 +291,27 @@ function AddStaffPage() {
                   placeholder="Enter staff member's email address"
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">
-                Login credentials will be sent to this email address
-              </p>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
+                <input
+                  id="password"
+                  type="text"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full pl-10 pr-4 py-3 placeholder-slate-400 border border-gray-300 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none transition text-gray-900"
+                  placeholder="Set a password for this staff member"
+                />
+              </div>
             </div>
 
             {/* Info Box */}
@@ -229,9 +326,8 @@ function AddStaffPage() {
                   <p className="font-medium mb-1">What happens next?</p>
                   <ul className="list-disc list-inside space-y-1 text-blue-700">
                     <li>A staff account will be created with the selected role</li>
-                    <li>A temporary password will be generated</li>
-                    <li>Login credentials will be sent via email</li>
-                    <li>Staff member must verify their email on first login</li>
+                    <li>The password you set will be saved and emailed to the staff member</li>
+                    <li>Staff member can log in immediately with these credentials</li>
                   </ul>
                 </div>
               </div>
@@ -263,7 +359,7 @@ function AddStaffPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setFormData({ name: '', email: '', roleId: '' });
+                  setFormData({ name: '', email: '', roleId: '', password: '' });
                   setError('');
                   setSuccess('');
                 }}

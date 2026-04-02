@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { hashPassword, createVerificationToken } from '@/lib/auth';
+import { createVerificationToken } from '@/lib/auth';
 import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -20,23 +20,6 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character' },
-        { status: 400 }
-      );
-    }
-
-    // Enhanced password validation
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return NextResponse.json(
-        { error: 'Password must contain at least one uppercase letter, lowercase letter, number, and special character' },
         { status: 400 }
       );
     }
@@ -94,15 +77,12 @@ export async function POST(request: NextRequest) {
         roleId = roleResult.rows[0]?.id || null;
       }
 
-      // Hash password
-      const hashedPassword = await hashPassword(password);
-
-      // Create user
+      // Create user with plain-text password
       const result = await client.query(
         `INSERT INTO users (company_id, role_id, name, email, phone, password, is_verified) 
          VALUES ($1, $2, $3, $4, $5, $6, $7) 
          RETURNING id, email, name`,
-        [targetCompanyId, roleId, name.trim(), normalizedEmail, phone?.trim() || null, hashedPassword, false]
+        [targetCompanyId, roleId, name.trim(), normalizedEmail, phone?.trim() || null, password, false]
       );
 
       const newUser = result.rows[0];

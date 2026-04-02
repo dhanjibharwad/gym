@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { verifyPassword, createSession, updateLastLogin } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
+import { createSession, updateLastLogin } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit-logger';
 
 export async function POST(request: NextRequest) {
@@ -89,8 +90,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password);
+    // Verify password — support both bcrypt hash and plain text
+    const isValidPassword = user.password.startsWith('$2')
+      ? await bcrypt.compare(password, user.password)
+      : password === user.password;
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Invalid email or password' },

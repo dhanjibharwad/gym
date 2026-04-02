@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const companyId = auth.session!.user.companyId;
     
     // Check cache first
-    const cacheKey = `staff:list:${companyId}`;
+    const cacheKey = `staff:list:v2:${companyId}`;
     const cached = cache.get(cacheKey);
     if (cached) {
       console.log(`[Staff API] ✅ Cache HIT for company ${companyId}`);
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     console.log(`[Staff API] ❌ Cache MISS for company ${companyId}, fetching from DB...`);
 
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, r.name as role, r.id as role_id, u.is_verified, u.created_at 
+      `SELECT u.id, u.name, u.email, u.password, r.name as role, r.id as role_id, u.is_verified, u.created_at 
        FROM users u
        LEFT JOIN roles r ON u.role_id = r.id
        WHERE u.company_id = $1
