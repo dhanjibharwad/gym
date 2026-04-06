@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
 import { checkPermission } from '@/lib/api-permissions';
 
 export async function POST(request: NextRequest) {
@@ -12,8 +11,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { member_id, membership_id, amount, payment_mode, payment_date, reference_number } = body;
 
-    const session = await getSession();
     const companyId = request.headers.get('x-company-id');
+    const userName = request.headers.get('x-user-name') || 'Reception';
+    const userRole = request.headers.get('x-user-role') || 'staff';
     
     if (!companyId) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         [membership_id, companyId]
       );
       
-      console.log('Payment lookup:', { membership_id, companyId, foundRows: currentPayment.rows.length });
+      
       
       if (currentPayment.rows.length === 0) {
         // Debug: Check if membership exists
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
           'SELECT * FROM memberships WHERE id = $1',
           [membership_id]
         );
-        console.log('Membership lookup:', { membership_id, found: membershipCheck.rows.length > 0 });
+        
         
         if (membershipCheck.rows.length === 0) {
           // Try to find membership by member_id instead

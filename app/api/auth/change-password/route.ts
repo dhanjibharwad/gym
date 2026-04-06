@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession, verifyPassword, hashPassword } from '@/lib/auth';
+import { verifyPassword, hashPassword } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/session-utils';
 import pool from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    
+    const session = getSessionFromRequest(request);
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { currentPassword, newPassword } = await request.json();

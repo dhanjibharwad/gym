@@ -1,23 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/session-utils';
 import { createAuditLog } from '@/lib/audit-logger';
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; membershipId: string }> }
 ) {
   try {
-    const session = await getSession();
+    const session = getSessionFromRequest(request);
     const companyId = session?.user?.companyId;
     const userId = session?.user?.id;
-    
-    if (!companyId || !userId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    if (!companyId || !userId) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     
     const { id: memberId, membershipId } = await params;
 
@@ -78,7 +72,7 @@ export async function DELETE(
         entityType: 'membership',
         entityId: parseInt(membershipId),
         details: `Deleted membership: ${membership.plan_name} for ${membership.full_name}`,
-        userRole: 'staff',
+        userRole: session.user.role,
         userId
       });
 
@@ -86,17 +80,10 @@ export async function DELETE(
         success: true,
         message: 'Membership deleted successfully'
       });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error('Error deleting membership:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to delete membership' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Failed to delete membership' }, { status: 500 });
   }
 }

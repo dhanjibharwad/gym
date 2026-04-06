@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/session-utils';
 import pool from '@/lib/db';
 import { cache } from '@/lib/cache/MemoryCache';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    
+    const session = getSessionFromRequest(request);
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
     
     // Check cache first (10 minute cache for user profile)
@@ -64,13 +60,9 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getSession();
-    
+    const session = getSessionFromRequest(request);
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, email, phone } = await request.json();

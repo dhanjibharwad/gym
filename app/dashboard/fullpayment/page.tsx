@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Member {
   id: number;
@@ -23,7 +22,7 @@ interface Member {
 
 function FullPaymentPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -31,26 +30,12 @@ function FullPaymentPage() {
   }, []);
 
   const fetchFullPaymentMembers = async () => {
-    setLoading(true);
     try {
-      const response = await fetch('/api/payments');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch('/api/payments?status=full&limit=200');
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      
-      if (data.success && Array.isArray(data.payments)) {
-        // Filter payments with full payment status
-        const fullPaymentMembers = data.payments.filter((payment: any) => 
-          payment.payment_status === 'full'
-        );
-        setMembers(fullPaymentMembers);
-      } else {
-        console.error('Invalid data format:', data);
-        setMembers([]);
-      }
+      setMembers(data.success && Array.isArray(data.payments) ? data.payments : []);
     } catch (error) {
-      console.error('Error fetching payments:', error);
       setMembers([]);
     } finally {
       setLoading(false);
@@ -74,7 +59,30 @@ function FullPaymentPage() {
   };
 
   if (loading) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Fully Paid Members</h1>
+          </div>
+          <p className="text-gray-600">Members who have completed their payment</p>
+        </div>
+        <div className="space-y-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/4" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

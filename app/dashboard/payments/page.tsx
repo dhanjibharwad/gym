@@ -23,8 +23,7 @@ import {
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
-import { usePermission } from '@/components/rbac/PermissionGate';
-import TopLoadingBar from '@/components/TopLoadingBar';
+import { usePermission, useUser } from '@/components/rbac/PermissionGate';
 
 interface Payment {
   id: number;
@@ -66,13 +65,12 @@ interface PaymentTransaction {
 }
 
 const PaymentsPage = () => {
-  const { can, isAdmin } = usePermission();
+  const { can } = usePermission();
+  const { user: currentUser } = useUser();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
   const [memberTransactions, setMemberTransactions] = useState<PaymentTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
-  const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
+  const [loading, setLoading] = useState(true);
   const [selectedMemberForTimeline, setSelectedMemberForTimeline] = useState<Payment | null>(null);
   const [showTimelineModal, setShowTimelineModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,11 +86,10 @@ const PaymentsPage = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
 
   useEffect(() => {
-    fetchPayments();
-    fetchPaymentHistory();
-    fetchCurrentUser();
+    Promise.all([fetchPayments(), fetchPaymentHistory()]);
   }, []);
 
   useEffect(() => {
@@ -110,20 +107,6 @@ const PaymentsPage = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
-
-  const fetchCurrentUser = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setCurrentUser(result.user);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching current user:', error);
-    }
-  };
 
   const handleAddPayment = (payment: Payment) => {
     const pendingAmount = payment.total_amount - payment.paid_amount;
@@ -152,15 +135,6 @@ const PaymentsPage = () => {
       setNotification({type: 'error', message: `Amount cannot exceed pending amount of ${formatCurrency(maxAmount)}`});
       return;
     }
-    
-    console.log('Submitting payment:', {
-      member_id: selectedPayment.member_id,
-      membership_id: selectedPayment.membership_id,
-      amount,
-      payment_mode: newPayment.payment_mode,
-      payment_date: newPayment.payment_date,
-      reference_number: newPayment.reference_number
-    });
     
     setSubmitting(true);
     try {
@@ -278,47 +252,21 @@ const PaymentsPage = () => {
   const fetchPaymentHistory = async () => {
     try {
       const response = await fetch('/api/payments/history');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch payment history');
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch payment history');
       const result = await response.json();
-      
-      if (result.success) {
-        setPaymentHistory(result.transactions);
-      } else {
-        setNotification({type: 'error', message: 'Failed to load payment history'});
-      }
-    } catch (error) {
-      console.error('Error fetching payment history:', error);
+      if (result.success) setPaymentHistory(result.transactions);
+    } catch {
       setNotification({type: 'error', message: 'Unable to load payment history.'});
     }
   };
 
   const fetchPayments = async () => {
-    setLoading(true);
     try {
       const response = await fetch('/api/payments');
-      
-      console.log('Fetch payments response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Payment API error response:', errorText);
-        throw new Error(`Failed to fetch payments: ${response.status} ${response.statusText}`);
-      }
-      
+      if (!response.ok) throw new Error(`Failed: ${response.status}`);
       const result = await response.json();
-      console.log('Fetched payments result:', result);
-      
-      if (result.success) {
-        setPayments(result.payments);
-      } else {
-        setNotification({type: 'error', message: 'Failed to load payment data'});
-      }
-    } catch (error) {
-      console.error('Error fetching payments:', error);
+      if (result.success) setPayments(result.payments);
+    } catch {
       setNotification({type: 'error', message: 'Unable to load payments. Please refresh the page.'});
     } finally {
       setLoading(false);
@@ -416,7 +364,26 @@ const PaymentsPage = () => {
   const overduePayments = payments.filter(p => p.payment_status !== 'full' && isOverdue(p.next_due_date)).length;
 
   if (loading) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <p className="text-gray-600 mt-1">Track and manage member payments</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse"><div className="h-8 bg-gray-200 rounded w-1/2 mb-2" /><div className="h-6 bg-gray-200 rounded w-1/3" /></div>)}
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-100 animate-pulse">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2"><div className="h-3 bg-gray-200 rounded w-1/3" /><div className="h-3 bg-gray-200 rounded w-1/4" /></div>
+              <div className="h-3 bg-gray-200 rounded w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

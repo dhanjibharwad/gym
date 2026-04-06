@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
+import { AlertTriangle, Phone, Calendar, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 
 interface Member {
@@ -11,10 +11,6 @@ interface Member {
   email: string;
   profile_photo_url: string;
   plan_name: string;
-  total_amount: number;
-  paid_amount: number;
-  payment_mode: string;
-  payment_status: string;
   start_date: string;
   end_date: string;
   membership_status: string;
@@ -22,7 +18,7 @@ interface Member {
 
 function ExpiredMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -30,30 +26,12 @@ function ExpiredMembersPage() {
   }, []);
 
   const fetchExpiredMembers = async () => {
-    setLoading(true);
     try {
-      const response = await fetch('/api/payments');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch('/api/members?status=expired&limit=200');
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      
-      if (data.success && Array.isArray(data.payments)) {
-        const currentDate = new Date();
-        currentDate.setHours(0, 0, 0, 0);
-        
-        const expiredMembers = data.payments.filter((payment: any) => {
-          if (!payment.end_date) return false;
-          const endDate = new Date(payment.end_date);
-          endDate.setHours(0, 0, 0, 0);
-          return endDate < currentDate;
-        });
-        setMembers(expiredMembers);
-      } else {
-        setMembers([]);
-      }
-    } catch (error) {
-      console.error('Error fetching payments:', error);
+      setMembers(data.success && Array.isArray(data.members) ? data.members : []);
+    } catch {
       setMembers([]);
     } finally {
       setLoading(false);
@@ -86,14 +64,24 @@ function ExpiredMembersPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
-            ))}
-          </div>
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center gap-3 mb-6">
+          <AlertTriangle className="w-8 h-8 text-red-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Expired Memberships</h1>
+        </div>
+        <div className="space-y-4">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/4" />
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-32" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -196,10 +184,6 @@ function ExpiredMembersPage() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600 space-y-1">
-                    <div className="flex items-center gap-1 justify-end">
-                      <CreditCard className="w-4 h-4" />
-                      <span>₹{member.paid_amount?.toLocaleString('en-IN')} ({member.payment_mode})</span>
-                    </div>
                     {member.start_date && member.end_date && (
                       <div className="flex items-center gap-1 justify-end">
                         <Calendar className="w-4 h-4" />

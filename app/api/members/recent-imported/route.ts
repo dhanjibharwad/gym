@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/session-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
+    const session = getSessionFromRequest(request);
     if (!session?.user?.companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
     const client = await pool.connect();
     try {
-      // Get members who were recently imported (no membership yet)
-      // and order by creation date to get the most recent imports
       const result = await client.query(`
         SELECT 
           m.id,

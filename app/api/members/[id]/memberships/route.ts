@@ -1,21 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSessionFromRequest } from '@/lib/session-utils';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
+    const session = getSessionFromRequest(request);
     const companyId = session?.user?.companyId;
-    
-    if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    if (!companyId) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     
     const { id: memberId } = await params;
 

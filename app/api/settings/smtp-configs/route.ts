@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { getSession } from '@/lib/auth';
 import { checkPermission } from '@/lib/api-permissions';
+import { cache } from '@/lib/cache/MemoryCache';
 
 // GET — list all smtp configs for company
-export async function GET() {
-  const session = await getSession();
-  if (!session?.user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(request: NextRequest) {
+  const companyId = request.headers.get('x-company-id');
+  if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const cacheKey = `smtp-configs:${companyId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return NextResponse.json(cached);
 
   const result = await pool.query(
     `SELECT id, host, port, secure, username, from_name, is_active, created_at FROM smtp_configs WHERE company_id = $1 ORDER BY created_at ASC`,
-    [session.user.companyId]
+    [parseInt(companyId)]
   );
-  return NextResponse.json({ success: true, configs: result.rows });
+  const data = { success: true, configs: result.rows };
+  cache.set(cacheKey, data, 300);
+  return NextResponse.json(data);
 }
 
 // POST — add new smtp config
@@ -37,6 +43,7 @@ export async function POST(request: NextRequest) {
     [companyId, host, parseInt(port), port == 465, username, password, fromName || 'Gym Management', isFirst]
   );
 
+  cache.delete(`smtp-configs:${companyId}`);
   return NextResponse.json({ success: true, id: result.rows[0].id, isActive: isFirst });
 }
 
@@ -50,7 +57,7 @@ export async function PATCH(request: NextRequest) {
 
   await pool.query('UPDATE smtp_configs SET is_active = FALSE WHERE company_id = $1', [companyId]);
   await pool.query('UPDATE smtp_configs SET is_active = TRUE WHERE id = $1 AND company_id = $2', [id, companyId]);
-
+  cache.delete(`smtp-configs:${companyId}`);
   return NextResponse.json({ success: true });
 }
 
@@ -74,6 +81,6 @@ export async function DELETE(request: NextRequest) {
       [companyId]
     );
   }
-
+  cache.delete(`smtp-configs:${companyId}`);
   return NextResponse.json({ success: true });
 }
