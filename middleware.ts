@@ -30,11 +30,12 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET);
-      const { userId, companyId, role, isSuperAdmin } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean };
+      const { userId, companyId, role, isSuperAdmin, name } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean; name?: string };
 
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', userId.toString());
       requestHeaders.set('x-user-role', role);
+      if (name) requestHeaders.set('x-user-name', name);
       
       if (companyId) {
         requestHeaders.set('x-company-id', companyId.toString());
@@ -74,7 +75,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    const { userId, companyId, role, isSuperAdmin } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean };
+    const { userId, companyId, role, isSuperAdmin, name } = payload as { userId: number; companyId?: number; role: string; isSuperAdmin?: boolean; name?: string };
 
     // SuperAdmin access control
     if (isSuperAdmin || role === 'SuperAdmin') {
@@ -103,6 +104,7 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-user-id', userId.toString());
     requestHeaders.set('x-company-id', companyId.toString());
     requestHeaders.set('x-user-role', role);
+    if (name) requestHeaders.set('x-user-name', name);
 
     return NextResponse.next({
       request: {

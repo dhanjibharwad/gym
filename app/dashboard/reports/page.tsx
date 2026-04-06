@@ -187,114 +187,41 @@ function ReportsPage() {
     try {
       let queryParams = `period=${dateFilter}`;
       
-      console.log('Fetching data with:', { dateFilter, customStartDate, customEndDate, activeTab });
-      console.log('Current tab data lengths:', {
-        memberships: membershipData.memberships.length,
-        payments: paymentData.payments.length,
-        revenue: revenueData.daily_revenue.length
-      });
-      
       if (dateFilter === 'custom' && customStartDate && customEndDate) {
-        // Validate date format
         const startDateObj = new Date(customStartDate);
         const endDateObj = new Date(customEndDate);
-        
-        if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
-          console.error('Invalid date format:', { customStartDate, customEndDate });
-          setLoading(false);
-          return;
-        }
-        
-        // Check if end date is after start date
-        if (endDateObj < startDateObj) {
-          console.error('End date cannot be before start date:', { customStartDate, customEndDate });
-          showToast('End date must be after start date', 'error');
-          setLoading(false);
-          return;
-        }
-        
+        if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) { setLoading(false); return; }
+        if (endDateObj < startDateObj) { showToast('End date must be after start date', 'error'); setLoading(false); return; }
         queryParams = `start_date=${customStartDate}&end_date=${customEndDate}`;
-        console.log('Using custom date range:', queryParams);
-        console.log('Date objects:', { startDateObj, endDateObj });
-      } else {
-        console.log('Using period filter:', queryParams);
       }
 
-      let url = '';
       switch (activeTab) {
-        case 'memberships':
-          url = `/api/reports/membership?${queryParams}`;
-          console.log('Fetching memberships from:', url);
-          const companyId1 = localStorage.getItem('company_id') || '1';
-          const membershipRes = await fetch(url, {
-            headers: {
-              'x-company-id': companyId1
-            }
-          });
-          const membershipData = await membershipRes.json();
-          console.log('Memberships API response:', membershipData);
-          if (membershipData.success) {
-            console.log('Setting membership data with', membershipData.memberships.length, 'records');
-            setMembershipData(membershipData);
-          }
+        case 'memberships': {
+          const res = await fetch(`/api/reports/membership?${queryParams}`);
+          const data = await res.json();
+          if (data.success) setMembershipData(data);
           break;
-        case 'payments':
-          url = `/api/reports/payment?${queryParams}`;
-          console.log('Fetching payments from:', url);
-          
-          // Get company ID from localStorage or session
-          const companyId4 = localStorage.getItem('company_id') || '1';
-          console.log('Using company ID:', companyId4);
-          
-          const paymentRes = await fetch(url, {
-            headers: {
-              'x-company-id': companyId4
-            }
-          });
-          const paymentData = await paymentRes.json();
-          console.log('Payments API response:', paymentData);
-          if (paymentData.success) {
-            console.log('Setting payment data with', paymentData.payments?.length || 0, 'records');
-            console.log('Payment summary:', paymentData.summary);
-            console.log('Payment mode breakdown:', paymentData.mode_breakdown);
-            setPaymentData(paymentData);
-          } else {
-            console.error('Payment API error:', paymentData.message, paymentData.error);
-          }
+        }
+        case 'payments': {
+          const res = await fetch(`/api/reports/payment?${queryParams}`);
+          const data = await res.json();
+          if (data.success) setPaymentData(data);
           break;
-        case 'revenue':
-          url = `/api/reports/revenue?${queryParams}`;
-          const companyId2 = localStorage.getItem('company_id') || '1';
-          const revenueRes = await fetch(url, {
-            headers: {
-              'x-company-id': companyId2
-            }
-          });
-          const revenueData = await revenueRes.json();
-          if (revenueData.success) {
-            setRevenueData(revenueData);
-          }
+        }
+        case 'revenue': {
+          const res = await fetch(`/api/reports/revenue?${queryParams}`);
+          const data = await res.json();
+          if (data.success) setRevenueData(data);
           break;
-        case 'overall':
-          url = `/api/reports/overall?${queryParams}`;
-          const companyId3 = localStorage.getItem('company_id') || '1';
-          const overallRes = await fetch(url, {
-            headers: {
-              'x-company-id': companyId3
-            }
-          });
-          const overallData = await overallRes.json();
-          console.log('[Reports Page] Overall API Response:', overallData);
-          if (overallData.success) {
-            console.log('[Reports Page] Setting overall data with overview:', overallData.overview);
-            setOverallData(overallData);
-          } else {
-            console.error('Overall API error:', overallData.message, overallData.error);
-          }
+        }
+        case 'overall': {
+          const res = await fetch(`/api/reports/overall?${queryParams}`);
+          const data = await res.json();
+          if (data.success) setOverallData(data);
           break;
+        }
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       showToast('Failed to fetch report data', 'error');
     } finally {
       setLoading(false);
@@ -477,18 +404,12 @@ function ReportsPage() {
     m.plan_name.toLowerCase().includes(membershipSearch.toLowerCase())
   );
 
-  console.log('Payment data:', paymentData);
-  console.log('Payment search:', paymentSearch);
-  console.log('Raw payments:', paymentData.payments);
-  
   const filteredPayments = paymentData.payments?.filter(p => 
     p.full_name?.toLowerCase().includes(paymentSearch.toLowerCase()) ||
     p.phone_number?.includes(paymentSearch) ||
     p.plan_name?.toLowerCase().includes(paymentSearch.toLowerCase()) ||
     p.receipt_number?.toLowerCase().includes(paymentSearch.toLowerCase())
   ) || [];
-  
-  console.log('Filtered payments:', filteredPayments);
 
   // Fetch data on tab or filter change
   useEffect(() => {

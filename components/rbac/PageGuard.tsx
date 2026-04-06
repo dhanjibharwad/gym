@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePermission } from './PermissionGate';
-import GymLoader from '@/components/GymLoader';
 
 interface PageGuardProps {
   /** Single permission required to view this page */
@@ -41,57 +40,37 @@ export function PageGuard({
 }: PageGuardProps) {
   const router = useRouter();
   const { can, canAny, isAdmin, role } = usePermission();
-  const [checked, setChecked] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    // Wait for user data to load
-    if (role === null) {
-      return;
-    }
+    if (role === null) return;
 
-    let access = false;
+    let access = isAdmin()
+      ? true
+      : permission
+      ? can(permission)
+      : permissions?.length
+      ? canAny(permissions)
+      : true;
 
-    // Admin always has access
-    if (isAdmin()) {
-      access = true;
-    } else if (permission) {
-      // Check single permission
-      access = can(permission);
-    } else if (permissions && permissions.length > 0) {
-      // Check any of multiple permissions
-      access = canAny(permissions);
-    } else {
-      // No permission required
-      access = true;
-    }
+    if (!access) router.push('/unauthorized');
+  }, [role]);
 
-    setHasAccess(access);
-    setChecked(true);
-
-    // Redirect if no access
-    if (!access) {
-      router.push('/unauthorized');
-    }
-  }, [permission, permissions, can, canAny, isAdmin, role, router]);
-
-  // Show loading state while checking
-  if (!checked) {
-    return (
-      <>
-        {loadingComponent || (
-          <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <GymLoader size="lg" />
-          </div>
-        )}
-      </>
-    );
+  // Still loading user — render children immediately to avoid blank screen
+  // The useEffect above will redirect if no access once role is known
+  if (role === null) {
+    return <>{children}</>;
   }
 
-  // Don't render children if no access (redirect will happen)
-  if (!hasAccess) {
-    return null;
-  }
+  // Role known but no access — redirect already triggered
+  const hasAccess = isAdmin()
+    ? true
+    : permission
+    ? can(permission)
+    : permissions?.length
+    ? canAny(permissions)
+    : true;
+
+  if (!hasAccess) return null;
 
   return <>{children}</>;
 }

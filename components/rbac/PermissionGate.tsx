@@ -34,18 +34,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async () => {
     try {
+      // Check sessionStorage cache first (avoids re-fetching on every page navigation)
+      const cached = sessionStorage.getItem('gymportal_user');
+      if (cached) {
+        setUser(JSON.parse(cached));
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/auth/me');
       const data = await response.json();
       
       if (data.success) {
-        setUser({
+        const userData = {
           id: data.user.id,
           name: data.user.name,
           role: data.user.role,
           permissions: data.user.permissions || [],
-          isAdmin: data.user.isAdmin || isAdmin(data.user.role)
-        });
+          isAdmin: data.user.isAdmin || isAdmin(data.user.role),
+          companyName: data.user.companyName,
+        };
+        sessionStorage.setItem('gymportal_user', JSON.stringify(userData));
+        setUser(userData);
       } else {
+        sessionStorage.removeItem('gymportal_user');
         setUser(null);
       }
     } catch (error) {
@@ -56,12 +68,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    sessionStorage.removeItem('gymportal_user');
+    await fetchUser();
+  };
+
   useEffect(() => {
     fetchUser();
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, isLoading, refreshUser: fetchUser }}>
+    <UserContext.Provider value={{ user, isLoading, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

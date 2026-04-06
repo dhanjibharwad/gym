@@ -14,6 +14,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import TopLoadingBar from '@/components/TopLoadingBar';
+import { useUser } from '@/components/rbac/PermissionGate';
 
 interface UserProfile {
   id: number;
@@ -26,6 +27,7 @@ interface UserProfile {
 }
 
 const ProfilePage = () => {
+  const { user: sessionUser } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -74,33 +76,27 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      const data = await response.json();
+      const userResponse = await fetch('/api/auth/profile');
+      const userData = await userResponse.json();
       
-      if (data.success) {
-        // Get additional user data from users table
-        const userResponse = await fetch('/api/auth/profile');
-        const userData = await userResponse.json();
-        
-        if (userData.success) {
-          const fullProfile = {
-            ...data.user,
-            ...userData.user
-          };
-          setProfile(fullProfile);
-          setFormData({
-            name: fullProfile.name,
-            email: fullProfile.email,
-            phone: fullProfile.phone || ''
-          });
-        } else {
-          setProfile(data.user);
-          setFormData({
-            name: data.user.name,
-            email: data.user.email,
-            phone: data.user.phone || ''
-          });
-        }
+      if (userData.success) {
+        const fullProfile = {
+          ...sessionUser,
+          ...userData.user
+        };
+        setProfile(fullProfile as UserProfile);
+        setFormData({
+          name: fullProfile.name || '',
+          email: fullProfile.email || '',
+          phone: fullProfile.phone || ''
+        });
+      } else if (sessionUser) {
+        setProfile(sessionUser as unknown as UserProfile);
+        setFormData({
+          name: sessionUser.name,
+          email: '',
+          phone: ''
+        });
       }
     } catch (error) {
       console.error('Error fetching profile');

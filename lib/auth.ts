@@ -17,8 +17,8 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 // Create session with company context
-export async function createSession(userId: number, companyId: number, role: string) {
-  const token = await new SignJWT({ userId, companyId, role })
+export async function createSession(userId: number, companyId: number, role: string, name?: string) {
+  const token = await new SignJWT({ userId, companyId, role, name: name || '' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')

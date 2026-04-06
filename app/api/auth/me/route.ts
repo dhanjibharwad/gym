@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const userIsAdmin = isAdmin(sessionRole);
 
     const result = await pool.query(
-      `SELECT c.name as company_name, r.name as role_name,
+      `SELECT c.name as company_name, r.name as role_name, u.name as user_name,
               ARRAY_AGG(DISTINCT p.name) FILTER (WHERE p.name IS NOT NULL) as permissions
        FROM users u
        JOIN companies c ON u.company_id = c.id
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
        LEFT JOIN role_permissions rp ON rp.role_id = u.role_id
        LEFT JOIN permissions p ON rp.permission_id = p.id
        WHERE u.id = $1
-       GROUP BY c.name, r.name`,
+       GROUP BY c.name, r.name, u.name`,
       [sessionUserId]
     );
 
@@ -77,19 +77,13 @@ export async function GET(request: NextRequest) {
 
     const user = {
       id: sessionUserId,
-      name: request.headers.get('x-user-name') || '',
+      name: request.headers.get('x-user-name') || result.rows[0]?.user_name || '',
       role: roleName,
       permissions: userPermissions,
       isAdmin: userIsAdmin,
       companyName,
       companyId: sessionCompanyId,
     };
-
-    // Need the name from session since headers don't carry it
-    if (!user.name) {
-      const session = await getSession();
-      user.name = session?.user?.name || '';
-    }
 
     cache.set(cacheKey, user, 300); // 5 minutes
 
