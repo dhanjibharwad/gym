@@ -65,11 +65,19 @@ export const memberOps = {
 
       const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-      // Get total count
-      const countResult = await client.query(
-        `SELECT COUNT(*) as total FROM members m ${whereClause}`,
-        params
-      );
+      // Get total count — must use same lateral join when filtering by status
+      const countQuery = status
+        ? `SELECT COUNT(*) as total FROM members m
+           LEFT JOIN LATERAL (
+             SELECT ms.status as membership_status
+             FROM memberships ms
+             WHERE ms.member_id = m.id
+             ORDER BY ms.created_at DESC LIMIT 1
+           ) membership ON true
+           WHERE m.company_id = $1 AND membership.membership_status = $2`
+        : `SELECT COUNT(*) as total FROM members m WHERE m.company_id = $1`;
+
+      const countResult = await client.query(countQuery, status ? [companyId, status] : [companyId]);
       const total = parseInt(countResult.rows[0].total);
 
       // Get paginated results with only needed columns

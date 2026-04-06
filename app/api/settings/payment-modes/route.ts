@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSessionFromRequest } from '@/lib/session-utils';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,6 +9,10 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.companyId) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
+
+    const cacheKey = `payment-modes:${session.user.companyId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     const result = await pool.query(
       'SELECT payment_modes FROM settings WHERE company_id = $1',
@@ -26,15 +31,10 @@ export async function GET(request: NextRequest) {
       .filter(([_, config]: [string, any]) => config.enabled)
       .map(([name, config]: [string, any]) => ({ name, ...config }));
 
-    return NextResponse.json({
-      success: true,
-      paymentModes: enabledPaymentModes
-    });
+    const data = { success: true, paymentModes: enabledPaymentModes };
+    cache.set(cacheKey, data, 300);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching payment modes:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch payment modes' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Failed to fetch payment modes' }, { status: 500 });
   }
 }

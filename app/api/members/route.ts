@@ -15,15 +15,14 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '20')));
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
     
-    // Use optimized query with caching
     const result = await memberOps.getList(
       companyId,
       { page, limit, search, status },
-      { cacheTTL: 60, useCache: true }
+      { cacheTTL: 60, useCache: !search } // skip cache when searching
     );
     
     return NextResponse.json({
