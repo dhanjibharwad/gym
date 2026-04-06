@@ -115,11 +115,9 @@ export async function POST(request: NextRequest) {
       // Create session with company context
       const token = await createSession(user.id, user.company_id, user.role);
 
-      // Update last login timestamp
-      await updateLastLogin(user.id);
-
-      // Log successful login to audit logs
-      await createAuditLog({
+      // Fire-and-forget: don't await these — they don't affect the login response
+      updateLastLogin(user.id).catch(() => {});
+      createAuditLog({
         companyId: user.company_id,
         action: 'LOGIN',
         entityType: 'user',
@@ -127,7 +125,7 @@ export async function POST(request: NextRequest) {
         details: `${user.name} (${user.email}) logged in successfully`,
         userRole: user.role,
         userId: user.id
-      });
+      }).catch(() => {});
 
       return NextResponse.json({
         message: 'Login successful',

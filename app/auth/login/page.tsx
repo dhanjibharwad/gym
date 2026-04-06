@@ -56,7 +56,6 @@ export default function LoginPage() {
       
       const redirectPath = roleRoutes[data.user.role as keyof typeof roleRoutes] || '/dashboard';
       router.push(redirectPath);
-      router.refresh();
     } catch (err) {
       console.error('Login error:', err);
       setError('An error occurred. Please try again.');
@@ -73,7 +72,7 @@ export default function LoginPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('https://img.freepik.com/free-photo/strong-man-training-gym_1303-23478.jpg?semt=ais_hybrid&w=740&q=80')"
+            backgroundImage: "url('/images/gym-interior.jpg')"
           }}
         ></div>
         

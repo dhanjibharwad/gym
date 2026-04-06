@@ -10,9 +10,6 @@ import { checkPermission } from '@/lib/api-permissions';
  */
 export async function GET(request: NextRequest) {
   try {
-    const startTime = Date.now();
-    
-    // Check view_dashboard permission
     const { authorized, response } = await checkPermission(request, 'view_dashboard');
     if (!authorized) return response;
 
@@ -40,14 +37,12 @@ export async function GET(request: NextRequest) {
     // If date filters are applied, fetch filtered data separately
     let filteredStats = stats;
     if (startDate && endDate) {
-      const filterStartTime = Date.now();
       filteredStats = await getFilteredDashboardStats(
         parseInt(companyId),
         startDate,
         endDate,
         birthdayFilter
       );
-      console.log(`[Dashboard API] Filter query took: ${Date.now() - filterStartTime}ms`);
     }
 
     // Ensure proper serialization of all values
@@ -68,9 +63,6 @@ export async function GET(request: NextRequest) {
           JSON.parse((filteredStats as any).upcoming_birthdays_list) : 
           (filteredStats as any).upcoming_birthdays_list) : []
     };
-
-    const endTime = Date.now();
-    console.log(`[Dashboard API] Total response time: ${endTime - startTime}ms`);
 
     return NextResponse.json({
       success: true,

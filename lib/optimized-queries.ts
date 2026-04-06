@@ -227,8 +227,6 @@ export const paymentOps = {
     const { page = 1, limit = 20, status = '', startDate = '', endDate = '' } = options;
     const offset = (page - 1) * limit;
 
-    console.log('PaymentOps.getList called:', { companyId, page, limit, status });
-    
     const cacheKey = `payments:list:${companyId}:${page}:${limit}:${status}:${startDate}:${endDate}`;
     
     if (queryOptions.useCache) {
@@ -238,9 +236,7 @@ export const paymentOps = {
 
     const client = await pool.connect();
     try {
-      console.log('Database client connected, executing query...');
-      
-      const conditions: string[] = ['m.company_id = $1']; // Filter by members.company_id instead
+      const conditions: string[] = ['m.company_id = $1'];
       const params: any[] = [companyId];
       let paramIndex = 2;
 
@@ -264,8 +260,6 @@ export const paymentOps = {
 
       const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-      console.log('Building count query with conditions:', whereClause);
-      
       // Get total count
       const countResult = await client.query(
         `SELECT COUNT(*) as total FROM payments p 
@@ -304,7 +298,6 @@ export const paymentOps = {
       `;
 
       const result = await client.query(query, [...params, limit, offset]);
-      console.log('Query executed successfully, rows returned:', result.rows.length);
 
       const response = {
         payments: result.rows,

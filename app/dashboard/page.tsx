@@ -20,9 +20,7 @@ import {
   X,
   Cake
 } from 'lucide-react';
-import { usePermission } from '@/components/rbac/PermissionGate';
-import { useUser } from '@/lib/hooks/useUser';
-import { prefetchByRole } from '@/lib/prefetch-pages';
+import { usePermission, useUser } from '@/components/rbac/PermissionGate';
 
 interface User {
   id: number;
@@ -112,20 +110,6 @@ const Dashboard = () => {
     setCurrentTime(new Date().toLocaleString());
     fetchDashboardData();
   }, []);
-
-  // Prefetch pages IMMEDIATELY after dashboard data is loaded - THROTTLED
-  useEffect(() => {
-    if (!loading && user) {
-      // console.log('[Dashboard Page] 🚀 Starting throttled prefetch after dashboard load');
-      
-      // Start prefetching with delay to not overwhelm DB
-      const prefetchTimeout = setTimeout(() => {
-        prefetchByRole(user.role);
-      }, 500); // Increased from 200ms to 500ms
-      
-      return () => clearTimeout(prefetchTimeout);
-    }
-  }, [loading, user]);
 
   // Recalculate when birthday filter changes
   useEffect(() => {
@@ -299,13 +283,8 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Single API call for all dashboard stats - OPTIMIZED with no-store to prevent stale data
-      const startTime = Date.now();
       const statsRes = await fetch('/api/dashboard/stats?limit=1000', { 
-        cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        cache: 'no-store'
       });
       
       if (!statsRes.ok) {
@@ -313,8 +292,6 @@ const Dashboard = () => {
       }
       
       const statsData = await statsRes.json();
-      const endTime = Date.now();
-      console.log(`Dashboard data loaded in ${endTime - startTime}ms`);
       
       if (statsData.success) {
         const stats = statsData.stats;

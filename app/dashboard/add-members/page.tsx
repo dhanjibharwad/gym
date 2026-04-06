@@ -330,17 +330,6 @@ const AddMemberPage = () => {
     }
   };
 
-  // Add window focus event to refresh payment modes when user returns to tab
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchPaymentModes();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  
   useEffect(() => {
     fetchPlans();
     fetchPaymentModes();

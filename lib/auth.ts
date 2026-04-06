@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import pool from './db';
+import { cache } from './cache/MemoryCache';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
@@ -49,18 +50,25 @@ export async function getSession() {
 
   if (!token) return null;
 
+  // Check session cache first (30s TTL) — avoids DB hit on every API call
+  const cacheKey = `session:${token}`;
+  const cached = cache.get<any>(cacheKey);
+  if (cached) return cached;
+
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     
     // Handle SuperAdmin (no database session)
     if (payload.isSuperAdmin || payload.role === 'SuperAdmin') {
-      return {
+      const superAdminSession = {
         user: {
           id: payload.userId as number,
           name: 'Super Administrator',
           role: 'SuperAdmin',
         },
       };
+      cache.set(cacheKey, superAdminSession, 120);
+      return superAdminSession;
     }
     
     const maxRetries = 3;
@@ -70,11 +78,9 @@ export async function getSession() {
 
     while (retries < maxRetries) {
       try {
-        // Add small delay to allow connections to be freed
         if (retries > 0) {
           await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, retries), 1000)));
         }
-        
         result = await pool.query(
           `SELECT 
             s.id as session_id,
@@ -99,7 +105,7 @@ export async function getSession() {
         if (result.rows.length === 0) return null;
 
         const data = result.rows[0];
-        return {
+        const sessionData = {
           user: {
             id: data.user_id,
             companyId: data.company_id,
@@ -117,22 +123,13 @@ export async function getSession() {
           sessionId: data.session_id,
           expiresAt: data.expires_at,
         };
+
+  // Cache session for 2 minutes (was 30s — too short, caused frequent DB hits)
+        cache.set(cacheKey, sessionData, 120);
+        return sessionData;
       } catch (error) {
         lastError = error;
         retries++;
-        
-        // Log retry attempt
-        if (retries < maxRetries) {
-          console.warn(`Session verification retry ${retries}/${maxRetries}:`, error instanceof Error ? error.message : error);
-        }
-        
-        // If it's a connection pool issue, wait longer
-        if (error instanceof Error && (
-          error.message.includes('too many clients') || 
-          error.message.includes('ECONNRESET')
-        )) {
-          await new Promise(resolve => setTimeout(resolve, 500 * retries));
-        }
       }
     }
     
@@ -155,6 +152,8 @@ export async function deleteSession() {
     } catch (error) {
       console.error('Error deleting session:', error);
     }
+    // Clear session cache on logout
+    cache.delete(`session:${token}`);
   }
 
   cookieStore.delete('session');

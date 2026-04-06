@@ -34,8 +34,8 @@ const nextConfig: NextConfig = {
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    // Reduce bundle size in dev
     optimizeCss: true,
+    instrumentationHook: true, // enables instrumentation.ts for route warm-up
   },
   
   // Compiler optimizations

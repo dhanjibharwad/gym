@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { checkPermission, checkAnyPermission } from '@/lib/api-permissions';
+import { checkPermission, checkAnyPermission, invalidateUserPermissionsCache } from '@/lib/api-permissions';
 import { MODULES, ALL_PERMISSIONS } from '@/lib/permissions';
 import { isAdmin } from '@/lib/rbac';
 
@@ -128,6 +128,14 @@ export async function POST(request: NextRequest) {
       }
 
       await client.query('COMMIT');
+
+      // Invalidate permissions cache for all users with this role
+      const affectedUsers = await pool.query(
+        'SELECT id FROM users WHERE role_id = $1',
+        [roleId]
+      );
+      affectedUsers.rows.forEach(row => invalidateUserPermissionsCache(row.id));
+
       return NextResponse.json({ message: 'Permissions updated successfully' });
     } catch (error) {
       await client.query('ROLLBACK');

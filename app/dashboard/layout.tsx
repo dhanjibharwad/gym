@@ -2,58 +2,42 @@
 
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
-import { UserProvider } from "@/components/rbac/PermissionGate";
-import { useUser } from "@/lib/hooks/useUser";
+import { UserProvider, useUser } from "@/components/rbac/PermissionGate";
 import { useEffect, useState } from 'react';
 import { prefetchByRole } from '@/lib/prefetch-pages';
 import TopLoadingBar from '@/components/TopLoadingBar';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, loading } = useUser();
+// Inner layout reads user from UserProvider context (single /api/auth/me call)
+function DashboardInner({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useUser();
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Prefetch common pages IMMEDIATELY after user is loaded - THROTTLED
   useEffect(() => {
-    if (!loading && user) {
-      console.log('[Dashboard Layout] 🚀 Starting throttled prefetch for role:', user.role);
-      
-      // Start prefetching with longer delay to not overwhelm DB
+    if (!isLoading && user) {
       const timeoutId = setTimeout(() => {
         prefetchByRole(user.role);
-      }, 1000); // Increased from 500ms to 1000ms
-      
+      }, 5000); // Start after 5s so login interactions are never blocked
       return () => clearTimeout(timeoutId);
     }
-  }, [loading, user]);
+  }, [isLoading, user]);
 
-  // Simulate loading progress
   useEffect(() => {
-    if (loading) {
+    if (isLoading) {
       setLoadingProgress(0);
       const interval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + 10;
-        });
+        setLoadingProgress(prev => prev >= 90 ? prev : prev + 10);
       }, 100);
-      
       return () => clearInterval(interval);
     } else {
       setLoadingProgress(100);
     }
-  }, [loading]);
+  }, [isLoading]);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
-    <UserProvider>
-      <TopLoadingBar isLoading={loading} progress={loadingProgress} />
+    <>
+      <TopLoadingBar isLoading={isLoading} progress={loadingProgress} />
       <div className="min-h-screen flex bg-gray-50">
         <Sidebar userRole={user.role} userPermissions={user.permissions} />
         <div className="flex-1 flex flex-col min-w-0">
@@ -63,6 +47,18 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <UserProvider>
+      <DashboardInner>{children}</DashboardInner>
     </UserProvider>
   );
 }
