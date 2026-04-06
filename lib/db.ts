@@ -13,8 +13,8 @@ const pool =
     database: process.env.DB_NAME || 'gymportal',
     user: process.env.DB_USER || 'username',
     password: process.env.DB_PASSWORD || 'password',
-    max: 10, // Allow up to 10 concurrent connections
-    min: 2,   // Keep 2 warm connections ready
+    max: 10,
+    min: 0,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 3000,
     query_timeout: 8000,
