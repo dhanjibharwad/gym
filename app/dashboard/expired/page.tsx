@@ -1,14 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Phone, Calendar, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-
-// Pre-fetch at module import time — before React mounts
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/members?status=expired&limit=200').then(r => r.json())
-    : null;
+import { cachedFetch, clientCacheGet } from '@/lib/clientCache';
 
 interface Member {
   id: number;
@@ -26,20 +21,13 @@ function ExpiredMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     const init = async () => {
+      const cached = clientCacheGet<any>('/api/members?status=expired&limit=200');
+      if (cached?.success) { setMembers(cached.members ?? []); setLoading(false); }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          const res = await fetch('/api/members?status=expired&limit=200');
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          data = await res.json();
-        }
+        const data = await cachedFetch<any>('/api/members?status=expired&limit=200');
         setMembers(data.success && Array.isArray(data.members) ? data.members : []);
       } catch {
         setMembers([]);

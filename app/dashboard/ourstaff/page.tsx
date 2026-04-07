@@ -1,21 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X, Copy, Check, KeyRound, Eye, EyeOff, KeySquare } from 'lucide-react';
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
+import { cachedFetch, clientCacheDelete, clientCacheGet } from '@/lib/clientCache';
 
 // Pre-fetch at module import time — before React mounts
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? Promise.all([
-        fetch('/api/admin/staff').then(r => r.json()),
-        fetch('/api/admin/roles').then(r => r.json()),
-      ])
-    : null;
-
 function OurStaffPage() {
   const { can } = usePermission();
   const [staff, setStaff] = useState<any[]>([]);
@@ -32,7 +25,6 @@ function OurStaffPage() {
   const [resetPassword, setResetPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<{ password: string; emailSent: boolean } | null>(null);
-  const prefetchConsumed = useRef(false);
 
   const togglePasswordVisibility = (id: number) => {
     setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
@@ -82,7 +74,8 @@ function OurStaffPage() {
 
   const fetchStaff = async () => {
     try {
-      const data = await fetch('/api/admin/staff').then(r => r.json());
+      clientCacheDelete('/api/admin/staff');
+      const data = await cachedFetch<any>('/api/admin/staff');
       if (data.staff) setStaff(data.staff);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
@@ -154,18 +147,15 @@ function OurStaffPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      const cachedStaff = clientCacheGet<any>('/api/admin/staff');
+      const cachedRoles = clientCacheGet<any>('/api/admin/roles');
+      if (cachedStaff?.staff) { setStaff(cachedStaff.staff); setLoading(false); }
+      if (cachedRoles?.roles) setRoles(cachedRoles.roles.filter((r: any) => !r.is_protected && r.name.toLowerCase() !== 'admin'));
       try {
-        let staffData: any, rolesData: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          [staffData, rolesData] = await prefetchPromise;
-        } else {
-          [staffData, rolesData] = await Promise.all([
-            fetch('/api/admin/staff').then(r => r.json()),
-            fetch('/api/admin/roles').then(r => r.json()),
-          ]);
-        }
+        const [staffData, rolesData] = await Promise.all([
+          cachedFetch<any>('/api/admin/staff'),
+          cachedFetch<any>('/api/admin/roles'),
+        ]);
         if (staffData?.staff) setStaff(staffData.staff);
         if (rolesData?.roles) setRoles(rolesData.roles.filter((r: any) => !r.is_protected && r.name.toLowerCase() !== 'admin'));
       } catch (error) {

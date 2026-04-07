@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
+import { cachedFetch, clientCacheGet } from '@/lib/clientCache';
 
 interface Role {
   id: number;
@@ -27,15 +28,6 @@ interface Modules {
   [key: string]: Module;
 }
 
-// Pre-fetch as soon as this module is imported — before React even mounts
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? Promise.all([
-        fetch('/api/admin/roles').then(r => r.json()),
-        fetch('/api/admin/permissions').then(r => r.json()),
-      ])
-    : null;
-
 function PermissionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
@@ -46,24 +38,18 @@ function PermissionsPage() {
   const [message, setMessage] = useState('');
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [selectedRoleName, setSelectedRoleName] = useState('');
-  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     const init = async () => {
+      const cachedRoles = clientCacheGet<any>('/api/admin/roles');
+      const cachedModules = clientCacheGet<any>('/api/admin/permissions');
+      if (cachedRoles?.roles) { setRoles(cachedRoles.roles); setLoading(false); }
+      if (cachedModules?.modules) setModules(cachedModules.modules);
       try {
-        let rolesData: any, modulesData: any;
-
-        // Use the pre-fetched data if available and not yet consumed
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          [rolesData, modulesData] = await prefetchPromise;
-        } else {
-          [rolesData, modulesData] = await Promise.all([
-            fetch('/api/admin/roles').then(r => r.json()),
-            fetch('/api/admin/permissions').then(r => r.json()),
-          ]);
-        }
-
+        const [rolesData, modulesData] = await Promise.all([
+          cachedFetch<any>('/api/admin/roles'),
+          cachedFetch<any>('/api/admin/permissions'),
+        ]);
         if (rolesData?.roles) setRoles(rolesData.roles);
         if (modulesData?.modules) setModules(modulesData.modules);
       } catch (error) {

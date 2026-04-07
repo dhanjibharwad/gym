@@ -1,16 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
+import { cachedFetch, clientCacheDelete, clientCacheGet } from '@/lib/clientCache';
 import Toast from '@/app/components/Toast';
-
-// Pre-fetch at module import time — before React mounts
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/membership-plans').then(r => r.json())
-    : null;
 
 interface MembershipPlan {
   id: number;
@@ -52,23 +47,19 @@ function MembershipPlansPage() {
   
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm>({ show: false, plan: null });
   const [validationError, setValidationError] = useState<string>('');
-  const prefetchConsumed = useRef(false);
-
   const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
   };
 
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      const cached = clientCacheGet<any>('/api/membership-plans');
+      if (cached?.success) {
+        setPlans(cached.plans);
+        setLoading(false);
+      }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          data = await fetch('/api/membership-plans').then(r => r.json());
-        }
+        const data = await cachedFetch<any>('/api/membership-plans');
         if (data.success) setPlans(data.plans);
       } catch (error) {
         console.error('Error fetching plans:', error);
@@ -81,7 +72,8 @@ function MembershipPlansPage() {
 
   const fetchPlans = async () => {
     try {
-      const data = await fetch('/api/membership-plans').then(r => r.json());
+      clientCacheDelete('/api/membership-plans');
+      const data = await cachedFetch<any>('/api/membership-plans');
       if (data.success) setPlans(data.plans);
     } catch (error) {
       console.error('Error fetching plans:', error);

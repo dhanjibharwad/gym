@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Users, Edit, Trash2, AlertTriangle, Shield } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/admin/roles').then(r => r.json())
-    : null;
+import { cachedFetch, clientCacheDelete, clientCacheGet } from '@/lib/clientCache';
 
 interface Role {
   id: number;
@@ -33,7 +29,6 @@ function RolesPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const prefetchConsumed = useRef(false);
 
   const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
@@ -41,15 +36,10 @@ function RolesPage() {
 
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      const cached = clientCacheGet<any>('/api/admin/roles');
+      if (cached?.roles) { setRoles(cached.roles); setLoading(false); }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          data = await fetch('/api/admin/roles').then(r => r.json());
-        }
+        const data = await cachedFetch<any>('/api/admin/roles');
         if (data?.roles) setRoles(data.roles);
       } catch (error) {
         console.error('Error fetching roles:', error);
@@ -86,6 +76,7 @@ function RolesPage() {
         setRoles(roles.filter(r => r.id !== roleToDelete.id));
         setShowDeleteModal(false);
         setRoleToDelete(null);
+        clientCacheDelete('/api/admin/roles');
         showToastMessage('Role deleted successfully!', 'success');
       } else {
         showToastMessage(data.error || 'Failed to delete role', 'error');
@@ -123,6 +114,7 @@ function RolesPage() {
           setRoles([...roles, data.role]);
           showToastMessage('Role created successfully!', 'success');
         }
+        clientCacheDelete('/api/admin/roles');
         resetForm();
       } else {
         showToastMessage(data.error || 'Failed to save role', 'error');

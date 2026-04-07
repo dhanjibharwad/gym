@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   User,
@@ -17,11 +17,7 @@ import {
   Filter
 } from 'lucide-react';
 import TopLoadingBar from '@/components/TopLoadingBar';
-
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/members').then(r => r.json())
-    : null;
+import { cachedFetch, clientCacheGet } from '@/lib/clientCache';
 
 interface MemberTransaction {
   id: number;
@@ -61,19 +57,13 @@ const HistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
-  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     const init = async () => {
-      setLoading(true);
+      const cached = clientCacheGet<any>('/api/members');
+      if (cached?.success) { setMembers(cached.members); setLoading(false); }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          data = await fetch('/api/members').then(r => r.json());
-        }
+        const data = await cachedFetch<any>('/api/members');
         if (data?.success) setMembers(data.members);
       } catch (error) {
         console.error('Error fetching members:', error);

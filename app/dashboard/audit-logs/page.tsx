@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Clock, User, Activity, Search } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
-
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/audit-logs?page=1&limit=100').then(r => r.json())
-    : null;
+import { cachedFetch, clientCacheGet } from '@/lib/clientCache';
 
 interface AuditLog {
   id: number;
@@ -26,7 +22,6 @@ function AuditLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const prefetchConsumed = useRef(false);
 
   const tabs = [
     { id: 'all', label: 'All Logs' },
@@ -62,20 +57,13 @@ function AuditLogsPage() {
 
   useEffect(() => {
     const init = async () => {
+      const cached = clientCacheGet<any>('/api/audit-logs?page=1&limit=100');
+      if (cached?.success) { setLogs(cached.logs); setLoading(false); }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          data = await fetch('/api/audit-logs?page=1&limit=100').then(r => r.json());
-        }
-        if (data.success) {
-          setLogs(data.logs);
-        } else {
-          setError(data.message || 'Failed to load audit logs');
-        }
-      } catch (error) {
+        const data = await cachedFetch<any>('/api/audit-logs?page=1&limit=100');
+        if (data.success) setLogs(data.logs);
+        else setError(data.message || 'Failed to load audit logs');
+      } catch {
         setError('Unable to load audit logs. Please try again.');
       } finally {
         setLoading(false);

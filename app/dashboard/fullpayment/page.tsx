@@ -1,13 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, Phone, Calendar, CreditCard, User, Search } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? fetch('/api/payments?status=full&limit=200').then(r => r.json())
-    : null;
+import { cachedFetch, clientCacheGet } from '@/lib/clientCache';
 
 interface Member {
   id: number;
@@ -29,22 +25,15 @@ function FullPaymentPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     const init = async () => {
+      const cached = clientCacheGet<any>('/api/payments?status=full&limit=200');
+      if (cached?.success) { setMembers(cached.payments ?? []); setLoading(false); }
       try {
-        let data: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          data = await prefetchPromise;
-        } else {
-          const res = await fetch('/api/payments?status=full&limit=200');
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          data = await res.json();
-        }
+        const data = await cachedFetch<any>('/api/payments?status=full&limit=200');
         setMembers(data.success && Array.isArray(data.payments) ? data.payments : []);
-      } catch (error) {
+      } catch {
         setMembers([]);
       } finally {
         setLoading(false);

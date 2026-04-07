@@ -1,14 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-
-const prefetchPromise =
-  typeof window !== 'undefined'
-    ? Promise.all([
-        fetch('/api/payments').then(r => r.json()),
-        fetch('/api/payments/history').then(r => r.json()),
-      ])
-    : null;
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   Search,
@@ -29,9 +21,10 @@ import {
   X,
   Save
 } from 'lucide-react';
-import Toast from '@/app/components/Toast';
+import { cachedFetch, clientCacheDelete, clientCacheGet } from '@/lib/clientCache';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission, useUser } from '@/components/rbac/PermissionGate';
+import Toast from '@/app/components/Toast';
 
 interface Payment {
   id: number;
@@ -95,21 +88,18 @@ const PaymentsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
-  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
     const init = async () => {
+      const cachedP = clientCacheGet<any>('/api/payments');
+      const cachedH = clientCacheGet<any>('/api/payments/history');
+      if (cachedP?.success) { setPayments(cachedP.payments); setLoading(false); }
+      if (cachedH?.success) { setPaymentHistory(cachedH.transactions); setLoading(false); }
       try {
-        let paymentsData: any, historyData: any;
-        if (prefetchPromise && !prefetchConsumed.current) {
-          prefetchConsumed.current = true;
-          [paymentsData, historyData] = await prefetchPromise;
-        } else {
-          [paymentsData, historyData] = await Promise.all([
-            fetch('/api/payments').then(r => r.json()),
-            fetch('/api/payments/history').then(r => r.json()),
-          ]);
-        }
+        const [paymentsData, historyData] = await Promise.all([
+          cachedFetch<any>('/api/payments'),
+          cachedFetch<any>('/api/payments/history'),
+        ]);
         if (paymentsData?.success) setPayments(paymentsData.payments);
         if (historyData?.success) setPaymentHistory(historyData.transactions);
       } catch {
@@ -280,9 +270,8 @@ const PaymentsPage = () => {
 
   const fetchPaymentHistory = async () => {
     try {
-      const response = await fetch('/api/payments/history');
-      if (!response.ok) throw new Error('Failed to fetch payment history');
-      const result = await response.json();
+      clientCacheDelete('/api/payments/history');
+      const result = await cachedFetch<any>('/api/payments/history');
       if (result.success) setPaymentHistory(result.transactions);
     } catch {
       setNotification({type: 'error', message: 'Unable to load payment history.'});
@@ -291,9 +280,8 @@ const PaymentsPage = () => {
 
   const fetchPayments = async () => {
     try {
-      const response = await fetch('/api/payments');
-      if (!response.ok) throw new Error(`Failed: ${response.status}`);
-      const result = await response.json();
+      clientCacheDelete('/api/payments');
+      const result = await cachedFetch<any>('/api/payments');
       if (result.success) setPayments(result.payments);
     } catch {
       setNotification({type: 'error', message: 'Unable to load payments. Please refresh the page.'});
