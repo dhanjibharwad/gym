@@ -46,7 +46,7 @@ export function prefetchByRole(role: string): void {
 
   // Admin-only extras
   if (role.toLowerCase() === 'admin') {
-    setTimeout(() => prefetchUrl('/api/admin/permissions'), 10000);
+    setTimeout(() => prefetchUrl('/api/dashboard'), 5000);
   }
 }
 

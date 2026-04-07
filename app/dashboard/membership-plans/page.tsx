@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-import TopLoadingBar from '@/components/TopLoadingBar';
+
+// Pre-fetch at module import time — before React mounts
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? fetch('/api/membership-plans').then(r => r.json())
+    : null;
 
 interface MembershipPlan {
   id: number;
@@ -47,28 +52,39 @@ function MembershipPlansPage() {
   
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm>({ show: false, plan: null });
   const [validationError, setValidationError] = useState<string>('');
+  const prefetchConsumed = useRef(false);
 
   const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
   };
 
   useEffect(() => {
-    fetchPlans();
+    const init = async () => {
+      setLoading(true);
+      try {
+        let data: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          data = await prefetchPromise;
+        } else {
+          data = await fetch('/api/membership-plans').then(r => r.json());
+        }
+        if (data.success) setPlans(data.plans);
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const fetchPlans = async () => {
-    setLoading(true);
     try {
-      const response = await fetch('/api/membership-plans');
-      const data = await response.json();
-      
-      if (data.success) {
-        setPlans(data.plans);
-      }
+      const data = await fetch('/api/membership-plans').then(r => r.json());
+      if (data.success) setPlans(data.plans);
     } catch (error) {
       console.error('Error fetching plans:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -154,7 +170,30 @@ function MembershipPlansPage() {
   };
 
   if (loading) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="p-6">
+        <div className="max-w-full mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-56 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md p-6 space-y-4">
+                <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-1/2 bg-gray-100 rounded animate-pulse mx-auto" />
+                <div className="h-4 w-1/3 bg-gray-100 rounded animate-pulse mx-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
