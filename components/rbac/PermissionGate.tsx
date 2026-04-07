@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode } from 'react';
 import { hasPermission, hasAnyPermission, hasAllPermissions, isAdmin } from '@/lib/rbac';
 
 // Context for user permissions
@@ -32,12 +32,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserContextType['user']>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // useLayoutEffect runs after hydration but before paint — safe to read sessionStorage
+  useLayoutEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('gymportal_user');
+      if (cached) {
+        setUser(JSON.parse(cached));
+        setIsLoading(false);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const fetchUser = async () => {
     try {
       // Check sessionStorage cache first (avoids re-fetching on every page navigation)
       const cached = sessionStorage.getItem('gymportal_user');
       if (cached) {
-        setUser(JSON.parse(cached));
+        // Already handled by useLayoutEffect — just ensure loading is false
         setIsLoading(false);
         return;
       }

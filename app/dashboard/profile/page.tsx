@@ -70,9 +70,18 @@ const ProfilePage = () => {
     return `${day}-${month}-${year} ${hours}:${minutes}`;
   };
 
+  // Render immediately from session cache, then enrich with DB data
   useEffect(() => {
+    if (sessionUser) {
+      setProfile(prev => prev ?? (sessionUser as unknown as UserProfile));
+      setFormData(prev => prev.name ? prev : {
+        name: sessionUser.name || '',
+        email: '',
+        phone: ''
+      });
+    }
     fetchProfile();
-  }, []);
+  }, [sessionUser]);
 
   const fetchProfile = async () => {
     try {
@@ -80,22 +89,12 @@ const ProfilePage = () => {
       const userData = await userResponse.json();
       
       if (userData.success) {
-        const fullProfile = {
-          ...sessionUser,
-          ...userData.user
-        };
+        const fullProfile = { ...sessionUser, ...userData.user };
         setProfile(fullProfile as UserProfile);
         setFormData({
           name: fullProfile.name || '',
           email: fullProfile.email || '',
           phone: fullProfile.phone || ''
-        });
-      } else if (sessionUser) {
-        setProfile(sessionUser as unknown as UserProfile);
-        setFormData({
-          name: sessionUser.name,
-          email: '',
-          phone: ''
         });
       }
     } catch (error) {
@@ -164,7 +163,9 @@ const ProfilePage = () => {
     }
   };
 
-  if (!profile) return null;
+  const displayProfile = profile || (sessionUser as unknown as UserProfile);
+
+  if (!displayProfile) return null;
 
   return (
     <div className="space-y-6">
@@ -185,8 +186,8 @@ const ProfilePage = () => {
               <User className="w-10 h-10 text-white" />
             </div>
             <div className="text-white">
-              <h2 className="text-2xl font-bold">{profile.name}</h2>
-              <p className="text-gray-300 capitalize">{profile.role}</p>
+              <h2 className="text-2xl font-bold">{displayProfile.name}</h2>
+              <p className="text-gray-300 capitalize">{displayProfile.role}</p>
             </div>
           </div>
         </div>
@@ -229,7 +230,7 @@ const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <User className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-900">{profile.name}</span>
+                  <span className="text-gray-900">{displayProfile.name}</span>
                 </div>
               )}
             </div>
@@ -250,7 +251,7 @@ const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Mail className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-900">{profile.email}</span>
+                  <span className="text-gray-900">{displayProfile.email}</span>
                 </div>
               )}
             </div>
@@ -271,7 +272,7 @@ const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                   <Phone className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-900">{profile.phone || 'Not provided'}</span>
+                  <span className="text-gray-900">{displayProfile.phone || 'Not provided'}</span>
                 </div>
               )}
             </div>
@@ -283,7 +284,7 @@ const ProfilePage = () => {
               </label>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Shield className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-900 capitalize">{profile.role}</span>
+                <span className="text-gray-900 capitalize">{displayProfile.role}</span>
               </div>
             </div>
 
@@ -295,7 +296,7 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-900">
-                  {formatDate(profile.created_at)}
+                  {formatDate(displayProfile.created_at)}
                 </span>
               </div>
             </div>
@@ -308,7 +309,7 @@ const ProfilePage = () => {
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-900">
-                  {profile.last_login_at ? formatDateTime(profile.last_login_at) : 'Never'}
+                  {displayProfile.last_login_at ? formatDateTime(displayProfile.last_login_at) : 'Never'}
                 </span>
               </div>
             </div>
