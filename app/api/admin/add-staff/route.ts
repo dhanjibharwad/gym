@@ -87,7 +87,10 @@ export async function POST(request: NextRequest) {
     cache.delete(`staff:list:v2:${auth.session!.user.companyId}`);
 
     // Send email with login credentials
-    const loginUrl = process.env.NEXTAUTH_URL || 'http://localhost:8004';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      ? `https://${process.env.NEXT_PUBLIC_BASE_URL.replace(/^https?:\/\//, '')}`
+      : process.env.NEXTAUTH_URL || 'http://localhost:8004';
+    const loginUrl = baseUrl;
     const { sent: emailSent, error: emailErrorMsg } = await sendStaffEmail(
       auth.session!.user.companyId,
       normalizedEmail,

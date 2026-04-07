@@ -21,7 +21,7 @@ import {
   X,
   Save
 } from 'lucide-react';
-import { cachedFetch, clientCacheDelete, clientCacheGet } from '@/lib/clientCache';
+import { cachedFetch, clientCacheDelete, clientCacheGet, clientCacheSet } from '@/lib/clientCache';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission, useUser } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
@@ -90,25 +90,30 @@ const PaymentsPage = () => {
   const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
 
   useEffect(() => {
-    const init = async () => {
-      const cachedP = clientCacheGet<any>('/api/payments');
-      const cachedH = clientCacheGet<any>('/api/payments/history');
-      if (cachedP?.success) { setPayments(cachedP.payments); setLoading(false); }
-      if (cachedH?.success) { setPaymentHistory(cachedH.transactions); setLoading(false); }
-      try {
-        const [paymentsData, historyData] = await Promise.all([
-          cachedFetch<any>('/api/payments'),
-          cachedFetch<any>('/api/payments/history'),
-        ]);
-        if (paymentsData?.success) setPayments(paymentsData.payments);
-        if (historyData?.success) setPaymentHistory(historyData.transactions);
-      } catch {
-        setNotification({ type: 'error', message: 'Unable to load payments. Please refresh.' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
+    const cachedP = clientCacheGet<any>('/api/payments');
+    const cachedH = clientCacheGet<any>('/api/payments/history');
+    if (cachedP?.success) setPayments(cachedP.payments);
+    if (cachedH?.success) setPaymentHistory(cachedH.transactions);
+    if (cachedP?.success && cachedH?.success) {
+      setLoading(false);
+      Promise.all([
+        fetch('/api/payments').then(r => r.json()),
+        fetch('/api/payments/history').then(r => r.json()),
+      ]).then(([p, h]) => {
+        if (p?.success) { clientCacheSet('/api/payments', p); setPayments(p.payments); }
+        if (h?.success) { clientCacheSet('/api/payments/history', h); setPaymentHistory(h.transactions); }
+      }).catch(() => {});
+      return;
+    }
+    Promise.all([
+      fetch('/api/payments').then(r => r.json()),
+      fetch('/api/payments/history').then(r => r.json()),
+    ]).then(([p, h]) => {
+      if (p?.success) { clientCacheSet('/api/payments', p); setPayments(p.payments); }
+      if (h?.success) { clientCacheSet('/api/payments/history', h); setPaymentHistory(h.transactions); }
+    }).catch(() => {
+      setNotification({ type: 'error', message: 'Unable to load payments. Please refresh.' });
+    }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {

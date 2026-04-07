@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       `, [companyId, limit, offset]);
 
       const data = { success: true, transactions: result.rows };
-      cache.set(cacheKey, data, 60);
+      cache.set(cacheKey, data, 300); // 5 minutes
       return NextResponse.json(data);
     } finally {
       client.release();

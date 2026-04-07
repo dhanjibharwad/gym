@@ -21,6 +21,7 @@ import {
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
+import { cachedFetch, clientCacheGet, clientCacheSet } from '@/lib/clientCache';
 
 interface Membership {
   id: number;
@@ -179,49 +180,51 @@ function ReportsPage() {
 
   // Fetch data based on active tab and filters
   const fetchData = async () => {
+    let queryParams = `period=${dateFilter}`;
+    if (dateFilter === 'custom' && customStartDate && customEndDate) {
+      const startDateObj = new Date(customStartDate);
+      const endDateObj = new Date(customEndDate);
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) return;
+      if (endDateObj < startDateObj) { showToast('End date must be after start date', 'error'); return; }
+      queryParams = `start_date=${customStartDate}&end_date=${customEndDate}`;
+    }
+
+    const urlMap: Record<string, string> = {
+      memberships: `/api/reports/membership?${queryParams}`,
+      payments:    `/api/reports/payment?${queryParams}`,
+      revenue:     `/api/reports/revenue?${queryParams}`,
+      overall:     `/api/reports/overall?${queryParams}`,
+    };
+    const url = urlMap[activeTab];
+    if (!url) return;
+
+    // Show cached data instantly
+    const cached = clientCacheGet<any>(url);
+    if (cached?.success) {
+      applyData(activeTab, cached);
+      // Refresh in background silently
+      fetch(url).then(r => r.json()).then(fresh => {
+        if (fresh?.success) { clientCacheSet(url, fresh); applyData(activeTab, fresh); }
+      }).catch(() => {});
+      return;
+    }
+
     setLoading(true);
     try {
-      let queryParams = `period=${dateFilter}`;
-      
-      if (dateFilter === 'custom' && customStartDate && customEndDate) {
-        const startDateObj = new Date(customStartDate);
-        const endDateObj = new Date(customEndDate);
-        if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) { setLoading(false); return; }
-        if (endDateObj < startDateObj) { showToast('End date must be after start date', 'error'); setLoading(false); return; }
-        queryParams = `start_date=${customStartDate}&end_date=${customEndDate}`;
-      }
-
-      switch (activeTab) {
-        case 'memberships': {
-          const res = await fetch(`/api/reports/membership?${queryParams}`);
-          const data = await res.json();
-          if (data.success) setMembershipData(data);
-          break;
-        }
-        case 'payments': {
-          const res = await fetch(`/api/reports/payment?${queryParams}`);
-          const data = await res.json();
-          if (data.success) setPaymentData(data);
-          break;
-        }
-        case 'revenue': {
-          const res = await fetch(`/api/reports/revenue?${queryParams}`);
-          const data = await res.json();
-          if (data.success) setRevenueData(data);
-          break;
-        }
-        case 'overall': {
-          const res = await fetch(`/api/reports/overall?${queryParams}`);
-          const data = await res.json();
-          if (data.success) setOverallData(data);
-          break;
-        }
-      }
-    } catch (error) {
+      const data = await cachedFetch<any>(url);
+      if (data?.success) applyData(activeTab, data);
+    } catch {
       showToast('Failed to fetch report data', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyData = (tab: string, data: any) => {
+    if (tab === 'memberships') setMembershipData(data);
+    else if (tab === 'payments') setPaymentData(data);
+    else if (tab === 'revenue') setRevenueData(data);
+    else if (tab === 'overall') setOverallData(data);
   };
 
   // Export to Excel
