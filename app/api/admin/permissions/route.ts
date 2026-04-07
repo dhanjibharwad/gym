@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { checkPermission, checkAnyPermission, invalidateUserPermissionsCache } from '@/lib/api-permissions';
 import { MODULES, ALL_PERMISSIONS } from '@/lib/permissions';
 import { isAdmin } from '@/lib/rbac';
+import { cache } from '@/lib/cache/MemoryCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +15,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const roleId = searchParams.get('roleId');
+    const companyId = auth.session!.user.companyId;
 
     if (roleId) {
+      const cacheKey = `permissions:role:${roleId}:${companyId}`;
+      const cached = cache.get(cacheKey);
+      if (cached) return NextResponse.json(cached);
+
       // Get role info to check if it's admin
       const roleResult = await pool.query(
         'SELECT name FROM roles WHERE id = $1 AND company_id = $2',
@@ -28,12 +34,9 @@ export async function GET(request: NextRequest) {
         Object.entries(MODULES).forEach(([key, module]) => {
           allPermissions[key] = module.permissions.map(p => p.name);
         });
-        
-        return NextResponse.json({ 
-          modules: MODULES, 
-          rolePermissions: allPermissions,
-          isAdmin: true 
-        });
+        const adminResult = { modules: MODULES, rolePermissions: allPermissions, isAdmin: true };
+        cache.set(cacheKey, adminResult, 300);
+        return NextResponse.json(adminResult);
       }
 
       // Get permissions for specific role
@@ -50,11 +53,9 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {});
 
-      return NextResponse.json({ 
-        modules: MODULES, 
-        rolePermissions,
-        isAdmin: false 
-      });
+      const roleResult2 = { modules: MODULES, rolePermissions, isAdmin: false };
+      cache.set(cacheKey, roleResult2, 300);
+      return NextResponse.json(roleResult2);
     }
 
     // Return all modules
@@ -135,6 +136,7 @@ export async function POST(request: NextRequest) {
         [roleId]
       );
       affectedUsers.rows.forEach(row => invalidateUserPermissionsCache(row.id));
+      cache.delete(`permissions:role:${roleId}:${auth.session!.user.companyId}`);
 
       return NextResponse.json({ message: 'Permissions updated successfully' });
     } catch (error) {

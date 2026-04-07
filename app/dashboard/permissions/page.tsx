@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
-import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Role {
   id: number;
@@ -28,6 +27,15 @@ interface Modules {
   [key: string]: Module;
 }
 
+// Pre-fetch as soon as this module is imported — before React even mounts
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? Promise.all([
+        fetch('/api/admin/roles').then(r => r.json()),
+        fetch('/api/admin/permissions').then(r => r.json()),
+      ])
+    : null;
+
 function PermissionsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
@@ -38,47 +46,41 @@ function PermissionsPage() {
   const [message, setMessage] = useState('');
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [selectedRoleName, setSelectedRoleName] = useState('');
+  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
-    fetchRoles();
-    fetchModules();
+    const init = async () => {
+      try {
+        let rolesData: any, modulesData: any;
+
+        // Use the pre-fetched data if available and not yet consumed
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          [rolesData, modulesData] = await prefetchPromise;
+        } else {
+          [rolesData, modulesData] = await Promise.all([
+            fetch('/api/admin/roles').then(r => r.json()),
+            fetch('/api/admin/permissions').then(r => r.json()),
+          ]);
+        }
+
+        if (rolesData?.roles) setRoles(rolesData.roles);
+        if (modulesData?.modules) setModules(modulesData.modules);
+      } catch (error) {
+        console.error('Error loading permissions page:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    if (selectedRole) {
-      const role = roles.find(r => r.id === selectedRole);
-      if (role) {
-        setSelectedRoleName(role.name);
-      }
-      fetchRolePermissions(selectedRole);
-    }
-  }, [selectedRole, roles]);
-
-  const fetchRoles = async () => {
-    try {
-      const response = await fetch('/api/admin/roles');
-      const data = await response.json();
-      if (response.ok) {
-        setRoles(data.roles);
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    }
-  };
-
-  const fetchModules = async () => {
-    try {
-      const response = await fetch('/api/admin/permissions');
-      const data = await response.json();
-      if (response.ok) {
-        setModules(data.modules);
-      }
-    } catch (error) {
-      console.error('Error fetching modules:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (!selectedRole) return;
+    const role = roles.find(r => r.id === selectedRole);
+    if (role) setSelectedRoleName(role.name);
+    fetchRolePermissions(selectedRole);
+  }, [selectedRole]);
 
   const fetchRolePermissions = async (roleId: number) => {
     try {
@@ -141,7 +143,29 @@ function PermissionsPage() {
   };
 
   if (loading) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
