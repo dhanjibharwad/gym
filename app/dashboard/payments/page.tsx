@@ -96,18 +96,11 @@ const PaymentsPage = () => {
     if (cachedH?.success) setPaymentHistory(cachedH.transactions);
     if (cachedP?.success && cachedH?.success) {
       setLoading(false);
-      Promise.all([
-        fetch('/api/payments').then(r => r.json()),
-        fetch('/api/payments/history').then(r => r.json()),
-      ]).then(([p, h]) => {
-        if (p?.success) { clientCacheSet('/api/payments', p); setPayments(p.payments); }
-        if (h?.success) { clientCacheSet('/api/payments/history', h); setPaymentHistory(h.transactions); }
-      }).catch(() => {});
       return;
     }
     Promise.all([
-      fetch('/api/payments').then(r => r.json()),
-      fetch('/api/payments/history').then(r => r.json()),
+      cachedP?.success ? Promise.resolve(cachedP) : fetch('/api/payments').then(r => r.json()),
+      cachedH?.success ? Promise.resolve(cachedH) : fetch('/api/payments/history').then(r => r.json()),
     ]).then(([p, h]) => {
       if (p?.success) { clientCacheSet('/api/payments', p); setPayments(p.payments); }
       if (h?.success) { clientCacheSet('/api/payments/history', h); setPaymentHistory(h.transactions); }

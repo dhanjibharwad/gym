@@ -33,7 +33,6 @@ export default function Topbar({ userRole = "admin", userName = "User", companyN
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      sessionStorage.removeItem('gymportal_user');
       window.location.href = '/auth/login';
     }
   };

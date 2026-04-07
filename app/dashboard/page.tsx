@@ -283,8 +283,8 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      const statsRes = await fetch('/api/dashboard/stats?limit=1000', { 
-        cache: 'no-store'
+      const statsRes = await fetch('/api/dashboard/stats', {
+        next: { revalidate: 60 }
       });
       
       if (!statsRes.ok) {

@@ -108,14 +108,14 @@ const MembersPage = () => {
   // Refetch members when page becomes visible (e.g., after navigation back)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && members.length === 0) {
         fetchMembers();
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [pagination.page, debouncedSearch]);
+  }, [pagination.page, debouncedSearch, members.length]);
 
   const handleEditMember = (member: Member) => {
     setEditingMember(member.id);
@@ -171,15 +171,10 @@ const MembersPage = () => {
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
         ...(debouncedSearch && { search: debouncedSearch }),
-        _t: Date.now().toString()
       });
       
       const response = await fetch(`/api/members?${params}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
-        cache: 'no-store'
       });
       
       const result = await response.json();
@@ -313,20 +308,13 @@ const MembersPage = () => {
     );
   };
 
-  const membersWithoutMembershipCount = members.filter(m => 
-    m.membership_status === 'none' || 
-    m.membership_status === 'expired'
+ const membersWithoutMembershipCount = members.filter(m =>
+    m.membership_status === 'none' || m.membership_status === 'expired'
   ).length;
-  
-  console.log('[Members Page] Total members:', members.length);
-  console.log('[Members Page] Without membership count:', membersWithoutMembershipCount);
-  if (members.length > 0) {
-    console.log('[Members Page] First member status:', members[0].membership_status);
-  }
 
   const toggleMemberSelection = (memberId: number) => {
-    setSelectedMembers(prev => 
-      prev.includes(memberId) 
+    setSelectedMembers(prev =>
+      prev.includes(memberId)
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );

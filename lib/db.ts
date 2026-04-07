@@ -13,16 +13,16 @@ const pool =
     database: process.env.DB_NAME || 'gymportal',
     user: process.env.DB_USER || 'username',
     password: process.env.DB_PASSWORD || 'password',
-    max: 10,
-    min: 2,
-    idleTimeoutMillis: 60000,
+    max: 20,
+    min: 5,
+    idleTimeoutMillis: 120000,
     connectionTimeoutMillis: 3000,
     query_timeout: 8000,
     keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
+    keepAliveInitialDelayMillis: 0,
     statement_timeout: 7000,
     allowExitOnIdle: false,
-    maxUses: 7500,
+    maxUses: 10000,
   });
 
 if (!globalForPg.__gymportal_pg_pool) {

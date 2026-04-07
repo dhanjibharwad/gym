@@ -1,20 +1,26 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { hasPermission, hasAnyPermission, hasAllPermissions, isAdmin } from '@/lib/rbac';
 
-// Context for user permissions
+interface UserData {
+  id: number;
+  name: string;
+  role: string;
+  permissions: string[];
+  isAdmin: boolean;
+  companyName?: string;
+}
+
 interface UserContextType {
-  user: {
-    id: number;
-    name: string;
-    role: string;
-    permissions: string[];
-    isAdmin: boolean;
-  } | null;
+  user: UserData | null;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
 }
+
+// Module-level cache — survives React re-mounts and page navigations within the same tab
+let _cachedUser: UserData | null = null;
+let _fetchPromise: Promise<void> | null = null;
 
 const UserContext = createContext<UserContextType>({
   user: null,
@@ -22,44 +28,20 @@ const UserContext = createContext<UserContextType>({
   refreshUser: async () => {}
 });
 
-// Hook to use user context
 export function useUser() {
   return useContext(UserContext);
 }
 
-// Provider component
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserContextType['user']>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<UserData | null>(_cachedUser);
+  const [isLoading, setIsLoading] = useState(_cachedUser === null);
 
-  // useLayoutEffect runs after hydration but before paint — safe to read sessionStorage
-  useLayoutEffect(() => {
+  const doFetch = async () => {
     try {
-      const cached = sessionStorage.getItem('gymportal_user');
-      if (cached) {
-        setUser(JSON.parse(cached));
-        setIsLoading(false);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const fetchUser = async () => {
-    try {
-      // Check sessionStorage cache first (avoids re-fetching on every page navigation)
-      const cached = sessionStorage.getItem('gymportal_user');
-      if (cached) {
-        // Already handled by useLayoutEffect — just ensure loading is false
-        setIsLoading(false);
-        return;
-      }
-
       const response = await fetch('/api/auth/me');
       const data = await response.json();
-      
       if (data.success) {
-        const userData = {
+        const userData: UserData = {
           id: data.user.id,
           name: data.user.name,
           role: data.user.role,
@@ -67,27 +49,43 @@ export function UserProvider({ children }: { children: ReactNode }) {
           isAdmin: data.user.isAdmin || isAdmin(data.user.role),
           companyName: data.user.companyName,
         };
-        sessionStorage.setItem('gymportal_user', JSON.stringify(userData));
+        _cachedUser = userData;
         setUser(userData);
       } else {
-        sessionStorage.removeItem('gymportal_user');
+        _cachedUser = null;
         setUser(null);
       }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      setUser(null);
+    } catch {
+      setUser(_cachedUser);
     } finally {
+      _fetchPromise = null;
       setIsLoading(false);
     }
   };
 
   const refreshUser = async () => {
-    sessionStorage.removeItem('gymportal_user');
-    await fetchUser();
+    _cachedUser = null;
+    _fetchPromise = null;
+    setIsLoading(true);
+    await doFetch();
   };
 
   useEffect(() => {
-    fetchUser();
+    if (_cachedUser !== null) {
+      // Already have user in memory — no fetch needed
+      setUser(_cachedUser);
+      setIsLoading(false);
+      return;
+    }
+    // Deduplicate: if a fetch is already in-flight, don't start another
+    if (!_fetchPromise) {
+      _fetchPromise = doFetch();
+    } else {
+      _fetchPromise.then(() => {
+        setUser(_cachedUser);
+        setIsLoading(false);
+      });
+    }
   }, []);
 
   return (

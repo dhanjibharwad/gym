@@ -8,8 +8,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Performance optimizations
-  reactStrictMode: true,
+  reactStrictMode: false,
   
   // Reduce dev server startup time
   webpack: (config, { isServer, dev }) => {

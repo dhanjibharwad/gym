@@ -85,6 +85,7 @@ export const memberOps = {
         SELECT 
           m.id,
           m.member_number,
+          m.member_number as formatted_member_id,
           m.full_name,
           m.phone_number,
           m.email,
