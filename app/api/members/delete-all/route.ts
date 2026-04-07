@@ -9,6 +9,9 @@ export async function DELETE(request: NextRequest) {
 
     const companyId = auth.session!.user.companyId;
 
+    // Ensure column exists
+    await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`).catch(() => {});
+
     // Soft delete all non-deleted members for this company
     const result = await pool.query(
       `UPDATE members SET deleted_at = NOW()

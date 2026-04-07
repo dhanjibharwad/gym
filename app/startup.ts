@@ -14,6 +14,10 @@ export async function startup() {
   try {
     // Test database connection
     await pool.query('SELECT NOW()');
+
+    // Run soft-delete migration (idempotent)
+    await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_deleted_at ON members(deleted_at) WHERE deleted_at IS NULL`);
     
     // Warm up cache (non-blocking, silent)
     warmUpGlobalCache().catch((err: Error) => {

@@ -340,10 +340,13 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Company ID required' }, { status: 400 });
     }
 
-    // Soft delete — just set deleted_at timestamp
+    // Soft delete — set deleted_at timestamp
+    // First ensure column exists (in case migration hasn't run yet)
+    await pool.query(`ALTER TABLE members ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`).catch(() => {});
+
     const result = await pool.query(
       `UPDATE members SET deleted_at = NOW()
-       WHERE id = $1 AND company_id = $2 AND deleted_at IS NULL
+       WHERE id = $1 AND company_id = $2
        RETURNING id, full_name`,
       [memberId, companyId]
     );
