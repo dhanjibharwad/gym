@@ -21,6 +21,7 @@ const API_PREFETCH: PrefetchConfig[] = [
   { url: '/api/payments',                     delay: 3500  },
   { url: '/api/admin/roles',                  delay: 4000  },
   { url: '/api/admin/permissions',            delay: 4500  },
+  { url: '/api/admin/staff',                  delay: 5000  },
 ];
 
 async function prefetchUrl(url: string): Promise<void> {

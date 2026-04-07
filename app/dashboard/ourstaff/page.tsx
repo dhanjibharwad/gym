@@ -1,12 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Users, Calendar, Shield, Trash2, User, Plus, Edit, AlertTriangle, X, Copy, Check, KeyRound, Eye, EyeOff, KeySquare } from 'lucide-react';
 import Link from 'next/link';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
-import TopLoadingBar from '@/components/TopLoadingBar';
 import Toast from '@/app/components/Toast';
+
+// Pre-fetch at module import time — before React mounts
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? Promise.all([
+        fetch('/api/admin/staff').then(r => r.json()),
+        fetch('/api/admin/roles').then(r => r.json()),
+      ])
+    : null;
 
 function OurStaffPage() {
   const { can } = usePermission();
@@ -24,6 +32,7 @@ function OurStaffPage() {
   const [resetPassword, setResetPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<{ password: string; emailSent: boolean } | null>(null);
+  const prefetchConsumed = useRef(false);
 
   const togglePasswordVisibility = (id: number) => {
     setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
@@ -72,29 +81,11 @@ function OurStaffPage() {
   };
 
   const fetchStaff = async () => {
-    setLoading(true);
     try {
-      const res = await fetch('/api/admin/staff');
-      const data = await res.json();
-      if (res.ok) {
-        setStaff(data.staff);
-      }
+      const data = await fetch('/api/admin/staff').then(r => r.json());
+      if (data.staff) setStaff(data.staff);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const res = await fetch('/api/admin/roles');
-      const data = await res.json();
-      if (res.ok && data.roles) {
-        setRoles(data.roles.filter((r: any) => !r.is_protected && r.name.toLowerCase() !== 'admin'));
-      }
-    } catch (error) {
-      console.error('Failed to fetch roles:', error);
     }
   };
 
@@ -162,18 +153,27 @@ function OurStaffPage() {
   };
 
   useEffect(() => {
-    // Fetch both in parallel but with Promise.all for better performance
     const loadData = async () => {
+      setLoading(true);
       try {
-        await Promise.all([
-          fetchStaff(),
-          fetchRoles()
-        ]);
+        let staffData: any, rolesData: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          [staffData, rolesData] = await prefetchPromise;
+        } else {
+          [staffData, rolesData] = await Promise.all([
+            fetch('/api/admin/staff').then(r => r.json()),
+            fetch('/api/admin/roles').then(r => r.json()),
+          ]);
+        }
+        if (staffData?.staff) setStaff(staffData.staff);
+        if (rolesData?.roles) setRoles(rolesData.roles.filter((r: any) => !r.is_protected && r.name.toLowerCase() !== 'admin'));
       } catch (error) {
         console.error('Error loading staff data:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    
     loadData();
   }, []);
 
@@ -310,8 +310,18 @@ function OurStaffPage() {
           
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-400">
-                Loading staff...
+              <div className="p-6 space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse shrink-0" />
+                    <div className="flex-1 grid grid-cols-4 gap-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : staff.length === 0 ? (
               <div className="p-8 text-center">
