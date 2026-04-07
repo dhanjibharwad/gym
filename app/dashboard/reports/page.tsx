@@ -275,54 +275,272 @@ function ReportsPage() {
 
   // Export to PDF
   const exportToPDF = async () => {
-    const jsPDF = (await import('jspdf')).default;
-    await import('jspdf-autotable');
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Report`, 14, 20);
-    doc.setFontSize(12);
-    const dateRange = dateFilter === 'custom' 
+    if (activeTab === 'overall') {
+      showToast('Select Memberships, Payments, or Revenue tab to export PDF.', 'info');
+      return;
+    }
+
+    const jsPDFModule = await import('jspdf');
+    const jsPDF = jsPDFModule.default;
+    const autoTableModule = await import('jspdf-autotable');
+    const autoTable = autoTableModule.default;
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+    const dateRange = dateFilter === 'custom'
       ? `${customStartDate} to ${customEndDate}`
       : dateFilters.find(f => f.value === dateFilter)?.label || '';
-    doc.text(`Period: ${dateRange}`, 14, 30);
-    let yPos = 40;
-    doc.setFontSize(14);
-    doc.text('Summary', 14, yPos);
-    yPos += 10;
-    switch (activeTab) {
-      case 'memberships':
-        if (membershipData.summary) {
-          const s = membershipData.summary;
-          doc.setFontSize(10);
-          doc.text(`Total Memberships: ${s.total_memberships}`, 14, yPos);
-          doc.text(`Active: ${s.active_memberships}`, 14, yPos + 6);
-          doc.text(`Expired: ${s.expired_memberships}`, 14, yPos + 12);
-          doc.text(`Total Revenue: ₹${Number(s.collected_revenue || 0).toFixed(2)}`, 14, yPos + 18);
-        }
-        break;
-      case 'payments':
-        if (paymentData.summary) {
-          const s = paymentData.summary;
-          doc.setFontSize(10);
-          doc.text(`Total Transactions: ${s.total_transactions}`, 14, yPos);
-          doc.text(`Total Revenue: ₹${Number(s.total_income || 0).toFixed(2)}`, 14, yPos + 6);
-        }
-        break;
-      case 'revenue':
-        if (revenueData.summary) {
-          const s = revenueData.summary;
-          doc.setFontSize(10);
-          doc.text(`Total Revenue: ₹${Number(s.total_revenue || 0).toFixed(2)}`, 14, yPos);
-          doc.text(`Total Transactions: ${s.total_transactions}`, 14, yPos + 6);
-        }
-        break;
-      case 'overall':
-        doc.setFontSize(10);
-        doc.text('Please select a specific report tab to export PDF.', 14, yPos);
-        break;
+
+    const ORANGE = [234, 88, 12] as [number, number, number];
+    const DARK   = [31, 41, 55]  as [number, number, number];
+    const LIGHT  = [249, 250, 251] as [number, number, number];
+    const WHITE  = [255, 255, 255] as [number, number, number];
+    const GRAY   = [107, 114, 128] as [number, number, number];
+    const GREEN  = [22, 163, 74]  as [number, number, number];
+    const RED    = [220, 38, 38]  as [number, number, number];
+    const BLUE   = [37, 99, 235]  as [number, number, number];
+
+    const addHeader = (title: string) => {
+      // Orange top bar
+      doc.setFillColor(...ORANGE);
+      doc.rect(0, 0, pageW, 18, 'F');
+      // Gym name
+      doc.setTextColor(...WHITE);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('OUR GYM', 14, 12);
+      // Report title
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(title, pageW / 2, 12, { align: 'center' });
+      // Date
+      doc.setFontSize(9);
+      doc.text(`Generated: ${today}`, pageW - 14, 12, { align: 'right' });
+      // Period bar
+      doc.setFillColor(...DARK);
+      doc.rect(0, 18, pageW, 8, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Period: ${dateRange}`, 14, 23.5);
+    };
+
+    const addFooter = () => {
+      const totalPages = (doc.internal as any).getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFillColor(...LIGHT);
+        doc.rect(0, pageH - 10, pageW, 10, 'F');
+        doc.setDrawColor(229, 231, 235);
+        doc.line(0, pageH - 10, pageW, pageH - 10);
+        doc.setTextColor(...GRAY);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Our Gym Management System', 14, pageH - 4);
+        doc.text(`Page ${i} of ${totalPages}`, pageW / 2, pageH - 4, { align: 'center' });
+        doc.text(`Confidential`, pageW - 14, pageH - 4, { align: 'right' });
+      }
+    };
+
+    const drawSummaryCards = (cards: { label: string; value: string; color: [number,number,number] }[], startY: number) => {
+      const cardW = (pageW - 28 - (cards.length - 1) * 5) / cards.length;
+      cards.forEach((card, i) => {
+        const x = 14 + i * (cardW + 5);
+        doc.setFillColor(...WHITE);
+        doc.setDrawColor(229, 231, 235);
+        doc.roundedRect(x, startY, cardW, 20, 2, 2, 'FD');
+        // Color accent bar
+        doc.setFillColor(...card.color);
+        doc.roundedRect(x, startY, 3, 20, 1, 1, 'F');
+        doc.setTextColor(...GRAY);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(card.label, x + 7, startY + 7);
+        doc.setTextColor(...DARK);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(card.value, x + 7, startY + 15);
+      });
+      return startY + 26;
+    };
+
+    // ── MEMBERSHIPS ──────────────────────────────────────────────────────────
+    if (activeTab === 'memberships') {
+      if (membershipData.memberships.length === 0) { showToast('No membership data to export', 'info'); return; }
+      addHeader('Membership Report');
+      let y = 32;
+
+      if (membershipData.summary) {
+        const s = membershipData.summary;
+        y = drawSummaryCards([
+          { label: 'Total Memberships', value: String(s.total_memberships || 0), color: BLUE },
+          { label: 'Active',            value: String(s.active_memberships || 0),  color: GREEN },
+          { label: 'Expired',           value: String(s.expired_memberships || 0), color: RED },
+          { label: 'Total Revenue',     value: `Rs.${Number(s.collected_revenue || 0).toFixed(0)}`, color: ORANGE },
+        ], y);
+      }
+
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Member Name', 'Phone', 'Plan', 'Duration', 'Total', 'Paid', 'Status', 'Start', 'End']],
+        body: membershipData.memberships.map((m, i) => [
+          i + 1,
+          m.full_name,
+          m.phone_number,
+          m.plan_name,
+          `${m.duration_months}m`,
+          `Rs.${Number(m.total_amount || 0).toFixed(0)}`,
+          `Rs.${Number(m.paid_amount || 0).toFixed(0)}`,
+          m.status_label,
+          m.start_date ? new Date(m.start_date).toLocaleDateString('en-IN') : '-',
+          m.end_date   ? new Date(m.end_date).toLocaleDateString('en-IN')   : '-',
+        ]),
+        styles: { fontSize: 7.5, cellPadding: 3, textColor: DARK, lineColor: [229, 231, 235], lineWidth: 0.1 },
+        headStyles: { fillColor: DARK, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+        alternateRowStyles: { fillColor: LIGHT },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+          7: { halign: 'center' },
+        },
+        didDrawCell: (data: any) => {
+          if (data.section === 'body' && data.column.index === 7) {
+            const status = membershipData.memberships[data.row.index]?.status;
+            const color = status === 'active' ? GREEN : status === 'expired' ? RED : GRAY;
+            doc.setTextColor(...color);
+            doc.setFont('helvetica', 'bold');
+            doc.text(String(data.cell.text), data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2 + 1, { align: 'center' });
+            doc.setTextColor(...DARK);
+            doc.setFont('helvetica', 'normal');
+            return false;
+          }
+        },
+        margin: { left: 14, right: 14, bottom: 14 },
+      });
     }
-    doc.save(`reports-${activeTab}-${new Date().toISOString().split('T')[0]}.pdf`);
-    showToast('PDF file exported successfully', 'success');
+
+    // ── PAYMENTS ─────────────────────────────────────────────────────────────
+    else if (activeTab === 'payments') {
+      if (paymentData.payments.length === 0) { showToast('No payment data to export', 'info'); return; }
+      addHeader('Payment History Report');
+      let y = 32;
+
+      if (paymentData.summary) {
+        const s = paymentData.summary;
+        const cards: { label: string; value: string; color: [number,number,number] }[] = [
+          { label: 'Total Transactions', value: String(s.total_transactions || 0), color: BLUE },
+          { label: 'Total Revenue',      value: `Rs.${Number(s.total_income || 0).toFixed(0)}`, color: GREEN },
+          { label: 'Pending Amount',     value: `Rs.${Number(s.pending_amount || 0).toFixed(0)}`, color: [245, 158, 11] as [number,number,number] },
+        ];
+        if (paymentData.mode_breakdown?.length) {
+          cards.push({ label: 'Payment Modes', value: String(paymentData.mode_breakdown.length), color: ORANGE });
+        }
+        y = drawSummaryCards(cards, y);
+      }
+
+      // Mode breakdown mini-table
+      if (paymentData.mode_breakdown?.length) {
+        doc.setTextColor(...DARK);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Payment Mode Breakdown', 14, y + 4);
+        autoTable(doc, {
+          startY: y + 7,
+          head: [['Payment Mode', 'Transactions', 'Total Amount']],
+          body: paymentData.mode_breakdown.map(m => [
+            m.payment_mode,
+            m.transaction_count,
+            `Rs.${Number(m.total_amount || 0).toFixed(2)}`,
+          ]),
+          styles: { fontSize: 7.5, cellPadding: 2.5, textColor: DARK },
+          headStyles: { fillColor: ORANGE, textColor: WHITE, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: LIGHT },
+          columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } },
+          margin: { left: 14, right: pageW / 2 },
+          tableWidth: (pageW - 28) / 2,
+        });
+        y = (doc as any).lastAutoTable.finalY + 8;
+      }
+
+      autoTable(doc, {
+        startY: y,
+        head: [['#', 'Member', 'Phone', 'Plan', 'Type', 'Amount', 'Mode', 'Date', 'Receipt No.']],
+        body: paymentData.payments.map((p, i) => [
+          i + 1,
+          p.full_name,
+          p.phone_number,
+          p.plan_name,
+          p.transaction_type_label,
+          `Rs.${Number(p.amount || 0).toFixed(2)}`,
+          p.payment_mode,
+          p.transaction_date ? new Date(p.transaction_date).toLocaleDateString('en-IN') : '-',
+          p.receipt_number || '-',
+        ]),
+        styles: { fontSize: 7.5, cellPadding: 3, textColor: DARK, lineColor: [229, 231, 235], lineWidth: 0.1 },
+        headStyles: { fillColor: DARK, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+        alternateRowStyles: { fillColor: LIGHT },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          5: { halign: 'right' },
+          6: { halign: 'center' },
+        },
+        margin: { left: 14, right: 14, bottom: 14 },
+      });
+    }
+
+    // ── REVENUE ──────────────────────────────────────────────────────────────
+    else if (activeTab === 'revenue') {
+      if (!revenueData.summary && revenueData.daily_revenue.length === 0) { showToast('No revenue data to export', 'info'); return; }
+      addHeader('Revenue Analytics Report');
+      let y = 32;
+
+      if (revenueData.summary) {
+        const s = revenueData.summary;
+        y = drawSummaryCards([
+          { label: 'Total Revenue',     value: `Rs.${Number(s.total_revenue || 0).toFixed(0)}`,  color: GREEN },
+          { label: 'Total Transactions',value: String(s.total_transactions || 0),                color: BLUE },
+          { label: 'Unique Customers',  value: String(s.unique_customers || 0),                  color: ORANGE },
+          { label: 'Active Days',       value: String(s.active_days || 0),                       color: DARK },
+        ], y);
+      }
+
+      if (revenueData.daily_revenue.length > 0) {
+        doc.setTextColor(...DARK);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Daily Revenue Breakdown', 14, y + 4);
+        autoTable(doc, {
+          startY: y + 7,
+          head: [['Date', 'Transactions', 'Revenue (Rs.)', 'Refunds (Rs.)', 'Net (Rs.)']],
+          body: revenueData.daily_revenue.map(r => [
+            r.date ? new Date(r.date).toLocaleDateString('en-IN') : '-',
+            r.transaction_count,
+            Number(r.daily_income || 0).toFixed(2),
+            Number(r.daily_refunds || 0).toFixed(2),
+            Number(r.net_daily_amount || 0).toFixed(2),
+          ]),
+          styles: { fontSize: 7.5, cellPadding: 3, textColor: DARK, lineColor: [229, 231, 235], lineWidth: 0.1 },
+          headStyles: { fillColor: DARK, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+          alternateRowStyles: { fillColor: LIGHT },
+          columnStyles: {
+            1: { halign: 'center' },
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+          },
+          margin: { left: 14, right: 14, bottom: 14 },
+        });
+      }
+    }
+
+    addFooter();
+    const fileName = `${activeTab}-report-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    showToast('PDF exported successfully', 'success');
   };
 
   // Handle date filter change
@@ -385,7 +603,7 @@ function ReportsPage() {
           <p className="text-gray-600 mt-1">Comprehensive business insights and performance metrics</p>
         </div>
         
-        {(activeTab === 'memberships' || activeTab === 'payments') && (
+        {(activeTab === 'memberships' || activeTab === 'payments' || activeTab === 'revenue') && (
           <div className="flex flex-wrap gap-3">
             {/* Date Filter */}
             <div className="relative">
