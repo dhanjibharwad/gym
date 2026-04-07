@@ -47,7 +47,7 @@ export const memberOps = {
     const client = await pool.connect();
     try {
       // Build dynamic query based on filters
-      const conditions: string[] = ['m.company_id = $1'];
+      const conditions: string[] = ['m.company_id = $1', 'm.deleted_at IS NULL'];
       const params: any[] = [companyId];
       let paramIndex = 2;
 
@@ -74,8 +74,8 @@ export const memberOps = {
              WHERE ms.member_id = m.id
              ORDER BY ms.created_at DESC LIMIT 1
            ) membership ON true
-           WHERE m.company_id = $1 AND membership.membership_status = $2`
-        : `SELECT COUNT(*) as total FROM members m WHERE m.company_id = $1`;
+           WHERE m.company_id = $1 AND m.deleted_at IS NULL AND membership.membership_status = $2`
+        : `SELECT COUNT(*) as total FROM members m WHERE m.company_id = $1 AND m.deleted_at IS NULL`;
 
       const countResult = await client.query(countQuery, status ? [companyId, status] : [companyId]);
       const total = parseInt(countResult.rows[0].total);
@@ -167,7 +167,7 @@ export const memberOps = {
       ) ms ON true
       LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
       LEFT JOIN medical_info mi ON m.id = mi.member_id
-      WHERE m.id = $1 AND m.company_id = $2
+      WHERE m.id = $1 AND m.company_id = $2 AND m.deleted_at IS NULL
     `;
 
     const result = await pool.query(query, [memberId, companyId]);
@@ -244,7 +244,7 @@ export const paymentOps = {
 
     const client = await pool.connect();
     try {
-      const conditions: string[] = ['m.company_id = $1'];
+      const conditions: string[] = ['m.company_id = $1', 'm.deleted_at IS NULL'];
       const params: any[] = [companyId];
       let paramIndex = 2;
 
@@ -422,7 +422,7 @@ export const dashboardOps = {
           LIMIT 1
         ) ms ON true
         LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
-        WHERE m.company_id = $1
+        WHERE m.company_id = $1 AND m.deleted_at IS NULL
         ORDER BY m.created_at DESC
         LIMIT 5
       ),
@@ -435,7 +435,7 @@ export const dashboardOps = {
           EXTRACT(DAY FROM (INTERVAL '1 year' + date_of_birth - CURRENT_DATE)) % 365 as days_until_birthday,
           EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth)) + 1 as turning_age
         FROM members
-        WHERE company_id = $1 
+        WHERE company_id = $1 AND deleted_at IS NULL
           AND date_of_birth IS NOT NULL
           AND EXTRACT(DAY FROM (INTERVAL '1 year' + date_of_birth - CURRENT_DATE)) % 365 <= 30
         ORDER BY days_until_birthday
@@ -484,3 +484,8 @@ export const dashboardOps = {
 export function invalidateCache(key: string): void {
   cache.delete(key);
 }
+
+
+
+
+

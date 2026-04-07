@@ -18,7 +18,7 @@ const getCachedMemberDetails = unstable_cache(
                 occupation, address, emergency_contact_name, emergency_contact_phone,
                 profile_photo_url, created_at
          FROM members 
-         WHERE id = $1 AND company_id = $2`,
+         WHERE id = $1 AND company_id = $2 AND deleted_at IS NULL`,
         [memberId, companyId]
       );
       
@@ -226,7 +226,7 @@ export async function PATCH(
           address = COALESCE($7, address),
           emergency_contact_name = COALESCE($8, emergency_contact_name),
           emergency_contact_phone = COALESCE($9, emergency_contact_phone)
-        WHERE id = $10 AND company_id = $11
+        WHERE id = $10 AND company_id = $11 AND deleted_at IS NULL
         RETURNING *`,
         [
           full_name,
@@ -325,141 +325,50 @@ export async function PATCH(
   }
 }
 
-/**
- * DELETE /api/members/[id]
- * Deletes a member and all associated data. Requires 'delete_members' permission.
- */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check delete_members permission
     const { authorized, response } = await checkPermission(request, 'delete_members');
     if (!authorized) return response;
 
     const { id: memberId } = await params;
     const companyId = request.headers.get('x-company-id');
-    
+
     if (!companyId) {
-      return NextResponse.json(
-        { success: false, message: 'Company ID required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Company ID required' }, { status: 400 });
     }
 
-    const client = await pool.connect();
-    
-    try {
-      await client.query('BEGIN');
+    // Soft delete — just set deleted_at timestamp
+    const result = await pool.query(
+      `UPDATE members SET deleted_at = NOW()
+       WHERE id = $1 AND company_id = $2 AND deleted_at IS NULL
+       RETURNING id, full_name`,
+      [memberId, companyId]
+    );
 
-      // Verify member exists and belongs to the company
-      const memberCheck = await client.query(
-        'SELECT id, full_name FROM members WHERE id = $1 AND company_id = $2',
-        [memberId, companyId]
-      );
-
-      if (memberCheck.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return NextResponse.json(
-          { success: false, message: 'Member not found' },
-          { status: 404 }
-        );
-      }
-
-      const memberName = memberCheck.rows[0].full_name;
-
-      // Delete related data in order (respecting foreign key constraints)
-      
-      // 1. Delete payment transactions
-      await client.query(
-        `DELETE FROM payment_transactions 
-         WHERE member_id = $1`,
-        [memberId]
-      );
-
-      // 2. Delete payments (via memberships)
-      await client.query(
-        `DELETE FROM payments 
-         WHERE membership_id IN (
-           SELECT id FROM memberships WHERE member_id = $1
-         )`,
-        [memberId]
-      );
-
-      // 3. Delete membership holds
-      await client.query(
-        `DELETE FROM membership_holds 
-         WHERE membership_id IN (
-           SELECT id FROM memberships WHERE member_id = $1
-         )`,
-        [memberId]
-      );
-
-      // 4. Delete memberships
-      await client.query(
-        'DELETE FROM memberships WHERE member_id = $1',
-        [memberId]
-      );
-
-      // 5. Delete medical info
-      await client.query(
-        'DELETE FROM medical_info WHERE member_id = $1',
-        [memberId]
-      );
-
-      // 6. Delete member payment summary
-      await client.query(
-        'DELETE FROM member_payment_summary WHERE member_id = $1',
-        [memberId]
-      );
-
-      // 7. Finally delete the member
-      await client.query(
-        'DELETE FROM members WHERE id = $1 AND company_id = $2',
-        [memberId, companyId]
-      );
-
-      // Create audit log for member deletion
-      const session = await getSession();
-      const userName = session?.user?.name || 'Unknown';
-      const userRole = session?.user?.role || 'staff';
-      await client.query(
-        `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          'DELETE',
-          'member',
-          memberId,
-          `Member ${memberName} deleted by ${userName}`,
-          userRole,
-          companyId
-        ]
-      );
-
-      await client.query('COMMIT');
-      
-      // Revalidate cache
-      revalidateTag('member');
-      revalidateTag('members');
-
-      return NextResponse.json({
-        success: true,
-        message: 'Member deleted successfully'
-      });
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
+    if (result.rows.length === 0) {
+      return NextResponse.json({ success: false, message: 'Member not found' }, { status: 404 });
     }
+
+    // Audit log
+    const session = await getSession();
+    await pool.query(
+      `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      ['DELETE', 'member', memberId,
+       `Member ${result.rows[0].full_name} deleted by ${session?.user?.name || 'Unknown'}`,
+       session?.user?.role || 'staff', companyId]
+    );
+
+    revalidateTag('member');
+    revalidateTag('members');
+
+    return NextResponse.json({ success: true, message: 'Member deleted successfully' });
 
   } catch (error) {
     console.error('Delete member error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to delete member' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: 'Failed to delete member' }, { status: 500 });
   }
 }

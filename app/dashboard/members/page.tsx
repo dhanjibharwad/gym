@@ -348,60 +348,32 @@ const MembersPage = () => {
   const handleDeleteMembers = async () => {
     setDeleteAllLoading(true);
     try {
-      let response;
-      
       if (deleteMode === 'all') {
-        response = await fetch('/api/members/delete-all', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
-        });
+        const res = await fetch('/api/members/delete-all', { method: 'DELETE', credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Failed to delete members');
       } else {
-        // Delete selected members
-        const deletePromises = selectedMembers.map(memberId =>
-          fetch(`/api/members/${memberId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          })
-        );
-        
-        const results = await Promise.all(deletePromises);
-        const failedDeletes = results.filter(res => !res.ok);
-        
-        if (failedDeletes.length === 0) {
-          setDeleteAllLoading(false);
-          setShowDeleteModal(false);
-          setSelectedMembers([]);
-          fetchMembers();
-          return;
-        } else {
-          throw new Error(`${failedDeletes.length} members could not be deleted`);
+        for (const memberId of selectedMembers) {
+          const res = await fetch(`/api/members/${memberId}`, { method: 'DELETE', credentials: 'include' });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.message || `Failed to delete member ${memberId}`);
+          }
         }
       }
-
-      const result = await response.json();
-
-      if (result.success) {
-        setDeleteAllLoading(false);
-        setShowDeleteModal(false);
-        setSelectedMembers([]);
-        fetchMembers();
-      } else {
-        throw new Error(result.message);
-      }
+      setShowDeleteModal(false);
+      setSelectedMembers([]);
+      setShowSelection(false);
+      fetchMembers();
     } catch (error) {
       console.error('Error deleting members:', error);
+      alert('Error: ' + (error as Error).message);
+    } finally {
       setDeleteAllLoading(false);
-      alert('Error deleting members: ' + (error as Error).message);
     }
   };
 
-  const handleDeleteAllMembers = async () => {
+    const handleDeleteAllMembers = async () => {
     if (!confirm(`Are you sure you want to delete ALL members? This action cannot be undone and will remove all members and their membership data.`)) {
       return;
     }
