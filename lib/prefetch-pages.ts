@@ -15,14 +15,17 @@ let prefetchDone = false;
 // Only the most critical APIs — reduces console noise and DB load on login
 // Start after 8s so dashboard fully loads first
 const API_PREFETCH: PrefetchConfig[] = [
-  { url: '/api/membership-plans',             delay: 2000  },
-  { url: '/api/settings/payment-modes',       delay: 2500  },
-  { url: '/api/members?limit=50',             delay: 3000  },
-  { url: '/api/members?status=expired&limit=200', delay: 3500 },
-  { url: '/api/payments',                     delay: 4000  },
-  { url: '/api/admin/roles',                  delay: 4500  },
-  { url: '/api/admin/permissions',            delay: 5000  },
-  { url: '/api/admin/staff',                  delay: 5500  },
+  { url: '/api/membership-plans',                  delay: 2000 },
+  { url: '/api/settings/payment-modes',            delay: 2500 },
+  { url: '/api/members?limit=50',                  delay: 3000 },
+  { url: '/api/members?status=expired&limit=200',  delay: 3500 },
+  { url: '/api/payments',                          delay: 4000 },
+  { url: '/api/payments/history',                  delay: 4500 },
+  { url: '/api/payments?status=full&limit=200',    delay: 5000 },
+  { url: '/api/admin/roles',                       delay: 5500 },
+  { url: '/api/admin/permissions',                 delay: 6000 },
+  { url: '/api/admin/staff',                       delay: 6500 },
+  { url: '/api/audit-logs?page=1&limit=100',       delay: 5000 },
 ];
 
 async function prefetchUrl(url: string): Promise<void> {

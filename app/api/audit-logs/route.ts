@@ -85,14 +85,7 @@ export async function GET(request: NextRequest) {
       
       const whereClause = conditions.join(' AND ');
       
-      // Get total count
-      const countResult = await client.query(
-        `SELECT COUNT(*) as total FROM audit_logs WHERE ${whereClause}`,
-        params
-      );
-      const total = parseInt(countResult.rows[0].total);
-      
-      // Get paginated results
+      // Single query using COUNT(*) OVER() to avoid two round trips
       const result = await client.query(`
         SELECT 
           id,
@@ -101,16 +94,20 @@ export async function GET(request: NextRequest) {
           entity_id,
           details,
           user_role,
-          created_at
+          created_at,
+          COUNT(*) OVER() AS total_count
         FROM audit_logs
         WHERE ${whereClause}
         ORDER BY created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `, [...params, limit, offset]);
+
+      const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+      const logs = result.rows.map(({ total_count, ...row }) => row);
       
       const responseData = {
         success: true,
-        logs: result.rows,
+        logs,
         pagination: {
           page,
           limit,
@@ -121,8 +118,8 @@ export async function GET(request: NextRequest) {
         }
       };
       
-      // Cache for 2 minutes
-      cache.set(cacheKey, responseData, 120);
+      // Cache for 5 minutes
+      cache.set(cacheKey, responseData, 300);
       
       return NextResponse.json(responseData);
       

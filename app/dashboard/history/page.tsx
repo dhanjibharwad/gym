@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   User,
@@ -17,6 +17,11 @@ import {
   Filter
 } from 'lucide-react';
 import TopLoadingBar from '@/components/TopLoadingBar';
+
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? fetch('/api/members').then(r => r.json())
+    : null;
 
 interface MemberTransaction {
   id: number;
@@ -56,26 +61,28 @@ const HistoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
+  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
-    fetchMembers();
-  }, []);
-
-  const fetchMembers = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/members');
-      const result = await response.json();
-      
-      if (result.success) {
-        setMembers(result.members);
+    const init = async () => {
+      setLoading(true);
+      try {
+        let data: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          data = await prefetchPromise;
+        } else {
+          data = await fetch('/api/members').then(r => r.json());
+        }
+        if (data?.success) setMembers(data.members);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching members:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    init();
+  }, []);
 
   const fetchMemberTransactions = async (memberId: number) => {
     try {
@@ -191,7 +198,22 @@ const HistoryPage = () => {
   };
 
   if (loading && !selectedMember) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 animate-pulse">
+              <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="h-3 bg-gray-200 rounded w-1/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

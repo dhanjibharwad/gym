@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, Clock, User, Activity, Search } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
+
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? fetch('/api/audit-logs?page=1&limit=100').then(r => r.json())
+    : null;
 
 interface AuditLog {
   id: number;
@@ -17,10 +22,11 @@ interface AuditLog {
 
 function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const prefetchConsumed = useRef(false);
 
   const tabs = [
     { id: 'all', label: 'All Logs' },
@@ -55,31 +61,28 @@ function AuditLogsPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/audit-logs?page=1&limit=100', {
-        headers: {
-          'Content-Type': 'application/json'
+    const init = async () => {
+      try {
+        let data: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          data = await prefetchPromise;
+        } else {
+          data = await fetch('/api/audit-logs?page=1&limit=100').then(r => r.json());
         }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setLogs(data.logs);
-      } else {
-        setError(data.message || 'Failed to load audit logs');
+        if (data.success) {
+          setLogs(data.logs);
+        } else {
+          setError(data.message || 'Failed to load audit logs');
+        }
+      } catch (error) {
+        setError('Unable to load audit logs. Please try again.');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-      setError('Unable to load audit logs. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    init();
+  }, []);
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -95,13 +98,23 @@ function AuditLogsPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="bg-gray-200 h-16 rounded-lg"></div>
-            ))}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-6 w-36 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-64 bg-gray-200 rounded animate-pulse" />
           </div>
+        </div>
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-lg border border-gray-100 p-4 animate-pulse">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+              </div>
+              <div className="h-4 w-3/4 bg-gray-200 rounded" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -110,9 +123,7 @@ function AuditLogsPage() {
   return (
     <div className="p-6">
       {error && <Toast message={error} type="error" onClose={() => setError(null)} />}
-      
       <div className="max-w-full mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -123,8 +134,6 @@ function AuditLogsPage() {
               <p className="text-gray-600">Track all staff activities including login/logout and changes</p>
             </div>
           </div>
-          
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -137,7 +146,6 @@ function AuditLogsPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-gray-200">
           {tabs.map((tab) => (
             <button
@@ -154,7 +162,6 @@ function AuditLogsPage() {
           ))}
         </div>
 
-        {/* Logs List */}
         <div className="bg-white rounded-xl shadow-sm">
           {logs.length === 0 ? (
             <div className="text-center py-12">
@@ -167,52 +174,32 @@ function AuditLogsPage() {
               {(() => {
                 const filteredLogs = logs.filter((log) => {
                   const query = searchQuery.toLowerCase();
-                  const matchesSearch = log.details.toLowerCase().includes(query) ||
-                    log.user_role.toLowerCase().includes(query);
+                  const matchesSearch = log.details.toLowerCase().includes(query) || log.user_role.toLowerCase().includes(query);
                   return matchesSearch && filterLogsByTab(log);
                 });
-                
+
                 if (filteredLogs.length === 0) {
                   return (
                     <div className="text-center py-12">
                       <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg mb-2">
-                        No {activeTab === 'all' ? '' : tabs.find(t => t.id === activeTab)?.label.toLowerCase() + ' '}logs found
-                      </p>
-                      <p className="text-gray-400">
-                        {activeTab === 'all' 
-                          ? 'Activity logs will appear here'
-                          : `No ${tabs.find(t => t.id === activeTab)?.label.toLowerCase()} activity recorded yet`}
-                      </p>
+                      <p className="text-gray-500 text-lg mb-2">No {activeTab === 'all' ? '' : tabs.find(t => t.id === activeTab)?.label.toLowerCase() + ' '}logs found</p>
                     </div>
                   );
                 }
-                
+
                 return filteredLogs.map((log) => (
                   <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>
-                            {log.action}
-                          </span>
-                          <span className="text-sm text-gray-500 capitalize">
-                            {log.entity_type.replace('_', ' ')}
-                          </span>
-                          <span className="text-sm text-gray-400">
-                            ID: {log.entity_id}
-                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getActionColor(log.action)}`}>{log.action}</span>
+                          <span className="text-sm text-gray-500 capitalize">{log.entity_type.replace('_', ' ')}</span>
+                          <span className="text-sm text-gray-400">ID: {log.entity_id}</span>
                         </div>
                         <p className="text-gray-900 mb-2">{log.details}</p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            <span className="capitalize">{log.user_role}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{formatDateTime(log.created_at)}</span>
-                          </div>
+                          <div className="flex items-center gap-1"><User className="w-4 h-4" /><span className="capitalize">{log.user_role}</span></div>
+                          <div className="flex items-center gap-1"><Clock className="w-4 h-4" /><span>{formatDateTime(log.created_at)}</span></div>
                         </div>
                       </div>
                     </div>
@@ -227,7 +214,6 @@ function AuditLogsPage() {
   );
 }
 
-// Wrap with PageGuard to check permissions
 function AuditLogsPageWithGuard() {
   return (
     <PageGuard permission="view_audit_logs">

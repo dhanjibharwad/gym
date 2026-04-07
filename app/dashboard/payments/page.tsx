@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? Promise.all([
+        fetch('/api/payments').then(r => r.json()),
+        fetch('/api/payments/history').then(r => r.json()),
+      ])
+    : null;
 import {
   CreditCard,
   Search,
@@ -87,9 +95,30 @@ const PaymentsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [viewMode, setViewMode] = useState<'summary' | 'history'>('summary');
+  const prefetchConsumed = useRef(false);
 
   useEffect(() => {
-    Promise.all([fetchPayments(), fetchPaymentHistory()]);
+    const init = async () => {
+      try {
+        let paymentsData: any, historyData: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          [paymentsData, historyData] = await prefetchPromise;
+        } else {
+          [paymentsData, historyData] = await Promise.all([
+            fetch('/api/payments').then(r => r.json()),
+            fetch('/api/payments/history').then(r => r.json()),
+          ]);
+        }
+        if (paymentsData?.success) setPayments(paymentsData.payments);
+        if (historyData?.success) setPaymentHistory(historyData.transactions);
+      } catch {
+        setNotification({ type: 'error', message: 'Unable to load payments. Please refresh.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {

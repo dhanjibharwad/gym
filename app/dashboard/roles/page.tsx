@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Users, Edit, Trash2, AlertTriangle, Shield } from 'lucide-react';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-import TopLoadingBar from '@/components/TopLoadingBar';
+
+const prefetchPromise =
+  typeof window !== 'undefined'
+    ? fetch('/api/admin/roles').then(r => r.json())
+    : null;
 
 interface Role {
   id: number;
@@ -26,36 +30,35 @@ function RolesPage() {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  
-  // Toast state using shared Toast component
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  
-  // Delete confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const prefetchConsumed = useRef(false);
 
   const showToastMessage = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type });
   };
 
   useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  const fetchRoles = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/roles');
-      const data = await response.json();
-      if (response.ok) {
-        setRoles(data.roles);
+    const init = async () => {
+      setLoading(true);
+      try {
+        let data: any;
+        if (prefetchPromise && !prefetchConsumed.current) {
+          prefetchConsumed.current = true;
+          data = await prefetchPromise;
+        } else {
+          data = await fetch('/api/admin/roles').then(r => r.json());
+        }
+        if (data?.roles) setRoles(data.roles);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    init();
+  }, []);
 
   const handleEdit = (role: Role) => {
     setEditingRole(role);
@@ -75,12 +78,10 @@ function RolesPage() {
 
   const handleConfirmDelete = async () => {
     if (!roleToDelete) return;
-    
     setDeleteLoading(roleToDelete.id);
     try {
       const response = await fetch(`/api/admin/roles?id=${roleToDelete.id}`, { method: 'DELETE' });
       const data = await response.json();
-
       if (response.ok) {
         setRoles(roles.filter(r => r.id !== roleToDelete.id));
         setShowDeleteModal(false);
@@ -105,20 +106,15 @@ function RolesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-
     try {
-      const url = '/api/admin/roles';
       const method = editingRole ? 'PUT' : 'POST';
       const body = editingRole ? { ...formData, id: editingRole.id } : formData;
-
-      const response = await fetch(url, {
+      const response = await fetch('/api/admin/roles', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         if (editingRole) {
           setRoles(roles.map(r => r.id === editingRole.id ? data.role : r));
@@ -139,7 +135,19 @@ function RolesPage() {
   };
 
   if (loading) {
-    return <TopLoadingBar isLoading={true} progress={30} />;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          <div className="h-9 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -162,9 +170,7 @@ function RolesPage() {
           <h2 className="text-lg font-semibold mb-4 text-gray-800">{editingRole ? 'Edit Role' : 'Create New Role'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role Name</label>
               <input
                 type="text"
                 required
@@ -174,11 +180,8 @@ function RolesPage() {
                 placeholder="e.g., Trainer, Manager"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -187,7 +190,6 @@ function RolesPage() {
                 placeholder="Role description..."
               />
             </div>
-
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -196,11 +198,7 @@ function RolesPage() {
               >
                 {submitting ? (editingRole ? 'Updating...' : 'Creating...') : (editingRole ? 'Update Role' : 'Create Role')}
               </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 cursor-pointer"
-              >
+              <button type="button" onClick={resetForm} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 cursor-pointer">
                 Cancel
               </button>
             </div>
@@ -227,25 +225,13 @@ function RolesPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-gray-900">{role.name}</h3>
-                        {isProtected && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Protected</span>
-                        )}
-                        {role.is_system_role && (
-                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">System</span>
-                        )}
+                        {isProtected && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Protected</span>}
+                        {role.is_system_role && <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full">System</span>}
                       </div>
-                      {role.description && (
-                        <p className="text-gray-600 text-sm mt-1">{role.description}</p>
-                      )}
+                      {role.description && <p className="text-gray-600 text-sm mt-1">{role.description}</p>}
                       <div className="flex gap-3 mt-2 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          {role.permission_count || 0} permissions
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          {role.user_count || 0} users
-                        </span>
+                        <span className="flex items-center gap-1"><Shield className="w-3 h-3" />{role.permission_count || 0} permissions</span>
+                        <span className="flex items-center gap-1"><Users className="w-3 h-3" />{role.user_count || 0} users</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -254,26 +240,14 @@ function RolesPage() {
                           <button
                             onClick={() => handleEdit(role)}
                             disabled={isProtected}
-                            className={`p-1 rounded transition ${
-                              isProtected 
-                                ? 'text-gray-300 cursor-not-allowed' 
-                                : 'text-gray-400 hover:text-orange-600 cursor-pointer'
-                            }`}
-                            title={isProtected ? 'Cannot edit protected role' : 'Edit role'}
+                            className={`p-1 rounded transition ${isProtected ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-orange-600 cursor-pointer'}`}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(role)}
                             disabled={deleteLoading === role.id || isProtected}
-                            className={`p-1 rounded transition ${
-                              isProtected 
-                                ? 'text-gray-300 cursor-not-allowed' 
-                                : deleteLoading === role.id
-                                ? 'text-gray-400 cursor-not-allowed opacity-50'
-                                : 'text-gray-400 hover:text-red-600 cursor-pointer'
-                            }`}
-                            title={isProtected ? 'Cannot delete protected role' : 'Delete role'}
+                            className={`p-1 rounded transition ${isProtected ? 'text-gray-300 cursor-not-allowed' : deleteLoading === role.id ? 'text-gray-400 cursor-not-allowed opacity-50' : 'text-gray-400 hover:text-red-600 cursor-pointer'}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -288,7 +262,6 @@ function RolesPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && roleToDelete && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
@@ -303,11 +276,8 @@ function RolesPage() {
                 </div>
               </div>
             </div>
-            
             <div className="px-6 py-6">
-              <p className="text-gray-700">
-                Are you sure you want to delete the role <span className="font-semibold text-gray-900">"{roleToDelete.name}"</span>?
-              </p>
+              <p className="text-gray-700">Are you sure you want to delete the role <span className="font-semibold text-gray-900">"{roleToDelete.name}"</span>?</p>
               {roleToDelete.user_count > 0 && (
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800 flex items-center gap-2">
@@ -316,34 +286,17 @@ function RolesPage() {
                   </p>
                 </div>
               )}
-              <p className="text-sm text-gray-500 mt-3">
-                All associated permissions will be removed from this role.
-              </p>
+              <p className="text-sm text-gray-500 mt-3">All associated permissions will be removed from this role.</p>
             </div>
-            
             <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-              <button
-                onClick={handleCancelDelete}
-                disabled={deleteLoading === roleToDelete.id}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium"
-              >
+              <button onClick={handleCancelDelete} disabled={deleteLoading === roleToDelete.id} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmDelete}
-                disabled={deleteLoading === roleToDelete.id}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium flex items-center gap-2"
-              >
+              <button onClick={handleConfirmDelete} disabled={deleteLoading === roleToDelete.id} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium flex items-center gap-2">
                 {deleteLoading === roleToDelete.id ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Deleting...
-                  </>
+                  <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>Deleting...</>
                 ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </>
+                  <><Trash2 className="w-4 h-4" />Delete</>
                 )}
               </button>
             </div>
@@ -351,13 +304,11 @@ function RolesPage() {
         </div>
       )}
 
-      {/* Toast Notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }
 
-// Wrap with PageGuard to check permissions
 function RolesPageWithGuard() {
   return (
     <PageGuard permissions={['view_roles', 'manage_roles']}>
