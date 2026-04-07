@@ -16,7 +16,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, user]);
 
-  // Show layout immediately — sidebar/topbar render with defaults while user loads
   return (
     <div className="min-h-screen flex bg-gray-50">
       <Sidebar userRole={user?.role} userPermissions={user?.permissions} />

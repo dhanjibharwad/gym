@@ -6,6 +6,7 @@
  */
 
 const { Pool } = require('pg');
+require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 
 // Create database connection
@@ -64,6 +65,15 @@ const indexes = [
   // Composite index for dashboard queries
   `CREATE INDEX IF NOT EXISTS idx_members_dashboard ON members(company_id, created_at DESC, membership_status)`,
   `CREATE INDEX IF NOT EXISTS idx_payments_dashboard ON payments(company_id, created_at DESC, payment_status, paid_amount)`,
+
+  // CRITICAL: soft-delete filter index (deleted_at IS NULL used on every query)
+  `CREATE INDEX IF NOT EXISTS idx_members_not_deleted ON members(company_id, created_at DESC) WHERE deleted_at IS NULL`,
+
+  // CRITICAL: birthday lookup index
+  `CREATE INDEX IF NOT EXISTS idx_members_birthday ON members(company_id, date_of_birth) WHERE date_of_birth IS NOT NULL AND deleted_at IS NULL`,
+
+  // CRITICAL: session token lookup (used on every request)
+  `CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token) WHERE expires_at > NOW()`,
 
   // Partial indexes for common filters
   `CREATE INDEX IF NOT EXISTS idx_members_active ON members(company_id) WHERE membership_status = 'active'`,

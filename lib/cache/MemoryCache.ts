@@ -71,8 +71,7 @@ class MemoryCache {
    * Set value in cache with TTL
    */
   set<T>(key: string, value: T, ttlSeconds: number = 300): void {
-    // Estimate size (rough approximation)
-    const sizeKB = JSON.stringify(value).length / 1024;
+    const sizeKB = 1; // fixed estimate — avoids expensive JSON.stringify on every write
     
     // Evict if necessary
     while (this.cache.size >= this.maxSize || this.currentMemoryMB + sizeKB / 1024 > this.maxMemoryMB) {

@@ -71,7 +71,7 @@ export async function getSession() {
       return superAdminSession;
     }
     
-    const maxRetries = 3;
+    const maxRetries = 2;
     let retries = 0;
     let lastError: any = null;
     let result: any;
@@ -79,7 +79,7 @@ export async function getSession() {
     while (retries < maxRetries) {
       try {
         if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, Math.min(100 * Math.pow(2, retries), 1000)));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         result = await pool.query(
           `SELECT 

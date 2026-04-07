@@ -372,7 +372,7 @@ export const dashboardOps = {
   /**
    * Get all dashboard stats in ONE query - ULTRA FAST
    */
-  async getDashboardStats(companyId: number, queryOptions: QueryOptions = { cacheTTL: 120, useCache: true }) {
+  async getDashboardStats(companyId: number, queryOptions: QueryOptions = { cacheTTL: 300, useCache: true }) {
     const cacheKey = `dashboard:stats:${companyId}`;
     
     if (queryOptions.useCache) {

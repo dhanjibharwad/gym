@@ -106,11 +106,6 @@ const Dashboard = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasHoveredBirthday, setHasHoveredBirthday] = useState(false);
 
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleString());
-    fetchDashboardData();
-  }, []);
-
   // Recalculate when birthday filter changes
   useEffect(() => {
     if (allMembers.length > 0) {
@@ -284,7 +279,7 @@ const Dashboard = () => {
       setLoading(true);
       
       const statsRes = await fetch('/api/dashboard/stats', {
-        next: { revalidate: 60 }
+        cache: 'no-store'
       });
       
       if (!statsRes.ok) {
@@ -405,8 +400,24 @@ const Dashboard = () => {
     }
   ];
 
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleString());
+    fetchDashboardData();
+  }, []);
+
+  if (!user && loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="bg-gray-200 rounded-2xl h-28" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => <div key={i} className="bg-gray-200 rounded-xl h-32" />)}
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return null;
+    return null; // layout already shows skeleton above
   }
 
   return (
