@@ -331,8 +331,7 @@ const AddMemberPage = () => {
   };
 
   useEffect(() => {
-    fetchPlans();
-    fetchPaymentModes();
+    Promise.all([fetchPlans(), fetchPaymentModes()]);
   }, []);
 
   // Fetch members when switching to existing member mode

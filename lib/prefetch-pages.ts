@@ -15,10 +15,10 @@ let prefetchDone = false;
 // Only the most critical APIs — reduces console noise and DB load on login
 // Start after 8s so dashboard fully loads first
 const API_PREFETCH: PrefetchConfig[] = [
-  { url: '/api/members?limit=50',             delay: 8000  },
-  { url: '/api/membership-plans',             delay: 8500  },
-  { url: '/api/settings/payment-modes',       delay: 9000  },
-  { url: '/api/payments',                     delay: 9500  },
+  { url: '/api/membership-plans',             delay: 2000  },
+  { url: '/api/settings/payment-modes',       delay: 2500  },
+  { url: '/api/members?limit=50',             delay: 3000  },
+  { url: '/api/payments',                     delay: 3500  },
 ];
 
 async function prefetchUrl(url: string): Promise<void> {

@@ -18,13 +18,9 @@ import {
   ChevronDown,
   X
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { PageGuard } from '@/components/rbac/PageGuard';
 import { usePermission } from '@/components/rbac/PermissionGate';
 import Toast from '@/app/components/Toast';
-import TopLoadingBar from '@/components/TopLoadingBar';
 
 interface Membership {
   id: number;
@@ -229,73 +225,44 @@ function ReportsPage() {
   };
 
   // Export to Excel
-  const exportToExcel = () => {
-    console.log('Exporting to Excel for tab:', activeTab);
-    console.log('Current data state:', { 
-      memberships: membershipData.memberships?.length || 0,
-      payments: paymentData.payments?.length || 0,
-      revenue: revenueData.daily_revenue?.length || 0
-    });
-    
+  const exportToExcel = async () => {
+    const XLSX = await import('xlsx');
     let data: any[] = [];
     let fileName = `reports-${activeTab}-${new Date().toISOString().split('T')[0]}`;
 
     switch (activeTab) {
       case 'memberships':
-        console.log('Exporting membership data:', membershipData.memberships?.slice(0, 2));
         data = membershipData.memberships.map(m => ({
-          'Member Name': m.full_name,
-          'Phone': m.phone_number,
-          'Email': m.email,
-          'Plan': m.plan_name,
-          'Price': m.price,
-          'Start Date': m.start_date,
-          'End Date': m.end_date,
-          'Status': m.status_label,
-          'Total Amount': m.total_amount,
-          'Paid Amount': m.paid_amount,
-          'Payment Status': m.payment_status
+          'Member Name': m.full_name, 'Phone': m.phone_number, 'Email': m.email,
+          'Plan': m.plan_name, 'Price': m.price, 'Start Date': m.start_date,
+          'End Date': m.end_date, 'Status': m.status_label,
+          'Total Amount': m.total_amount, 'Paid Amount': m.paid_amount, 'Payment Status': m.payment_status
         }));
         fileName = `membership-reports-${new Date().toISOString().split('T')[0]}`;
         break;
       case 'payments':
-        console.log('Exporting payment data:', paymentData.payments?.slice(0, 2));
         data = paymentData.payments.map(p => ({
-          'Member Name': p.full_name,
-          'Phone': p.phone_number,
-          'Plan': p.plan_name,
-          'Transaction Type': p.transaction_type_label,
-          'Amount': p.amount,
-          'Payment Mode': p.payment_mode,
-          'Transaction Date': p.transaction_date,
-          'Receipt Number': p.receipt_number,
-          'Created By': p.created_by
+          'Member Name': p.full_name, 'Phone': p.phone_number, 'Plan': p.plan_name,
+          'Transaction Type': p.transaction_type_label, 'Amount': p.amount,
+          'Payment Mode': p.payment_mode, 'Transaction Date': p.transaction_date,
+          'Receipt Number': p.receipt_number, 'Created By': p.created_by
         }));
         fileName = `payment-reports-${new Date().toISOString().split('T')[0]}`;
         break;
       case 'revenue':
-        console.log('Exporting revenue data:', revenueData.daily_revenue?.slice(0, 2));
         data = revenueData.daily_revenue.map(r => ({
-          'Date': r.date,
-          'Transactions': r.transaction_count,
-          'Total Revenue': r.daily_income,
-          'Refunds': r.daily_refunds,
-          'Pending Count': r.transaction_count
+          'Date': r.date, 'Transactions': r.transaction_count,
+          'Total Revenue': r.daily_income, 'Refunds': r.daily_refunds
         }));
         fileName = `revenue-reports-${new Date().toISOString().split('T')[0]}`;
         break;
       case 'overall':
-        showToast('Overall dashboard summary cannot be exported. Please select a specific report tab.', 'info');
+        showToast('Overall dashboard cannot be exported. Select a specific report tab.', 'info');
         return;
     }
 
-    if (data.length === 0) {
-      showToast('No data available to export', 'info');
-      return;
-    }
+    if (data.length === 0) { showToast('No data available to export', 'info'); return; }
 
-    console.log('Exporting data:', data.slice(0, 2));
-    
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
@@ -304,80 +271,54 @@ function ReportsPage() {
   };
 
   // Export to PDF
-  const exportToPDF = () => {
-    console.log('Exporting to PDF for tab:', activeTab);
-    console.log('Current data state:', { 
-      memberships: membershipData.summary,
-      payments: paymentData.summary,
-      revenue: revenueData.summary
-    });
-    
+  const exportToPDF = async () => {
+    const jsPDF = (await import('jspdf')).default;
+    await import('jspdf-autotable');
     const doc = new jsPDF();
-    
-    // Add title
     doc.setFontSize(20);
     doc.text(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Report`, 14, 20);
-      
-    // Add date range
     doc.setFontSize(12);
     const dateRange = dateFilter === 'custom' 
       ? `${customStartDate} to ${customEndDate}`
       : dateFilters.find(f => f.value === dateFilter)?.label || '';
     doc.text(`Period: ${dateRange}`, 14, 30);
-
-    // Add summary data
     let yPos = 40;
     doc.setFontSize(14);
     doc.text('Summary', 14, yPos);
     yPos += 10;
-
     switch (activeTab) {
       case 'memberships':
         if (membershipData.summary) {
-          const summary = membershipData.summary;
+          const s = membershipData.summary;
           doc.setFontSize(10);
-          doc.text(`Total Memberships: ${summary.total_memberships}`, 14, yPos);
-          doc.text(`Active: ${summary.active_memberships}`, 14, yPos + 6);
-          doc.text(`Expired: ${summary.expired_memberships}`, 14, yPos + 12);
-          doc.text(`Cancelled: ${summary.cancelled_memberships}`, 14, yPos + 18);
-          doc.text(`Total Revenue: ₹${Number(summary.collected_revenue || 0).toFixed(2)}`, 14, yPos + 24);
-        } else {
-          doc.setFontSize(10);
-          doc.text('No membership summary data available', 14, yPos);
+          doc.text(`Total Memberships: ${s.total_memberships}`, 14, yPos);
+          doc.text(`Active: ${s.active_memberships}`, 14, yPos + 6);
+          doc.text(`Expired: ${s.expired_memberships}`, 14, yPos + 12);
+          doc.text(`Total Revenue: ₹${Number(s.collected_revenue || 0).toFixed(2)}`, 14, yPos + 18);
         }
         break;
       case 'payments':
         if (paymentData.summary) {
-          const summary = paymentData.summary;
+          const s = paymentData.summary;
           doc.setFontSize(10);
-          doc.text(`Total Transactions: ${summary.total_transactions}`, 14, yPos);
-          doc.text(`Total Revenue: ₹${Number(summary.total_income || 0).toFixed(2)}`, 14, yPos + 6);
-          doc.text(`Pending Amount: ₹${Number(summary.pending_amount || 0).toFixed(2)}`, 14, yPos + 12);
-        } else {
-          doc.setFontSize(10);
-          doc.text('No payment summary data available', 14, yPos);
+          doc.text(`Total Transactions: ${s.total_transactions}`, 14, yPos);
+          doc.text(`Total Revenue: ₹${Number(s.total_income || 0).toFixed(2)}`, 14, yPos + 6);
         }
         break;
       case 'revenue':
         if (revenueData.summary) {
-          const summary = revenueData.summary;
+          const s = revenueData.summary;
           doc.setFontSize(10);
-          doc.text(`Total Revenue: ₹${Number(summary.total_revenue || 0).toFixed(2)}`, 14, yPos);
-          doc.text(`Total Transactions: ${summary.total_transactions}`, 14, yPos + 6);
-        } else {
-          doc.setFontSize(10);
-          doc.text('No revenue summary data available', 14, yPos);
+          doc.text(`Total Revenue: ₹${Number(s.total_revenue || 0).toFixed(2)}`, 14, yPos);
+          doc.text(`Total Transactions: ${s.total_transactions}`, 14, yPos + 6);
         }
         break;
       case 'overall':
         doc.setFontSize(10);
-        doc.text('Overall dashboard summary cannot be exported to PDF. Please select a specific report tab.', 14, yPos);
+        doc.text('Please select a specific report tab to export PDF.', 14, yPos);
         break;
     }
-
-    const fileName = `reports-${activeTab}-${new Date().toISOString().split('T')[0]}.pdf`;
-    console.log('Saving PDF:', fileName);
-    doc.save(fileName);
+    doc.save(`reports-${activeTab}-${new Date().toISOString().split('T')[0]}.pdf`);
     showToast('PDF file exported successfully', 'success');
   };
 
@@ -552,7 +493,7 @@ function ReportsPage() {
 
       {/* Loading State */}
       {loading && (
-        <TopLoadingBar isLoading={true} progress={30} />
+        <div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div></div>
       )}
 
       {/* Tab Content */}

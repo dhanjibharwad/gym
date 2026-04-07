@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: { buildActivity: true },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -33,7 +34,7 @@ const nextConfig: NextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'xlsx', 'jspdf'],
     optimizeCss: true,
   },
   
@@ -44,11 +45,6 @@ const nextConfig: NextConfig = {
     } : false,
   },
   
-  // Faster refresh in development
-  devIndicators: {
-    buildActivity: true,
-    buildActivityPosition: 'bottom-right',
-  },
 };
 
 export default nextConfig;

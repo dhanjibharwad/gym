@@ -16,7 +16,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     if (!isLoading && user) {
       const timeoutId = setTimeout(() => {
         prefetchByRole(user.role);
-      }, 5000); // Start after 5s so login interactions are never blocked
+      }, 1000); // Start after 1s so dashboard loads first
       return () => clearTimeout(timeoutId);
     }
   }, [isLoading, user]);
@@ -33,7 +33,21 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading]);
 
-  if (!user) return null;
+  if (!user) return (
+    <div className="min-h-screen flex bg-gray-50">
+      <div className="w-64 bg-white shadow-lg shrink-0" />
+      <div className="flex-1 flex flex-col">
+        <div className="h-16 bg-white shadow-sm" />
+        <main className="p-6 flex-1">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3" />
+            <div className="h-4 bg-gray-200 rounded w-1/2" />
+            <div className="h-64 bg-gray-200 rounded" />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 
   return (
     <>
