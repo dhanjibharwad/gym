@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { verifyAuth } from '@/lib/auth-utils';
-import { Building2, Mail, User, Phone, Calendar, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react';
+import { Building2, Mail, User, Phone, Calendar, CheckCircle, XCircle, Clock, Search, Filter, KeyRound, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import GymLoader from '@/components/GymLoader';
 
 interface Company {
@@ -26,6 +26,14 @@ export default function SuperAdminPage() {
   const [user, setUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  // Reset password modal state
+  const [resetModal, setResetModal] = useState<{ companyId: number; companyName: string; adminName: string; adminEmail: string } | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -85,6 +93,42 @@ export default function SuperAdminPage() {
     } catch (error) {
       console.error('Failed to update company:', error);
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetModal || !newPassword.trim() || newPassword.trim().length < 6) return;
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/superadmin/reset-admin-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: resetModal.companyId, newPassword: newPassword.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResetResult({ success: true, message: data.message });
+      } else {
+        setResetResult({ success: false, message: data.error || 'Failed to reset password' });
+      }
+    } catch {
+      setResetResult({ success: false, message: 'An error occurred' });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const closeResetModal = () => {
+    setResetModal(null);
+    setNewPassword('');
+    setShowPassword(false);
+    setResetResult(null);
+    setCopied(false);
+  };
+
+  const copyPassword = () => {
+    navigator.clipboard.writeText(newPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const filteredCompanies = companies.filter(company => {
@@ -282,26 +326,33 @@ export default function SuperAdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {company.status === 'pending' ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproval(company.id, 'approve')}
-                            className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleApproval(company.id, 'reject')}
-                            className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-500">No actions</span>
-                      )}
+                      <div className="flex flex-col gap-2">
+                        {company.status === 'pending' ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleApproval(company.id, 'approve')}
+                              className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleApproval(company.id, 'reject')}
+                              className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Reject
+                            </button>
+                          </div>
+                        ) : null}
+                        <button
+                          onClick={() => setResetModal({ companyId: company.id, companyName: company.name, adminName: company.admin_name, adminEmail: company.email })}
+                          className="flex items-center gap-1.5 bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm w-fit"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                          Reset Password
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -310,6 +361,139 @@ export default function SuperAdminPage() {
           </div>
         )}
       </div>
+
+      {/* Reset Password Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-orange-50 px-6 py-4 border-b border-orange-100 flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <KeyRound className="w-5 h-5 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">Reset Admin Password</h3>
+                <p className="text-sm text-gray-500">{resetModal.companyName}</p>
+              </div>
+              <button onClick={closeResetModal} className="text-gray-400 hover:text-gray-600">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              {!resetResult ? (
+                <>
+                  {/* Admin info */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-5">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="font-medium">{resetModal.adminName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      {resetModal.adminEmail}
+                    </div>
+                  </div>
+
+                  {/* New password input */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password (min 6 chars)"
+                        className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 font-mono"
+                        autoFocus
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(p => !p)}
+                          className="p-1.5 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={copyPassword}
+                          disabled={!newPassword}
+                          className="p-1.5 text-gray-400 hover:text-orange-600 disabled:opacity-30"
+                        >
+                          {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    {newPassword.length > 0 && newPassword.length < 6 && (
+                      <p className="text-xs text-red-500 mt-1">Password must be at least 6 characters</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeResetModal}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleResetPassword}
+                      disabled={resetLoading || newPassword.trim().length < 6}
+                      className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {resetLoading ? (
+                        <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Resetting...</>
+                      ) : (
+                        <><KeyRound className="w-4 h-4" /> Reset Password</>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={`flex items-start gap-3 p-4 rounded-lg mb-5 ${
+                    resetResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                  }`}>
+                    {resetResult.success
+                      ? <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      : <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />}
+                    <p className={`text-sm font-medium ${
+                      resetResult.success ? 'text-green-800' : 'text-red-800'
+                    }`}>{resetResult.message}</p>
+                  </div>
+
+                  {resetResult.success && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500">New Password</p>
+                        <p className="text-sm font-mono font-semibold text-gray-900">
+                          {showPassword ? newPassword : '••••••••'}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setShowPassword(p => !p)} className="p-1.5 text-gray-400 hover:text-gray-600">
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        <button onClick={copyPassword} className="p-1.5 text-gray-400 hover:text-orange-600">
+                          {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={closeResetModal}
+                    className="w-full px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium transition-colors"
+                  >
+                    Done
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
