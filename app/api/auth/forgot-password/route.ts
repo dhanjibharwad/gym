@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
     // Create reset token
     const otp = await createVerificationToken(user.id, 'password_reset');
 
-    // Send password reset email
+    // Send password reset email — pass companyId so it uses company SMTP first, falls back to .env
     try {
-      await sendPasswordResetEmail(normalizedEmail, otp);
+      await sendPasswordResetEmail(normalizedEmail, otp, user.company_id ?? undefined);
     } catch (emailError) {
       console.error('Failed to send reset email:', emailError);
       // Don't fail the request if email fails
