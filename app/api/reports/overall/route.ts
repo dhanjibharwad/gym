@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
           (SELECT COUNT(*) FROM memberships m JOIN members mem ON m.member_id = mem.id WHERE mem.company_id = $1 AND m.status = 'expired' ${dateFilter.replace('created_at', 'm.created_at')}) as expired_memberships,
           
           -- Member Statistics
-          (SELECT COUNT(*) FROM members WHERE company_id = $1) as total_members,
-          (SELECT COUNT(*) FROM members m INNER JOIN memberships ms ON m.id = ms.member_id WHERE m.company_id = $1 AND ms.status = 'active') as active_members,
+          (SELECT COUNT(*) FROM members WHERE company_id = $1 AND deleted_at IS NULL) as total_members,
+          (SELECT COUNT(*) FROM members m INNER JOIN memberships ms ON m.id = ms.member_id WHERE m.company_id = $1 AND m.deleted_at IS NULL AND ms.status = 'active') as active_members,
           
           -- Payment Statistics (from payment_transactions if exists, otherwise from payments)
           COALESCE(

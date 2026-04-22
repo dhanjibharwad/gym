@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
           false as has_membership
         FROM members m
         WHERE m.company_id = $1
+          AND m.deleted_at IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM memberships ms WHERE ms.member_id = m.id
           )

@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
           END as has_membership
         FROM members m
         WHERE m.company_id = $1
+          AND m.deleted_at IS NULL
           AND m.created_at > NOW() - INTERVAL '24 hours'
         ORDER BY m.created_at DESC
         LIMIT 100

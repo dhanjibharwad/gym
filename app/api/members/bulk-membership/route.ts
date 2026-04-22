@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
         try {
           const { memberId } = memberData;
           
-          // Verify member belongs to company
+          // Verify member belongs to company and is not deleted
           const memberCheck = await client.query(
-            'SELECT id, full_name FROM members WHERE id = $1 AND company_id = $2',
+            'SELECT id, full_name FROM members WHERE id = $1 AND company_id = $2 AND deleted_at IS NULL',
             [memberId, session.user.companyId]
           );
 

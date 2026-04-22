@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         GROUP BY DATE(pt.transaction_date)
         ORDER BY DATE(pt.transaction_date) DESC
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
       `, dateParams);
 
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         GROUP BY mem.id, mem.full_name, mem.phone_number, mem.profile_photo_url
         ORDER BY total_spent DESC
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         GROUP BY mp.plan_name, mp.price
         ORDER BY plan_revenue DESC

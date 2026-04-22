@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         JOIN members mem ON pt.member_id = mem.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN payments p ON pt.membership_id = p.membership_id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         ORDER BY pt.transaction_date DESC, pt.created_at DESC
       `, dateParams);
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
             FROM payments p
             JOIN memberships ms ON p.membership_id = ms.id
             JOIN members mem ON ms.member_id = mem.id
-            WHERE mem.company_id = $1
+            WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
             AND p.payment_status IN ('pending', 'partial')
           ) as pending_amount,
           (
@@ -106,13 +106,13 @@ export async function GET(request: NextRequest) {
             FROM payments p
             JOIN memberships ms ON p.membership_id = ms.id
             JOIN members mem ON ms.member_id = mem.id
-            WHERE mem.company_id = $1
+            WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
             AND p.payment_status IN ('pending', 'partial')
           ) as pending_count
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
       `, dateParams);
       
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
         FROM payment_transactions pt
         JOIN memberships ms ON pt.membership_id = ms.id
         JOIN members mem ON pt.member_id = mem.id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         GROUP BY pt.payment_mode
         ORDER BY total_amount DESC

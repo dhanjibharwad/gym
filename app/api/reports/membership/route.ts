@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         JOIN members mem ON m.member_id = mem.id
         JOIN membership_plans mp ON m.plan_id = mp.id
         LEFT JOIN payments p ON m.id = p.membership_id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
         ORDER BY m.created_at DESC
       `;
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         JOIN members mem ON m.member_id = mem.id
         JOIN membership_plans mp ON m.plan_id = mp.id
         LEFT JOIN payments p ON m.id = p.membership_id
-        WHERE mem.company_id = $1
+        WHERE mem.company_id = $1 AND mem.deleted_at IS NULL
         ${dateFilter}
       `, dateParams);
 

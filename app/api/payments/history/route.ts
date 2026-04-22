@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         JOIN members m ON pt.member_id = m.id
         JOIN membership_plans mp ON ms.plan_id = mp.id
         JOIN payments p ON pt.membership_id = p.membership_id
-        WHERE m.company_id = $1
+        WHERE m.company_id = $1 AND m.deleted_at IS NULL
         ORDER BY pt.transaction_date DESC, pt.created_at DESC
         LIMIT $2 OFFSET $3
       `, [companyId, limit, offset]);

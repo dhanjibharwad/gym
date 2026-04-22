@@ -39,7 +39,7 @@ export async function tenantQuery(
 // Safe member operations
 export const memberOps = {
   async getAll(context?: TenantContext) {
-    return tenantQuery('SELECT * FROM members ORDER BY created_at DESC', [], context);
+    return tenantQuery('SELECT * FROM members WHERE deleted_at IS NULL ORDER BY created_at DESC', [], context);
   },
   
   async getById(id: number, context?: TenantContext) {

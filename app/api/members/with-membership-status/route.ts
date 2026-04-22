@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
           JOIN membership_plans mp ON ms.plan_id = mp.id
           WHERE mp.company_id = $1
         ) membership ON m.id = membership.member_id AND membership.rn = 1
-        WHERE m.company_id = $1
+        WHERE m.company_id = $1 AND m.deleted_at IS NULL
         ORDER BY m.created_at DESC
       `, [session.user.companyId]);
 
