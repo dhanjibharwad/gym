@@ -91,9 +91,9 @@ export async function POST(request: NextRequest) {
           throw new Error('Member not found or unauthorized');
         }
       } else {
-        // Ensure member_number (Serial No.) is unique per company
+        // Ensure member_number (Serial No.) is unique per company (exclude soft-deleted)
         const existingNumber = await client.query(
-          'SELECT id FROM members WHERE company_id = $1 AND member_number = $2',
+          'SELECT id FROM members WHERE company_id = $1 AND member_number = $2 AND deleted_at IS NULL',
           [session?.user?.companyId, parsedMemberNumber]
         );
         if (existingNumber.rows.length > 0) {
