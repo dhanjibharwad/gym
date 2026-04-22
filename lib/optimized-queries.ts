@@ -394,7 +394,7 @@ export const dashboardOps = {
           ORDER BY created_at DESC 
           LIMIT 1
         ) ms ON true
-        WHERE m.company_id = $1
+        WHERE m.company_id = $1 AND m.deleted_at IS NULL
       ),
       payment_stats AS (
         SELECT 
@@ -405,7 +405,7 @@ export const dashboardOps = {
         FROM payments p
         JOIN memberships ms ON p.membership_id = ms.id
         JOIN members m ON ms.member_id = m.id
-        WHERE m.company_id = $1
+        WHERE m.company_id = $1 AND m.deleted_at IS NULL
       ),
       recent_members AS (
         SELECT 
