@@ -103,7 +103,7 @@ async function getFilteredDashboardStats(
         ORDER BY created_at DESC 
         LIMIT 1
       ) ms ON true
-      WHERE m.company_id = $1
+      WHERE m.company_id = $1 AND m.deleted_at IS NULL
     ),
     payment_stats AS (
       SELECT 
@@ -114,7 +114,7 @@ async function getFilteredDashboardStats(
       FROM payments p
       JOIN memberships ms ON p.membership_id = ms.id
       JOIN members m ON ms.member_id = m.id
-      WHERE m.company_id = $1
+      WHERE m.company_id = $1 AND m.deleted_at IS NULL
     ),
     recent_members AS (
       SELECT 
@@ -133,6 +133,7 @@ async function getFilteredDashboardStats(
       ) ms ON true
       LEFT JOIN membership_plans mp ON ms.plan_id = mp.id
       WHERE m.company_id = $1
+        AND m.deleted_at IS NULL
         AND m.created_at >= $2 AND m.created_at <= $3
       ORDER BY m.created_at DESC
       LIMIT 5
@@ -147,6 +148,7 @@ async function getFilteredDashboardStats(
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, date_of_birth)) + 1 as turning_age
       FROM members
       WHERE company_id = $1 
+        AND deleted_at IS NULL
         AND date_of_birth IS NOT NULL
         AND EXTRACT(DAY FROM (INTERVAL '1 year' + date_of_birth - CURRENT_DATE)) % 365 <= $4
       ORDER BY days_until_birthday
