@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          // Check if serial number already exists
+          // Check if serial number already exists (exclude soft-deleted)
           const existingMember = await client.query(
-            'SELECT id FROM members WHERE company_id = $1 AND member_number = $2',
+            'SELECT id FROM members WHERE company_id = $1 AND member_number = $2 AND deleted_at IS NULL',
             [session.user.companyId, member.serialNumber]
           );
 
@@ -115,9 +115,9 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          // Check if phone number already exists in this company
+          // Check if phone number already exists in this company (exclude soft-deleted)
           const existingPhone = await client.query(
-            'SELECT id FROM members WHERE company_id = $1 AND phone_number = $2',
+            'SELECT id FROM members WHERE company_id = $1 AND phone_number = $2 AND deleted_at IS NULL',
             [session.user.companyId, member.phoneNumber]
           );
 
