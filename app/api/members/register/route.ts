@@ -352,19 +352,19 @@ export async function POST(request: NextRequest) {
 
     // Handle specific database errors
     if (error instanceof Error) {
-      if (error.message.includes('phone_number')) {
+      if (error.message.includes('phone_number') || error.message.includes('unique_active_member_phone')) {
         return NextResponse.json(
           { success: false, message: 'Phone number already exists' },
           { status: 400 }
         );
       }
-      if (error.message.includes('email')) {
+      if (error.message.includes('email') || error.message.includes('unique_active_member_email')) {
         return NextResponse.json(
           { success: false, message: 'Email already exists' },
           { status: 400 }
         );
       }
-      if (error.message.includes('unique_company_member_number')) {
+      if (error.message.includes('unique_company_member_number') || error.message.includes('unique_active_member_number')) {
         return NextResponse.json(
           { success: false, message: 'Serial No. already exists' },
           { status: 400 }

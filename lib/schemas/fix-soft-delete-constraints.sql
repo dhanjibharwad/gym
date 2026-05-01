@@ -11,6 +11,7 @@ ALTER TABLE members DROP CONSTRAINT IF EXISTS members_phone_number_key;
 ALTER TABLE members DROP CONSTRAINT IF EXISTS members_email_key;
 ALTER TABLE members DROP CONSTRAINT IF EXISTS members_company_id_phone_number_key;
 ALTER TABLE members DROP CONSTRAINT IF EXISTS members_company_id_email_key;
+ALTER TABLE members DROP CONSTRAINT IF EXISTS unique_company_member_number;
 
 -- Step 3: Drop old unique indexes if they exist
 DROP INDEX IF EXISTS unique_company_member_number;
