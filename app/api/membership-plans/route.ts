@@ -238,7 +238,7 @@ export async function DELETE(request: NextRequest) {
     const client = await pool.connect();
     
     try {
-      // Check if plan is being used by any memberships with company verification
+      // Check if plan is being used by ANY memberships (active or historical)
       const membershipCheck = await client.query(
         'SELECT COUNT(*) FROM memberships m JOIN membership_plans mp ON m.plan_id = mp.id WHERE m.plan_id = $1 AND mp.company_id = $2',
         [id, companyId]
@@ -246,7 +246,7 @@ export async function DELETE(request: NextRequest) {
       
       if (parseInt(membershipCheck.rows[0].count) > 0) {
         return NextResponse.json(
-          { success: false, message: 'Cannot delete plan that is being used by members' },
+          { success: false, message: 'Cannot delete plan that has been assigned to members. This would cause data loss in member history and reports.' },
           { status: 400 }
         );
       }

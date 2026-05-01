@@ -33,6 +33,7 @@ const CardioSection = () => {
 
   return (
     <section
+      id="cardio"
       ref={sectionRef}
       className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-gray-50 to-white"
     >

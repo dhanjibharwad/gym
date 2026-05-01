@@ -126,10 +126,10 @@ const PaymentsPage = () => {
   }, [notification]);
 
   const handleAddPayment = (payment: Payment) => {
-    const pendingAmount = payment.total_amount - payment.paid_amount;
+    const pendingAmount = Math.max(0, payment.total_amount - payment.paid_amount);
     setSelectedPayment(payment);
     setNewPayment({
-      amount: pendingAmount.toString(),
+      amount: pendingAmount > 0 ? pendingAmount.toString() : '',
       payment_mode: 'Cash',
       payment_date: new Date().toISOString().split('T')[0],
       reference_number: ''
@@ -312,6 +312,7 @@ const PaymentsPage = () => {
     const statusConfig = {
       full: { bg: 'bg-green-100', text: 'text-green-700', icon: CheckCircle },
       partial: { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: Clock },
+      overpaid: { bg: 'bg-blue-100', text: 'text-blue-700', icon: TrendingUp },
       pending: { bg: 'bg-red-100', text: 'text-red-700', icon: XCircle },
       refunded: { bg: 'bg-gray-100', text: 'text-gray-700', icon: AlertTriangle }
     };
@@ -625,9 +626,11 @@ const PaymentsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{formatCurrency(payment.paid_amount)} / {formatCurrency(payment.total_amount)}</div>
-                      {payment.payment_status !== 'full' && (
+                      {Number(payment.paid_amount) < Number(payment.total_amount) ? (
                         <div className="text-sm text-red-600">Pending: {formatCurrency(payment.total_amount - payment.paid_amount)}</div>
-                      )}
+                      ) : Number(payment.paid_amount) > Number(payment.total_amount) ? (
+                        <div className="text-sm text-blue-600">Credit: {formatCurrency(payment.paid_amount - payment.total_amount)}</div>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -635,7 +638,7 @@ const PaymentsPage = () => {
                         <span className="ml-2 text-sm text-gray-900">{payment.payment_mode}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(payment.payment_status)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(Number(payment.paid_amount) > Number(payment.total_amount) ? 'overpaid' : payment.payment_status)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {payment.next_due_date ? (
                         <div className={`text-sm ${isOverdue(payment.next_due_date) && payment.payment_status !== 'full' ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
@@ -749,13 +752,27 @@ const PaymentsPage = () => {
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-900">Remaining:</span>
-                    <span className="text-sm font-medium text-red-600">{formatCurrency(transaction.total_amount - transaction.paid_amount)}</span>
+                    {Number(transaction.total_amount) - Number(transaction.paid_amount) > 0 ? (
+                      <>
+                        <span className="text-sm text-gray-900">Remaining:</span>
+                        <span className="text-sm font-medium text-red-600">{formatCurrency(transaction.total_amount - transaction.paid_amount)}</span>
+                      </>
+                    ) : Number(transaction.paid_amount) > Number(transaction.total_amount) ? (
+                      <>
+                        <span className="text-sm text-gray-900">Credit:</span>
+                        <span className="text-sm font-medium text-blue-600">{formatCurrency(transaction.paid_amount - transaction.total_amount)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm text-gray-900">Remaining:</span>
+                        <span className="text-sm font-medium text-gray-900">₹0</span>
+                      </>
+                    )}
                   </div>
                   
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-sm text-gray-900">Status:</span>
-                    {getStatusBadge(transaction.payment_status)}
+                    {getStatusBadge(Number(transaction.paid_amount) > Number(transaction.total_amount) ? 'overpaid' : transaction.payment_status)}
                   </div>
                 </div>
               </div>
@@ -778,7 +795,7 @@ const PaymentsPage = () => {
 
       {showPaymentModal && selectedPayment && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto no-scrollbar">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 cursor-pointer">Add Payment</h3>
               <button onClick={closePaymentModal} className="text-gray-400 hover:text-gray-600">
@@ -818,8 +835,17 @@ const PaymentsPage = () => {
                     <span className="font-medium text-green-600">{formatCurrency(selectedPayment.paid_amount)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-900">Pending Amount:</span>
-                    <span className="font-medium text-red-600">{formatCurrency(selectedPayment.total_amount - selectedPayment.paid_amount)}</span>
+                    {selectedPayment.total_amount - selectedPayment.paid_amount > 0 ? (
+                      <>
+                        <span className="text-gray-900">Pending Amount:</span>
+                        <span className="font-medium text-red-600">{formatCurrency(selectedPayment.total_amount - selectedPayment.paid_amount)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-900">Credit Amount:</span>
+                        <span className="font-medium text-blue-600">{formatCurrency(Math.abs(selectedPayment.total_amount - selectedPayment.paid_amount))}</span>
+                      </>
+                    )}
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-900">Payment Date:</span>
@@ -846,12 +872,14 @@ const PaymentsPage = () => {
                       value={newPayment.amount}
                       onChange={(e) => setNewPayment({...newPayment, amount: e.target.value})}
                       min="1"
-                      max={selectedPayment.total_amount - selectedPayment.paid_amount}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-gray-900"
-                      placeholder="Enter amount"
+                      disabled={selectedPayment.paid_amount >= selectedPayment.total_amount}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder={selectedPayment.paid_amount >= selectedPayment.total_amount ? "Payment complete" : "Enter amount"}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Max: {formatCurrency(selectedPayment.total_amount - selectedPayment.paid_amount)}
+                    <p className={`text-xs mt-1 ${selectedPayment.paid_amount >= selectedPayment.total_amount ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+                      {selectedPayment.total_amount - selectedPayment.paid_amount > 0 
+                        ? `Max: ${formatCurrency(selectedPayment.total_amount - selectedPayment.paid_amount)}`
+                        : "Payment is already complete. No further payments required."}
                     </p>
                   </div>
                   
@@ -906,7 +934,7 @@ const PaymentsPage = () => {
               </button>
               <button
                 onClick={handleSubmitPayment}
-                disabled={submitting || !newPayment.amount || parseFloat(newPayment.amount) <= 0}
+                disabled={submitting || !newPayment.amount || parseFloat(newPayment.amount) <= 0 || selectedPayment.paid_amount >= selectedPayment.total_amount}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 {submitting ? (

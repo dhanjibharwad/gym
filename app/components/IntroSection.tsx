@@ -11,7 +11,7 @@ const IntroSection = () => {
   }, []);
 
   return (
-    <section className="py-20 bg-white">
+    <section id="about" className="py-20 bg-white">
       <div className="container mx-auto px-6">
         <div
           className={`transition-all duration-1000 ease-out ${

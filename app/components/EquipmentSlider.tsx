@@ -60,7 +60,7 @@ const EquipmentSlider = () => {
   const duplicatedImages = [...equipmentImages, ...equipmentImages];
 
   return (
-    <section className="py-16 bg-gray-900 overflow-hidden">
+    <section id="gallery" className="py-16 bg-gray-900 overflow-hidden">
       <div className="container mx-auto px-6 mb-12">
         <h2 className="text-4xl md:text-5xl font-black text-center text-white mb-4">
           Our Gym Gallery

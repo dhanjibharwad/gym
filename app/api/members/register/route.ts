@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
       referenceNumber: formData.get('referenceNumber') as string || null,
       nextDueDate: formData.get('nextDueDate') as string || null,
       profilePhoto: formData.get('profilePhoto') as File || null,
+      height: parseFloat(formData.get('height') as string) || null,
+      weight: parseFloat(formData.get('weight') as string) || null,
+      bmi: parseFloat(formData.get('bmi') as string) || null,
+      bmiCategory: formData.get('bmiCategory') as string || null,
+      fitnessGoal: formData.get('fitnessGoal') as string || null,
     };
 
     const parsedMemberNumber = data.serialNumber ? data.serialNumber.trim() : '';
@@ -148,13 +153,19 @@ export async function POST(request: NextRequest) {
         // Insert medical info for new members
         await client.query(
           `INSERT INTO medical_info (
-            member_id, medical_conditions, injuries_limitations, additional_notes
-          ) VALUES ($1, $2, $3, $4)`,
+            member_id, medical_conditions, injuries_limitations, additional_notes,
+            height, weight, bmi, bmi_category, fitness_goal
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             memberId,
             data.medicalConditions || null,
             data.injuriesLimitations || null,
-            data.additionalNotes || null
+            data.additionalNotes || null,
+            data.height,
+            data.weight,
+            data.bmi,
+            data.bmiCategory,
+            data.fitnessGoal
           ]
         );
       }

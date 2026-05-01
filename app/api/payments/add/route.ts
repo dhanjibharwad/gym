@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
           );
           
           // Insert transaction record
-          const userName = session?.user?.name || 'Reception';
           await client.query(
             `INSERT INTO payment_transactions (member_id, membership_id, transaction_type, amount, payment_mode, transaction_date, receipt_number, created_by)
              VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
@@ -100,7 +99,6 @@ export async function POST(request: NextRequest) {
           const memberName = memberResult.rows[0]?.full_name || 'Unknown';
           
           // Create audit log
-          const userRole = session?.user?.role || 'staff';
           await client.query(
             `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
              VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -146,7 +144,6 @@ export async function POST(request: NextRequest) {
           );
           
           // Insert transaction record
-          const userName = session?.user?.name || 'Reception';
           await client.query(
             `INSERT INTO payment_transactions (member_id, membership_id, transaction_type, amount, payment_mode, transaction_date, receipt_number, created_by)
              VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
@@ -154,14 +151,13 @@ export async function POST(request: NextRequest) {
           );
           
           // Get member name for audit log
-          const memberResult = await client.query(
+          const memberResult2 = await client.query(
             'SELECT full_name FROM members WHERE id = $1',
             [member_id]
           );
-          const memberName = memberResult.rows[0]?.full_name || 'Unknown';
+          const memberName2 = memberResult2.rows[0]?.full_name || 'Unknown';
           
           // Create audit log
-          const userRole = session?.user?.role || 'staff';
           await client.query(
             `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
              VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -169,7 +165,7 @@ export async function POST(request: NextRequest) {
               'CREATE',
               'payment',
               membership_id,
-              `Initial payment of ₹${amount} for ${memberName} by ${userName}`,
+              `Initial payment of ₹${amount} for ${memberName2} by ${userName}`,
               userRole,
               companyId
             ]
@@ -210,7 +206,6 @@ export async function POST(request: NextRequest) {
       );
       
       // Insert transaction record with current timestamp
-      const userName = session?.user?.name || 'Reception';
       await client.query(
         `INSERT INTO payment_transactions (member_id, membership_id, transaction_type, amount, payment_mode, transaction_date, receipt_number, created_by)
          VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
@@ -225,7 +220,6 @@ export async function POST(request: NextRequest) {
       const memberName = memberResult.rows[0]?.full_name || 'Unknown';
       
       // Create audit log for payment
-      const userRole = session?.user?.role || 'staff';
       await client.query(
         `INSERT INTO audit_logs (action, entity_type, entity_id, details, user_role, company_id)
          VALUES ($1, $2, $3, $4, $5, $6)`,

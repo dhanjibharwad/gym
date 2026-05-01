@@ -3,7 +3,7 @@ import IntroSection from "@/app/components/IntroSection";
 import EquipmentSlider from "@/app/components/EquipmentSlider";
 import CardioSection from "@/app/components/CardioSection";
 import ProgramsSection from "@/app/components/ProgramsSection";
-// import PricingSection from "@/components/PricingSection";
+import PricingSection from "@/app/components/PricingSection";
 // import TestimonialsSection from "@/components/TestimonialsSection";
 
 const Home = () => {
@@ -14,8 +14,8 @@ const Home = () => {
       <EquipmentSlider />
       <CardioSection />
       <ProgramsSection />
-      {/* <PricingSection />
-      <TestimonialsSection /> */}
+      <PricingSection />
+      {/* <TestimonialsSection /> */}
     </main>
   );
 };

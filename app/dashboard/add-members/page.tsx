@@ -17,7 +17,9 @@ import {
   Briefcase,
   UserCheck,
   FileUp,
-  Download
+  Download,
+  Activity,
+  Scale
 } from 'lucide-react';
 import Toast from '@/app/components/Toast';
 import { PageGuard } from '@/components/rbac/PageGuard';
@@ -66,6 +68,14 @@ interface FormData {
   paymentMode: 'Cash' | 'UPI' | 'Card' | 'Online' | 'Cheque' | '';
   referenceNumber: string;
   nextDueDate: string;
+
+  // BMI & Fitness Goals
+  height: number;
+  weight: number;
+  bmi: number;
+  bmiCategory: string;
+  fitnessGoal: 'Weight Gain' | 'Maintain' | 'Weight Loss' | '';
+  bmiSuggestion: string;
 }
 
 interface FormErrors {
@@ -156,11 +166,18 @@ const AddMemberPage = () => {
     amountPaidNow: 0,
     paymentMode: '',
     referenceNumber: '',
-    nextDueDate: ''
+    nextDueDate: '',
+    height: 0,
+    weight: 0,
+    bmi: 0,
+    bmiCategory: '',
+    fitnessGoal: '',
+    bmiSuggestion: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [previousBMI, setPreviousBMI] = useState<{ weight: number, bmi: number } | null>(null);
 
   // Memoized plans map for performance
   const plansMap = useMemo(() => {
@@ -201,6 +218,43 @@ const AddMemberPage = () => {
     return age;
   };
 
+  // BMI Calculation and Classification
+  const getBMIInfo = (weight: number, height: number) => {
+    if (!weight || !height || height <= 0) return { bmi: 0, category: '', goal: '' as any, suggestion: '', color: 'slate' };
+    
+    const heightInMeters = height / 100;
+    const bmiValue = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
+    
+    let category = '';
+    let goal: 'Weight Gain' | 'Maintain' | 'Weight Loss' | '' = '';
+    let suggestion = '';
+    let color = '';
+    
+    if (bmiValue < 18.5) {
+      category = 'Underweight';
+      goal = 'Weight Gain';
+      suggestion = 'Focus on nutrient-dense foods and strength training to build muscle mass safely.';
+      color = 'blue';
+    } else if (bmiValue >= 18.5 && bmiValue < 25) {
+      category = 'Normal';
+      goal = 'Maintain';
+      suggestion = 'You are in a healthy range. Maintain your current lifestyle with balanced nutrition and regular exercise.';
+      color = 'green';
+    } else if (bmiValue >= 25 && bmiValue < 30) {
+      category = 'Overweight';
+      goal = 'Weight Loss';
+      suggestion = 'Incorporate more cardio and monitor your calorie intake. Strength training will help boost metabolism.';
+      color = 'yellow';
+    } else {
+      category = 'Obese';
+      goal = 'Weight Loss';
+      suggestion = 'Prioritize consistent physical activity and consult with a nutritionist for a sustainable weight loss plan.';
+      color = 'red';
+    }
+    
+    return { bmi: bmiValue, category, goal, suggestion, color };
+  };
+
   // Reset form to initial state
   const resetForm = () => {
     setFormData({
@@ -236,7 +290,13 @@ const AddMemberPage = () => {
       amountPaidNow: 0,
       paymentMode: '',
       referenceNumber: '',
-      nextDueDate: ''
+      nextDueDate: '',
+      height: 0,
+      weight: 0,
+      bmi: 0,
+      bmiCategory: '',
+      fitnessGoal: '',
+      bmiSuggestion: ''
     });
     setErrors({});
     setPhotoPreview('');
@@ -341,12 +401,35 @@ const AddMemberPage = () => {
     }
   }, [memberType]);
 
-  // Fetch membership history when member is selected
+  // Fetch membership history and details when member is selected
   useEffect(() => {
     if (selectedMemberId) {
       fetchMembershipHistory(selectedMemberId);
+      
+      // Fetch additional member details for BMI comparison
+      const fetchMemberDetails = async () => {
+        try {
+          const response = await fetch(`/api/members/${selectedMemberId}`);
+          const data = await response.json();
+          if (data.success && data.medicalInfo) {
+            // Assuming medicalInfo might have weight/bmi in the future
+            // For now, let's try to extract from notes or just prepare the state
+            setPreviousBMI({
+              weight: data.medicalInfo.previous_weight || 0,
+              bmi: data.medicalInfo.previous_bmi || 0
+            });
+          } else {
+            setPreviousBMI(null);
+          }
+        } catch (error) {
+          console.error('Error fetching member details:', error);
+          setPreviousBMI(null);
+        }
+      };
+      fetchMemberDetails();
     } else {
       setMembershipHistory([]);
+      setPreviousBMI(null);
     }
   }, [selectedMemberId]);
 
@@ -485,6 +568,29 @@ const AddMemberPage = () => {
         return;
       }
       
+      // Handle BMI related fields
+      if (name === 'height' || name === 'weight') {
+        const numValue = parseFloat(value) || 0;
+        
+        // Basic range validation
+        if (name === 'height' && numValue > 250) return;
+        if (name === 'weight' && numValue > 300) return;
+        if (numValue < 0) return;
+
+        setFormData(prev => {
+          const newData = { ...prev, [name]: numValue };
+          const bmiInfo = getBMIInfo(newData.weight, newData.height);
+          return {
+            ...newData,
+            bmi: bmiInfo.bmi,
+            bmiCategory: bmiInfo.category,
+            fitnessGoal: bmiInfo.goal,
+            bmiSuggestion: bmiInfo.suggestion
+          };
+        });
+        return;
+      }
+
       // Default update for other fields
       setFormData(prev => ({ ...prev, [name]: processedValue }));
     }
@@ -592,6 +698,14 @@ const AddMemberPage = () => {
     
     if (paidAmount > totalFee) {
       newErrors.amountPaidNow = 'Amount paid cannot exceed total plan fee';
+    }
+
+    // BMI Validations
+    if (formData.height > 0 && (formData.height < 50 || formData.height > 250)) {
+      newErrors.height = 'Height must be between 50 and 250 cm';
+    }
+    if (formData.weight > 0 && (formData.weight < 20 || formData.weight > 300)) {
+      newErrors.weight = 'Weight must be between 20 and 300 kg';
     }
 
     setErrors(newErrors);
@@ -1234,6 +1348,149 @@ const AddMemberPage = () => {
           </div>
         </div>
         )}
+
+        {/* SECTION 1.5: BMI & Fitness Goals */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">BMI & Fitness Goals</h2>
+                <p className="text-sm text-slate-600">Body composition and health targets</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Height */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Height (cm)
+                </label>
+                <div className="relative">
+                  <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="number"
+                    name="height"
+                    value={formData.height || ''}
+                    onChange={handleInputChange}
+                    className={`w-full pl-11 pr-4 py-3 bg-white border ${errors.height ? 'border-red-500' : 'border-slate-300'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    placeholder="Enter height in cm"
+                  />
+                </div>
+                {errors.height && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.height}
+                  </p>
+                )}
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Weight (kg)
+                </label>
+                <div className="relative">
+                  <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="number"
+                    name="weight"
+                    value={formData.weight || ''}
+                    onChange={handleInputChange}
+                    className={`w-full pl-11 pr-4 py-3 bg-white border ${errors.weight ? 'border-red-500' : 'border-slate-300'} rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all`}
+                    placeholder="Enter weight in kg"
+                  />
+                </div>
+                {errors.weight && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.weight}
+                  </p>
+                )}
+              </div>
+
+              {/* BMI Display Card */}
+              {formData.bmi > 0 && (
+                <div className="md:col-span-2">
+                  <div className={`p-4 rounded-2xl border ${
+                    formData.bmiCategory === 'Underweight' ? 'bg-blue-50 border-blue-200' :
+                    formData.bmiCategory === 'Normal' ? 'bg-green-50 border-green-200' :
+                    formData.bmiCategory === 'Overweight' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold ${
+                          formData.bmiCategory === 'Underweight' ? 'bg-blue-100 text-blue-700' :
+                          formData.bmiCategory === 'Normal' ? 'bg-green-100 text-green-700' :
+                          formData.bmiCategory === 'Overweight' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {formData.bmi}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">BMI Category</p>
+                          <h3 className={`text-2xl font-bold ${
+                            formData.bmiCategory === 'Underweight' ? 'text-blue-700' :
+                            formData.bmiCategory === 'Normal' ? 'text-green-700' :
+                            formData.bmiCategory === 'Overweight' ? 'text-yellow-700' :
+                            'text-red-700'
+                          }`}>
+                            {formData.bmiCategory}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                        <p className="text-xs font-semibold text-slate-500 uppercase">Suggested Goal</p>
+                        <p className="text-lg font-bold text-slate-900">{formData.fitnessGoal}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-start gap-2 text-sm text-slate-700 leading-relaxed">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <p>{formData.bmiSuggestion}</p>
+                    </div>
+                    {previousBMI && previousBMI.weight > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-200/50 flex items-center gap-2 text-xs font-medium text-slate-500">
+                        <Activity className="w-3.5 h-3.5" />
+                        <span>Comparison: Previous weight was {previousBMI.weight}kg (BMI: {previousBMI.bmi})</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fitness Goal Select */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Fitness Goal
+                </label>
+                <select
+                  name="fitnessGoal"
+                  value={formData.fitnessGoal}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select goal</option>
+                  <option value="Weight Gain">Weight Gain</option>
+                  <option value="Maintain">Maintain</option>
+                  <option value="Weight Loss">Weight Loss</option>
+                </select>
+              </div>
+
+              {/* BMI Disclaimer */}
+              <div className="md:col-span-2">
+                <p className="text-[11px] text-slate-500 italic flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Note: Body Mass Index (BMI) is a general screening tool and not a medical diagnosis. It does not account for muscle mass, bone density, or body composition.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* SECTION 2: Medical & Notes - Only for New Members */}
         {memberType === 'new' && (

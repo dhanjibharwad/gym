@@ -98,6 +98,11 @@ interface MedicalInfo {
   medical_conditions: string;
   injuries_limitations: string;
   additional_notes: string;
+  height: number;
+  weight: number;
+  bmi: number;
+  bmi_category: string;
+  fitness_goal: string;
   created_at: string;
   updated_at: string;
 }
@@ -151,7 +156,16 @@ const MemberProfilePage = () => {
   
   // Edit modal states
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState<Partial<Member> & { medical_conditions?: string; injuries_limitations?: string; additional_notes?: string }>({});
+  const [editFormData, setEditFormData] = useState<Partial<Member> & { 
+    medical_conditions?: string; 
+    injuries_limitations?: string; 
+    additional_notes?: string;
+    height?: number;
+    weight?: number;
+    bmi?: number;
+    bmi_category?: string;
+    fitness_goal?: string;
+  }>({});
   const [saving, setSaving] = useState(false);
 
   // Receipt modal state
@@ -194,6 +208,52 @@ const MemberProfilePage = () => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+  };
+
+  // BMI Calculation and Classification
+  const getBMIInfo = (weight: number, height: number) => {
+    if (!weight || !height || height <= 0) return { bmi: 0, category: '', goal: '' as any, color: 'slate' };
+    
+    const heightInMeters = height / 100;
+    const bmiValue = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
+    
+    let category = '';
+    let goal: 'Weight Gain' | 'Maintain' | 'Weight Loss' | '' = '';
+    let color = '';
+    
+    if (bmiValue < 18.5) {
+      category = 'Underweight';
+      goal = 'Weight Gain';
+      color = 'blue';
+    } else if (bmiValue >= 18.5 && bmiValue < 25) {
+      category = 'Normal';
+      goal = 'Maintain';
+      color = 'green';
+    } else if (bmiValue >= 25 && bmiValue < 30) {
+      category = 'Overweight';
+      goal = 'Weight Loss';
+      color = 'yellow';
+    } else {
+      category = 'Obese';
+      goal = 'Weight Loss';
+      color = 'red';
+    }
+    
+    return { bmi: bmiValue, category, goal, color };
+  };
+
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      return '';
+    }
   };
 
   const fetchMemberData = async () => {
@@ -247,14 +307,18 @@ const MemberProfilePage = () => {
       phone_number: member.phone_number,
       email: member.email,
       gender: member.gender,
-      date_of_birth: member.date_of_birth,
+      date_of_birth: formatDateForInput(member.date_of_birth),
       occupation: member.occupation,
       address: member.address,
-      emergency_contact_name: member.emergency_contact_name,
       emergency_contact_phone: member.emergency_contact_phone,
       medical_conditions: medicalInfo?.medical_conditions || '',
       injuries_limitations: medicalInfo?.injuries_limitations || '',
-      additional_notes: medicalInfo?.additional_notes || ''
+      additional_notes: medicalInfo?.additional_notes || '',
+      height: medicalInfo?.height || 0,
+      weight: medicalInfo?.weight || 0,
+      bmi: medicalInfo?.bmi || 0,
+      bmi_category: medicalInfo?.bmi_category || '',
+      fitness_goal: medicalInfo?.fitness_goal || ''
     });
     setShowEditModal(true);
   };
@@ -693,7 +757,7 @@ const MemberProfilePage = () => {
                       type="text"
                       value={editFormData.full_name || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                       required
                     />
                   </div>
@@ -703,7 +767,7 @@ const MemberProfilePage = () => {
                       type="tel"
                       value={editFormData.phone_number || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, phone_number: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                       required
                     />
                   </div>
@@ -713,7 +777,7 @@ const MemberProfilePage = () => {
                       type="email"
                       value={editFormData.email || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     />
                   </div>
                   <div>
@@ -721,7 +785,7 @@ const MemberProfilePage = () => {
                     <select
                       value={editFormData.gender || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     >
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
@@ -735,7 +799,7 @@ const MemberProfilePage = () => {
                       type="date"
                       value={editFormData.date_of_birth || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, date_of_birth: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     />
                   </div>
                   <div>
@@ -744,7 +808,7 @@ const MemberProfilePage = () => {
                       type="text"
                       value={editFormData.occupation || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, occupation: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     />
                   </div>
                 </div>
@@ -760,7 +824,7 @@ const MemberProfilePage = () => {
                   <textarea
                     value={editFormData.address || ''}
                     onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
                     rows={2}
                   />
                 </div>
@@ -778,7 +842,7 @@ const MemberProfilePage = () => {
                       type="text"
                       value={editFormData.emergency_contact_name || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     />
                   </div>
                   <div>
@@ -787,7 +851,7 @@ const MemberProfilePage = () => {
                       type="tel"
                       value={editFormData.emergency_contact_phone || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
                     />
                   </div>
                 </div>
@@ -799,12 +863,87 @@ const MemberProfilePage = () => {
                   <Heart className="w-4 h-4" /> Medical Information
                 </h4>
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                      <input
+                        type="number"
+                        value={editFormData.height || ''}
+                        onChange={(e) => {
+                          const h = parseFloat(e.target.value) || 0;
+                          const bmiInfo = getBMIInfo(editFormData.weight || 0, h);
+                          setEditFormData({ 
+                            ...editFormData, 
+                            height: h, 
+                            bmi: bmiInfo.bmi, 
+                            bmi_category: bmiInfo.category,
+                            fitness_goal: bmiInfo.goal 
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                        placeholder="Height in cm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        value={editFormData.weight || ''}
+                        onChange={(e) => {
+                          const w = parseFloat(e.target.value) || 0;
+                          const bmiInfo = getBMIInfo(w, editFormData.height || 0);
+                          setEditFormData({ 
+                            ...editFormData, 
+                            weight: w, 
+                            bmi: bmiInfo.bmi, 
+                            bmi_category: bmiInfo.category,
+                            fitness_goal: bmiInfo.goal 
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                        placeholder="Weight in kg"
+                      />
+                    </div>
+                  </div>
+
+                  {editFormData.bmi && editFormData.bmi > 0 ? (
+                    <div className={`p-3 rounded-lg border flex items-center justify-between ${
+                      editFormData.bmi_category === 'Underweight' ? 'bg-blue-50 border-blue-200 text-blue-700' :
+                      editFormData.bmi_category === 'Normal' ? 'bg-green-50 border-green-200 text-green-700' :
+                      editFormData.bmi_category === 'Overweight' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' :
+                      'bg-red-50 border-red-200 text-red-700'
+                    }`}>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider opacity-70">Calculated BMI</p>
+                        <p className="text-xl font-bold">{editFormData.bmi} ({editFormData.bmi_category})</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wider opacity-70">Suggested Goal</p>
+                        <p className="font-bold">{editFormData.fitness_goal}</p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fitness Goal</label>
+                    <select
+                      value={editFormData.fitness_goal || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, fitness_goal: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                    >
+                      <option value="">Select Goal</option>
+                      <option value="Weight Gain">Weight Gain</option>
+                      <option value="Maintain">Maintain</option>
+                      <option value="Weight Loss">Weight Loss</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Medical Conditions</label>
                     <textarea
                       value={editFormData.medical_conditions || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, medical_conditions: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
                       rows={2}
                       placeholder="Any medical conditions..."
                     />
@@ -814,7 +953,7 @@ const MemberProfilePage = () => {
                     <textarea
                       value={editFormData.injuries_limitations || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, injuries_limitations: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
                       rows={2}
                       placeholder="Any injuries or physical limitations..."
                     />
@@ -824,7 +963,7 @@ const MemberProfilePage = () => {
                     <textarea
                       value={editFormData.additional_notes || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, additional_notes: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
                       rows={2}
                       placeholder="Any additional notes..."
                     />
@@ -1137,6 +1276,57 @@ const MemberProfilePage = () => {
               </div>
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Medical Information</h3>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Height</p>
+                </div>
+                <p className="text-gray-900 font-bold text-lg">{medicalInfo.height ? `${medicalInfo.height} cm` : 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</p>
+                </div>
+                <p className="text-gray-900 font-bold text-lg">{medicalInfo.weight ? `${medicalInfo.weight} kg` : 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-3.5 h-3.5 text-gray-400" />
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">BMI Result</p>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-gray-900 font-bold text-2xl">{medicalInfo.bmi || 'N/A'}</p>
+                    {medicalInfo.bmi_category && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                        medicalInfo.bmi_category === 'Underweight' ? 'bg-blue-100 text-blue-700' :
+                        medicalInfo.bmi_category === 'Normal' ? 'bg-green-100 text-green-700' :
+                        medicalInfo.bmi_category === 'Overweight' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {medicalInfo.bmi_category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Fitness Goal</p>
+                </div>
+                <p className={`font-bold text-lg ${
+                  medicalInfo.fitness_goal === 'Weight Gain' ? 'text-blue-600' :
+                  medicalInfo.fitness_goal === 'Weight Loss' ? 'text-red-600' :
+                  'text-green-600'
+                }`}>
+                  {medicalInfo.fitness_goal || 'N/A'}
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Medical Conditions</p>

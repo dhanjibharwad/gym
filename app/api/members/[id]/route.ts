@@ -81,7 +81,8 @@ const getCachedMemberDetails = unstable_cache(
         // Get medical info
         client.query(
           `SELECT id, member_id, medical_conditions, injuries_limitations, 
-                  additional_notes, created_at, updated_at
+                  additional_notes, height, weight, bmi, bmi_category, fitness_goal,
+                  created_at, updated_at
            FROM medical_info WHERE member_id = $1`,
           [memberId]
         ),
@@ -198,7 +199,12 @@ export async function PATCH(
       emergency_contact_phone,
       medical_conditions,
       injuries_limitations,
-      additional_notes
+      additional_notes,
+      height,
+      weight,
+      bmi,
+      bmi_category,
+      fitness_goal
     } = body;
     const companyId = request.headers.get('x-company-id');
 
@@ -252,13 +258,22 @@ export async function PATCH(
       }
 
       // Update or insert medical info if any medical fields are provided
-      if (medical_conditions !== undefined || injuries_limitations !== undefined || additional_notes !== undefined) {
+      if (
+        medical_conditions !== undefined || 
+        injuries_limitations !== undefined || 
+        additional_notes !== undefined ||
+        height !== undefined ||
+        weight !== undefined ||
+        bmi !== undefined ||
+        bmi_category !== undefined ||
+        fitness_goal !== undefined
+      ) {
         // Check if medical info exists for this member
         const existingMedical = await client.query(
           'SELECT id FROM medical_info WHERE member_id = $1',
           [memberId]
         );
-
+ 
         if (existingMedical.rows.length > 0) {
           // Update existing medical info
           await client.query(
@@ -266,16 +281,43 @@ export async function PATCH(
               medical_conditions = COALESCE($1, medical_conditions),
               injuries_limitations = COALESCE($2, injuries_limitations),
               additional_notes = COALESCE($3, additional_notes),
+              height = COALESCE($4, height),
+              weight = COALESCE($5, weight),
+              bmi = COALESCE($6, bmi),
+              bmi_category = COALESCE($7, bmi_category),
+              fitness_goal = COALESCE($8, fitness_goal),
               updated_at = CURRENT_TIMESTAMP
-            WHERE member_id = $4`,
-            [medical_conditions, injuries_limitations, additional_notes, memberId]
+            WHERE member_id = $9`,
+            [
+              medical_conditions, 
+              injuries_limitations, 
+              additional_notes,
+              height,
+              weight,
+              bmi,
+              bmi_category,
+              fitness_goal,
+              memberId
+            ]
           );
         } else {
           // Insert new medical info
           await client.query(
-            `INSERT INTO medical_info (member_id, medical_conditions, injuries_limitations, additional_notes)
-             VALUES ($1, $2, $3, $4)`,
-            [memberId, medical_conditions, injuries_limitations, additional_notes]
+            `INSERT INTO medical_info (
+              member_id, medical_conditions, injuries_limitations, additional_notes,
+              height, weight, bmi, bmi_category, fitness_goal
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [
+              memberId, 
+              medical_conditions, 
+              injuries_limitations, 
+              additional_notes,
+              height,
+              weight,
+              bmi,
+              bmi_category,
+              fitness_goal
+            ]
           );
         }
       }
